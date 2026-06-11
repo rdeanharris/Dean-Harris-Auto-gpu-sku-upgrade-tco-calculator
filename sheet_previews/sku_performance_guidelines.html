@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SKU Performance Guidelines</title>
+  <style>
+    :root {
+      --nvidia: #76b900;
+      --ink: #111827;
+      --muted: #5b6575;
+      --line: #d7dbe0;
+      --soft: #f2f4f7;
+      --black: #000000;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f7f7f7;
+      color: var(--ink);
+      font-family: "NVIDIA Sans", Aptos, Arial, sans-serif;
+      font-size: 15px;
+    }
+    .app {
+      width: 100%;
+      padding: 6px;
+    }
+    .title {
+      background: var(--black);
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 18px;
+      font-weight: 700;
+      border: 2px solid var(--black);
+    }
+    .nav {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 6px;
+      align-items: center;
+      margin-top: 6px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tab-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      color: var(--ink);
+    }
+    .tab-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      padding: 3px 6px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .tab-pill[aria-selected="true"] {
+      border-color: var(--black);
+      background: var(--black);
+      color: #fff;
+    }
+    .tab-pill:focus-visible {
+      outline: 2px solid var(--nvidia);
+      outline-offset: 2px;
+    }
+    .preview {
+      margin-top: 6px;
+      border: 2px solid var(--black);
+      background: #fff;
+      overflow: auto;
+    }
+    .preview img {
+      display: block;
+      max-width: none;
+      height: auto;
+    }
+    .preview img.fit-width {
+      width: 100%;
+      max-width: 100%;
+    }
+    .source-note {
+      padding: 5px 7px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.18;
+    }
+    .source-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 10.5px;
+      line-height: 1.12;
+    }
+    .source-table th,
+    .source-table td {
+      border: 1px solid var(--line);
+      padding: 3px 4px;
+      vertical-align: middle;
+      overflow-wrap: anywhere;
+    }
+    .price-input {
+      min-height: 24px;
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      padding: 2px 3px;
+      text-align: right;
+    }
+    .source-table th {
+      background: #1a1a1a;
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+    }
+    .source-table td {
+      background: #eaf7d8;
+    }
+    .source-table .money {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .source-table a {
+      color: #0645ad;
+      text-decoration: underline;
+      font-weight: 700;
+    }
+    .cloud_price_inputs col:nth-child(1) { width: 13%; }
+    .cloud_price_inputs col:nth-child(2) { width: 15%; }
+    .cloud_price_inputs col:nth-child(3) { width: 9%; }
+    .cloud_price_inputs col:nth-child(4) { width: 9%; }
+    .cloud_price_inputs col:nth-child(5) { width: 9%; }
+    .cloud_price_inputs col:nth-child(6) { width: 10%; }
+    .cloud_price_inputs col:nth-child(7) { width: 10%; }
+    .cloud_price_inputs col:nth-child(8) { width: 17%; }
+    .cloud_price_inputs col:nth-child(9) { width: 8%; }
+    .on_prem_price_inputs col:nth-child(1) { width: 16%; }
+    .on_prem_price_inputs col:nth-child(2) { width: 11%; }
+    .on_prem_price_inputs col:nth-child(3) { width: 13%; }
+    .on_prem_price_inputs col:nth-child(4) { width: 14%; }
+    .on_prem_price_inputs col:nth-child(5) { width: 12%; }
+    .on_prem_price_inputs col:nth-child(6) { width: 12%; }
+    .on_prem_price_inputs col:nth-child(7) { width: 16%; }
+    .on_prem_price_inputs col:nth-child(8) { width: 6%; }
+    .price-save-status {
+      min-width: 86px;
+      color: var(--muted);
+      text-align: right;
+    }
+    .back {
+      white-space: nowrap;
+    }
+    @media (max-width: 680px) {
+      .nav { grid-template-columns: 1fr; }
+      .back { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="title">SKU Performance Guidelines</div>
+    <div class="nav">
+      <a class="tab-pill back" href="../editable_tco_preview.html">TCO Calculator</a>
+      <div class="tab-list" aria-label="Source files">
+        <a class="tab-pill" href="cloud_price_inputs.html" aria-selected="false">Cloud Price Inputs</a>
+        <a class="tab-pill" href="on_prem_price_inputs.html" aria-selected="false">On-Prem Price Inputs</a>
+        <a class="tab-pill" href="sku_performance_guidelines.html" aria-selected="true">SKU Performance Guidelines</a>
+        <a class="tab-pill" href="a10_baseline_sku_perf.html" aria-selected="false">A10 Baseline SKU Perf</a>
+        <a class="tab-pill" href="a10_to_h100.html" aria-selected="false">A10 to H100</a>
+        <a class="tab-pill" href="a10_to_h200.html" aria-selected="false">A10 to H200</a>
+        <a class="tab-pill" href="a10_to_b200.html" aria-selected="false">A10 to B200</a>
+        <a class="tab-pill" href="h100_to_b200.html" aria-selected="false">H100 to B200</a>
+        <a class="tab-pill" href="a100_to_b200.html" aria-selected="false">A100 to B200</a>
+        <a class="tab-pill" href="sku_dropdown_lists.html" aria-selected="false">SKU Dropdown Lists</a>
+      </div>
+      <span class="price-save-status" id="priceSaveStatus"></span>
+    </div>
+    <div class="preview">
+      <img class="" src="sku_performance_guidelines.png?v=1781206655999" alt="SKU Performance Guidelines preview" />
+    </div>
+  </main>
+  
+</body>
+</html>

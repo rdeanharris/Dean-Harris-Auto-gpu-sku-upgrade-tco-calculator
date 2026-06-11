@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+*.log
+*.tmp
+*.bak
+*.zip
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+

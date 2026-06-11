@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>On-Prem Price Inputs</title>
+  <style>
+    :root {
+      --nvidia: #76b900;
+      --ink: #111827;
+      --muted: #5b6575;
+      --line: #d7dbe0;
+      --soft: #f2f4f7;
+      --black: #000000;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f7f7f7;
+      color: var(--ink);
+      font-family: "NVIDIA Sans", Aptos, Arial, sans-serif;
+      font-size: 15px;
+    }
+    .app {
+      width: 100%;
+      padding: 6px;
+    }
+    .title {
+      background: var(--black);
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 18px;
+      font-weight: 700;
+      border: 2px solid var(--black);
+    }
+    .nav {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 6px;
+      align-items: center;
+      margin-top: 6px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tab-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      color: var(--ink);
+    }
+    .tab-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      padding: 3px 6px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .tab-pill[aria-selected="true"] {
+      border-color: var(--black);
+      background: var(--black);
+      color: #fff;
+    }
+    .tab-pill:focus-visible {
+      outline: 2px solid var(--nvidia);
+      outline-offset: 2px;
+    }
+    .preview {
+      margin-top: 6px;
+      border: 2px solid var(--black);
+      background: #fff;
+      overflow: auto;
+    }
+    .preview img {
+      display: block;
+      max-width: none;
+      height: auto;
+    }
+    .preview img.fit-width {
+      width: 100%;
+      max-width: 100%;
+    }
+    .source-note {
+      padding: 5px 7px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.18;
+    }
+    .source-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 10.5px;
+      line-height: 1.12;
+    }
+    .source-table th,
+    .source-table td {
+      border: 1px solid var(--line);
+      padding: 3px 4px;
+      vertical-align: middle;
+      overflow-wrap: anywhere;
+    }
+    .price-input {
+      min-height: 24px;
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      padding: 2px 3px;
+      text-align: right;
+    }
+    .source-table th {
+      background: #1a1a1a;
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+    }
+    .source-table td {
+      background: #eaf7d8;
+    }
+    .source-table .money {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .source-table a {
+      color: #0645ad;
+      text-decoration: underline;
+      font-weight: 700;
+    }
+    .cloud_price_inputs col:nth-child(1) { width: 13%; }
+    .cloud_price_inputs col:nth-child(2) { width: 15%; }
+    .cloud_price_inputs col:nth-child(3) { width: 9%; }
+    .cloud_price_inputs col:nth-child(4) { width: 9%; }
+    .cloud_price_inputs col:nth-child(5) { width: 9%; }
+    .cloud_price_inputs col:nth-child(6) { width: 10%; }
+    .cloud_price_inputs col:nth-child(7) { width: 10%; }
+    .cloud_price_inputs col:nth-child(8) { width: 17%; }
+    .cloud_price_inputs col:nth-child(9) { width: 8%; }
+    .on_prem_price_inputs col:nth-child(1) { width: 16%; }
+    .on_prem_price_inputs col:nth-child(2) { width: 11%; }
+    .on_prem_price_inputs col:nth-child(3) { width: 13%; }
+    .on_prem_price_inputs col:nth-child(4) { width: 14%; }
+    .on_prem_price_inputs col:nth-child(5) { width: 12%; }
+    .on_prem_price_inputs col:nth-child(6) { width: 12%; }
+    .on_prem_price_inputs col:nth-child(7) { width: 16%; }
+    .on_prem_price_inputs col:nth-child(8) { width: 6%; }
+    .price-save-status {
+      min-width: 86px;
+      color: var(--muted);
+      text-align: right;
+    }
+    .back {
+      white-space: nowrap;
+    }
+    @media (max-width: 680px) {
+      .nav { grid-template-columns: 1fr; }
+      .back { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="title">On-Prem Price Inputs</div>
+    <div class="nav">
+      <a class="tab-pill back" href="../editable_tco_preview.html">TCO Calculator</a>
+      <div class="tab-list" aria-label="Source files">
+        <a class="tab-pill" href="cloud_price_inputs.html" aria-selected="false">Cloud Price Inputs</a>
+        <a class="tab-pill" href="on_prem_price_inputs.html" aria-selected="true">On-Prem Price Inputs</a>
+        <a class="tab-pill" href="sku_performance_guidelines.html" aria-selected="false">SKU Performance Guidelines</a>
+        <a class="tab-pill" href="a10_baseline_sku_perf.html" aria-selected="false">A10 Baseline SKU Perf</a>
+        <a class="tab-pill" href="a10_to_h100.html" aria-selected="false">A10 to H100</a>
+        <a class="tab-pill" href="a10_to_h200.html" aria-selected="false">A10 to H200</a>
+        <a class="tab-pill" href="a10_to_b200.html" aria-selected="false">A10 to B200</a>
+        <a class="tab-pill" href="h100_to_b200.html" aria-selected="false">H100 to B200</a>
+        <a class="tab-pill" href="a100_to_b200.html" aria-selected="false">A100 to B200</a>
+        <a class="tab-pill" href="sku_dropdown_lists.html" aria-selected="false">SKU Dropdown Lists</a>
+      </div>
+      <span class="price-save-status" id="priceSaveStatus"></span>
+    </div>
+    <div class="preview">
+      <div class="source-note">On-prem defaults use public searchable estimates where available. Rows without a public URL remain editable assumptions and should be replaced with vendor quotes or actual purchase prices.</div>
+      <table class="source-table on_prem_price_inputs price-input-table">
+        <colgroup><col /><col /><col /><col /><col /><col /><col /><col /></colgroup>
+        <thead><tr><th>GPU SKU</th><th>Default Estimate $/GPU</th><th>Estimate Basis</th><th>Source</th><th>Override $/GPU Capex</th><th>Calculator $/GPU Capex</th><th>Notes</th><th>Last Checked</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>GB300 NVL72</td>
+            <td class="money default-price"><a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems" target="_blank" rel="noopener noreferrer">$87,500</a></td>
+            <td>Public rack-derived estimate</td>
+            <td><a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems" target="_blank" rel="noopener noreferrer">Tom's Hardware rack estimate</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="GB300%20NVL72" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="GB300%20NVL72" data-price-basis="onPrem" data-default-price="87500" data-decimals="0"></span></td>
+            <td>Derived from public GB300 NVL72 rack range of roughly $6.0M-$6.5M divided by 72 GPUs; rounded planning estimate. Vendor quote should replace this.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>GB200 NVL72</td>
+            <td class="money default-price"><a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems" target="_blank" rel="noopener noreferrer">$43,000</a></td>
+            <td>Public rack-derived estimate</td>
+            <td><a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems" target="_blank" rel="noopener noreferrer">Tom's Hardware rack estimate</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="GB200%20NVL72" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="GB200%20NVL72" data-price-basis="onPrem" data-default-price="43000" data-decimals="0"></span></td>
+            <td>Derived from public GB200 NVL72 rack range of roughly $2.8M-$3.4M divided by 72 GPUs; midpoint is about $43.1K/GPU.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>B300 270GB SXM</td>
+            <td class="money default-price">$50,000</td>
+            <td>Quote required</td>
+            <td>No direct public standalone price found</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="B300%20270GB%20SXM" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="B300%20270GB%20SXM" data-price-basis="onPrem" data-default-price="50000" data-decimals="0"></span></td>
+            <td>No reliable public standalone B300 price found in search; keep editable planning assumption until vendor quote is available.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>B200 180GB SXM</td>
+            <td class="money default-price"><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">$35,000</a></td>
+            <td>Public range midpoint</td>
+            <td><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">Investors.com / CNBC-reported Blackwell range</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="B200%20180GB%20SXM" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="B200%20180GB%20SXM" data-price-basis="onPrem" data-default-price="35000" data-decimals="0"></span></td>
+            <td>Midpoint of public Blackwell GPU estimate range of $30K-$40K. Actual B200/NVL pricing is quote-dependent.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>RTX PRO 6000 Blackwell Server Edition</td>
+            <td class="money default-price"><a href="https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada" target="_blank" rel="noopener noreferrer">$8,565</a></td>
+            <td>Public retailer listing</td>
+            <td><a href="https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada" target="_blank" rel="noopener noreferrer">Tom's Hardware coverage of Connection listing</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="RTX%20PRO%206000%20Blackwell%20Server%20Edition" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="RTX%20PRO%206000%20Blackwell%20Server%20Edition" data-price-basis="onPrem" data-default-price="8565" data-decimals="0"></span></td>
+            <td>Uses published RTX Pro 6000 Blackwell listing price. Server Edition may be sold inside systems; replace with server quote when available.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>RTX 6000 Ada 48GB</td>
+            <td class="money default-price"><a href="https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada" target="_blank" rel="noopener noreferrer">$6,800</a></td>
+            <td>Derived from public listing</td>
+            <td><a href="https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada" target="_blank" rel="noopener noreferrer">Tom's Hardware RTX Pro comparison</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="RTX%206000%20Ada%2048GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="RTX%206000%20Ada%2048GB" data-price-basis="onPrem" data-default-price="6800" data-decimals="0"></span></td>
+            <td>Derived from RTX Pro 6000 Blackwell listed at $8,565 and described as 26% above RTX 6000 Ada; rounded.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>H200 141GB SXM</td>
+            <td class="money default-price"><a href="https://www.tomshardware.com/pc-components/gpus/busted-12vhpwr-connector-sidelines-usd30-000-h200-hopper-gpu-repair-technician-saves-the-data-center-day-by-fixing-power-port" target="_blank" rel="noopener noreferrer">$30,000</a></td>
+            <td>Public estimate</td>
+            <td><a href="https://www.tomshardware.com/pc-components/gpus/busted-12vhpwr-connector-sidelines-usd30-000-h200-hopper-gpu-repair-technician-saves-the-data-center-day-by-fixing-power-port" target="_blank" rel="noopener noreferrer">Tom's Hardware H200 article</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="H200%20141GB%20SXM" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="H200%20141GB%20SXM" data-price-basis="onPrem" data-default-price="30000" data-decimals="0"></span></td>
+            <td>Public article states Nvidia H200 GPU retails around $30K; replace with quote for specific SXM/PCIe configuration.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>H100 80GB SXM</td>
+            <td class="money default-price"><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">$25,000</a></td>
+            <td>Public range midpoint</td>
+            <td><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">Investors.com analyst estimate</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="H100%2080GB%20SXM" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20SXM" data-price-basis="onPrem" data-default-price="25000" data-decimals="0"></span></td>
+            <td>Uses midpoint/low end of public H100 estimate range of $20K-$30K. Replace with quote for SXM configuration.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>H100 80GB PCIe</td>
+            <td class="money default-price"><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">$25,000</a></td>
+            <td>Public range midpoint</td>
+            <td><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">Investors.com analyst estimate</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="H100%2080GB%20PCIe" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20PCIe" data-price-basis="onPrem" data-default-price="25000" data-decimals="0"></span></td>
+            <td>Uses public H100 estimate range of $20K-$30K. Replace with quote for PCIe configuration.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>H100 NVL 94GB</td>
+            <td class="money default-price"><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">$30,000</a></td>
+            <td>Public range upper estimate</td>
+            <td><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">Investors.com analyst estimate</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="H100%20NVL%2094GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="H100%20NVL%2094GB" data-price-basis="onPrem" data-default-price="30000" data-decimals="0"></span></td>
+            <td>Uses upper end of public H100 estimate range because NVL/high-memory configuration should carry a premium. Replace with quote.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>GH200 96GB</td>
+            <td class="money default-price">$50,000</td>
+            <td>Quote required</td>
+            <td>No direct public standalone price found</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="GH200%2096GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="GH200%2096GB" data-price-basis="onPrem" data-default-price="50000" data-decimals="0"></span></td>
+            <td>No reliable public standalone GH200 price found in search; keep editable planning assumption until vendor quote is available.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>A100 80GB SXM</td>
+            <td class="money default-price">$8,500</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A100%2080GB%20SXM" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20SXM" data-price-basis="onPrem" data-default-price="8500" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>A100 80GB PCIe</td>
+            <td class="money default-price">$13,500</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A100%2080GB%20PCIe" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20PCIe" data-price-basis="onPrem" data-default-price="13500" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>A100 40GB SXM</td>
+            <td class="money default-price">$5,000</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A100%2040GB%20SXM" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20SXM" data-price-basis="onPrem" data-default-price="5000" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>A100 40GB PCIe</td>
+            <td class="money default-price">$6,000</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A100%2040GB%20PCIe" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20PCIe" data-price-basis="onPrem" data-default-price="6000" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>L40S 48GB</td>
+            <td class="money default-price">$9,000</td>
+            <td>Internal planning assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="L40S%2048GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="L40S%2048GB" data-price-basis="onPrem" data-default-price="9000" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>L40 48GB</td>
+            <td class="money default-price">$6,959</td>
+            <td>Internal planning assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="L40%2048GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="L40%2048GB" data-price-basis="onPrem" data-default-price="6959" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>L4 24GB</td>
+            <td class="money default-price">$2,800</td>
+            <td>Internal planning assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="L4%2024GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="L4%2024GB" data-price-basis="onPrem" data-default-price="2800" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>A40 48GB</td>
+            <td class="money default-price">$2,500</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A40%2048GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A40%2048GB" data-price-basis="onPrem" data-default-price="2500" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>A30 24GB</td>
+            <td class="money default-price">$2,250</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A30%2024GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A30%2024GB" data-price-basis="onPrem" data-default-price="2250" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>A10 24GB</td>
+            <td class="money default-price">$3,000</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A10%2024GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A10%2024GB" data-price-basis="onPrem" data-default-price="3000" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>A2 16GB</td>
+            <td class="money default-price">$900</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A2%2016GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A2%2016GB" data-price-basis="onPrem" data-default-price="900" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>A6000 48GB</td>
+            <td class="money default-price">$4,500</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A6000%2048GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A6000%2048GB" data-price-basis="onPrem" data-default-price="4500" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>Quadro RTX 6000 24GB</td>
+            <td class="money default-price">$1,000</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="Quadro%20RTX%206000%2024GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="Quadro%20RTX%206000%2024GB" data-price-basis="onPrem" data-default-price="1000" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>T4 16GB</td>
+            <td class="money default-price">$700</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="T4%2016GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="T4%2016GB" data-price-basis="onPrem" data-default-price="700" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>Tesla V100 32GB</td>
+            <td class="money default-price">$700</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="Tesla%20V100%2032GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="Tesla%20V100%2032GB" data-price-basis="onPrem" data-default-price="700" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>Tesla V100 16GB</td>
+            <td class="money default-price">$350</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="Tesla%20V100%2016GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="Tesla%20V100%2016GB" data-price-basis="onPrem" data-default-price="350" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>P100 16GB</td>
+            <td class="money default-price">$177</td>
+            <td>Used-market/internal assumption</td>
+            <td>No current public source configured</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="P100%2016GB" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="P100%2016GB" data-price-basis="onPrem" data-default-price="177" data-decimals="0"></span></td>
+            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td>2026-06-11</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const storageKey = "gpuTcoSkuPriceOverrides";
+      const saveStatus = document.getElementById("priceSaveStatus");
+      let currentState = null;
+      let saveTimer = null;
+      let skuPriceOverrides = {};
+
+      function normalizePriceOverride(value) {
+        if (value === "" || value === null || value === undefined) return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+      }
+      function normalizeSkuPriceOverrides(input) {
+        if (!input || typeof input !== "object") return {};
+        return Object.fromEntries(Object.entries(input).map(([sku, entry]) => [
+          sku,
+          {
+            cloud: normalizePriceOverride(entry?.cloud),
+            onPrem: normalizePriceOverride(entry?.onPrem),
+          },
+        ]));
+      }
+      function mergeSkuPriceOverrides(primary, fallback) {
+        const merged = normalizeSkuPriceOverrides(primary);
+        for (const [sku, entry] of Object.entries(normalizeSkuPriceOverrides(fallback))) {
+          if (!merged[sku]) merged[sku] = { cloud: null, onPrem: null };
+          if (merged[sku].cloud === null) merged[sku].cloud = entry.cloud;
+          if (merged[sku].onPrem === null) merged[sku].onPrem = entry.onPrem;
+        }
+        return merged;
+      }
+      function overlaySkuPriceOverrides(primary, fallback) {
+        const merged = normalizeSkuPriceOverrides(fallback);
+        for (const [sku, entry] of Object.entries(normalizeSkuPriceOverrides(primary))) {
+          merged[sku] = entry;
+        }
+        return merged;
+      }
+      function storedSkuPriceOverrides() {
+        try {
+          return normalizeSkuPriceOverrides(JSON.parse(window.localStorage.getItem(storageKey) || "{}"));
+        } catch (error) {
+          return {};
+        }
+      }
+      function storeSkuPriceOverrides() {
+        try {
+          window.localStorage.setItem(storageKey, JSON.stringify(skuPriceOverrides));
+        } catch (error) {}
+      }
+      function formatMoney(value, decimals) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed) || parsed <= 0) return "";
+        return "$" + parsed.toLocaleString("en-US", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals,
+        });
+      }
+      function overrideFor(sku, basis) {
+        return normalizePriceOverride(skuPriceOverrides[sku]?.[basis]);
+      }
+      function basisKey(basis) {
+        return basis === "Cloud" ? "cloud" : "onPrem";
+      }
+      function ensureOverrideEntry(sku) {
+        if (!skuPriceOverrides[sku]) skuPriceOverrides[sku] = { cloud: null, onPrem: null };
+        return skuPriceOverrides[sku];
+      }
+      function stateWithCurrentOverrides() {
+        const nextState = { ...currentState, skuPriceOverrides };
+        nextState.migrationPaths = (currentState?.migrationPaths || []).map((path) => ({
+          ...path,
+          currentPriceOverride: overrideFor(path.currentSku, basisKey(path.currentBasis)),
+          targetPriceOverride: overrideFor(path.targetSku, basisKey(path.targetBasis)),
+        }));
+        return nextState;
+      }
+      function applyOverrides(updateInputs = true) {
+        document.querySelectorAll("[data-price-sku][data-price-basis]").forEach((element) => {
+          const sku = decodeURIComponent(element.dataset.priceSku || "");
+          const basis = element.dataset.priceBasis;
+          const override = overrideFor(sku, basis);
+          if (element.matches("input")) {
+            if (updateInputs) element.value = override ?? "";
+            return;
+          }
+          const defaultPrice = normalizePriceOverride(element.dataset.defaultPrice);
+          const decimals = Number(element.dataset.decimals || 2);
+          element.textContent = formatMoney(override ?? defaultPrice, decimals);
+        });
+      }
+      async function saveState() {
+        if (!currentState) return;
+        if (saveStatus) saveStatus.textContent = "Saving...";
+        try {
+          const response = await fetch("/api/save-state", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(stateWithCurrentOverrides()),
+          });
+          if (!response.ok) throw new Error("Save failed");
+          const payload = await response.json();
+          currentState = payload.savedState || { ...currentState, skuPriceOverrides };
+          if (saveStatus) saveStatus.textContent = "Saved to Excel";
+        } catch (error) {
+          if (saveStatus) saveStatus.textContent = "Save error";
+        }
+      }
+      function scheduleSave() {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(saveState, 600);
+      }
+      document.querySelectorAll(".price-input").forEach((input) => {
+        input.addEventListener("input", () => {
+          const sku = decodeURIComponent(input.dataset.priceSku || "");
+          const basis = input.dataset.priceBasis;
+          if (!sku || (basis !== "cloud" && basis !== "onPrem")) return;
+          ensureOverrideEntry(sku)[basis] = normalizePriceOverride(input.value);
+          storeSkuPriceOverrides();
+          applyOverrides(false);
+          scheduleSave();
+        });
+      });
+      async function loadState() {
+        skuPriceOverrides = storedSkuPriceOverrides();
+        applyOverrides();
+        try {
+          const response = await fetch("/api/state");
+          if (!response.ok) throw new Error("State load failed");
+          const payload = await response.json();
+          currentState = payload.state;
+          skuPriceOverrides = overlaySkuPriceOverrides(skuPriceOverrides, payload.state?.skuPriceOverrides);
+          storeSkuPriceOverrides();
+          applyOverrides();
+          if (saveStatus) saveStatus.textContent = "Saved";
+        } catch (error) {
+          if (saveStatus) saveStatus.textContent = "Local only";
+        }
+      }
+      window.addEventListener("storage", (event) => {
+        if (event.key !== storageKey) return;
+        skuPriceOverrides = overlaySkuPriceOverrides(storedSkuPriceOverrides(), skuPriceOverrides);
+        applyOverrides();
+      });
+      loadState();
+    })();
+  </script>
+</body>
+</html>

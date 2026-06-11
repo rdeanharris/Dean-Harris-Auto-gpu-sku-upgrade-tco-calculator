@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cloud Price Inputs</title>
+  <style>
+    :root {
+      --nvidia: #76b900;
+      --ink: #111827;
+      --muted: #5b6575;
+      --line: #d7dbe0;
+      --soft: #f2f4f7;
+      --black: #000000;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f7f7f7;
+      color: var(--ink);
+      font-family: "NVIDIA Sans", Aptos, Arial, sans-serif;
+      font-size: 15px;
+    }
+    .app {
+      width: 100%;
+      padding: 6px;
+    }
+    .title {
+      background: var(--black);
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 18px;
+      font-weight: 700;
+      border: 2px solid var(--black);
+    }
+    .nav {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 6px;
+      align-items: center;
+      margin-top: 6px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .tab-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      color: var(--ink);
+    }
+    .tab-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      padding: 3px 6px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .tab-pill[aria-selected="true"] {
+      border-color: var(--black);
+      background: var(--black);
+      color: #fff;
+    }
+    .tab-pill:focus-visible {
+      outline: 2px solid var(--nvidia);
+      outline-offset: 2px;
+    }
+    .preview {
+      margin-top: 6px;
+      border: 2px solid var(--black);
+      background: #fff;
+      overflow: auto;
+    }
+    .preview img {
+      display: block;
+      max-width: none;
+      height: auto;
+    }
+    .preview img.fit-width {
+      width: 100%;
+      max-width: 100%;
+    }
+    .source-note {
+      padding: 5px 7px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.18;
+    }
+    .source-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 10.5px;
+      line-height: 1.12;
+    }
+    .source-table th,
+    .source-table td {
+      border: 1px solid var(--line);
+      padding: 3px 4px;
+      vertical-align: middle;
+      overflow-wrap: anywhere;
+    }
+    .price-input {
+      min-height: 24px;
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      padding: 2px 3px;
+      text-align: right;
+    }
+    .source-table th {
+      background: #1a1a1a;
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+    }
+    .source-table td {
+      background: #eaf7d8;
+    }
+    .source-table .money {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .source-table a {
+      color: #0645ad;
+      text-decoration: underline;
+      font-weight: 700;
+    }
+    .cloud_price_inputs col:nth-child(1) { width: 13%; }
+    .cloud_price_inputs col:nth-child(2) { width: 15%; }
+    .cloud_price_inputs col:nth-child(3) { width: 9%; }
+    .cloud_price_inputs col:nth-child(4) { width: 9%; }
+    .cloud_price_inputs col:nth-child(5) { width: 9%; }
+    .cloud_price_inputs col:nth-child(6) { width: 10%; }
+    .cloud_price_inputs col:nth-child(7) { width: 10%; }
+    .cloud_price_inputs col:nth-child(8) { width: 17%; }
+    .cloud_price_inputs col:nth-child(9) { width: 8%; }
+    .on_prem_price_inputs col:nth-child(1) { width: 16%; }
+    .on_prem_price_inputs col:nth-child(2) { width: 11%; }
+    .on_prem_price_inputs col:nth-child(3) { width: 13%; }
+    .on_prem_price_inputs col:nth-child(4) { width: 14%; }
+    .on_prem_price_inputs col:nth-child(5) { width: 12%; }
+    .on_prem_price_inputs col:nth-child(6) { width: 12%; }
+    .on_prem_price_inputs col:nth-child(7) { width: 16%; }
+    .on_prem_price_inputs col:nth-child(8) { width: 6%; }
+    .price-save-status {
+      min-width: 86px;
+      color: var(--muted);
+      text-align: right;
+    }
+    .back {
+      white-space: nowrap;
+    }
+    @media (max-width: 680px) {
+      .nav { grid-template-columns: 1fr; }
+      .back { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="title">Cloud Price Inputs</div>
+    <div class="nav">
+      <a class="tab-pill back" href="../editable_tco_preview.html">TCO Calculator</a>
+      <div class="tab-list" aria-label="Source files">
+        <a class="tab-pill" href="cloud_price_inputs.html" aria-selected="true">Cloud Price Inputs</a>
+        <a class="tab-pill" href="on_prem_price_inputs.html" aria-selected="false">On-Prem Price Inputs</a>
+        <a class="tab-pill" href="sku_performance_guidelines.html" aria-selected="false">SKU Performance Guidelines</a>
+        <a class="tab-pill" href="a10_baseline_sku_perf.html" aria-selected="false">A10 Baseline SKU Perf</a>
+        <a class="tab-pill" href="a10_to_h100.html" aria-selected="false">A10 to H100</a>
+        <a class="tab-pill" href="a10_to_h200.html" aria-selected="false">A10 to H200</a>
+        <a class="tab-pill" href="a10_to_b200.html" aria-selected="false">A10 to B200</a>
+        <a class="tab-pill" href="h100_to_b200.html" aria-selected="false">H100 to B200</a>
+        <a class="tab-pill" href="a100_to_b200.html" aria-selected="false">A100 to B200</a>
+        <a class="tab-pill" href="sku_dropdown_lists.html" aria-selected="false">SKU Dropdown Lists</a>
+      </div>
+      <span class="price-save-status" id="priceSaveStatus"></span>
+    </div>
+    <div class="preview">
+      <div class="source-note">Public cloud pricing remains the default where available; override values replace the default price used by the calculator.</div>
+      <table class="source-table cloud_price_inputs price-input-table">
+        <colgroup><col /><col /><col /><col /><col /><col /><col /><col /><col /></colgroup>
+        <thead><tr><th>GPU SKU</th><th>Configuration</th><th>Price Model</th><th>Default $/GPU-Hour</th><th>Source</th><th>Override $/GPU-Hour</th><th>Calculator $/GPU-Hour</th><th>Notes</th><th>Last Checked</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>GB300 NVL72</td>
+            <td>NVIDIA GB300 NVL72</td>
+            <td>Quote Required</td>
+            <td class="money default-price"></td>
+            <td><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">coreweave.com</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="GB300%20NVL72" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="GB300%20NVL72" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>Listed availability with no public on-demand price; enter a quoted price to use in TCO.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>GB200 NVL72</td>
+            <td>NVIDIA GB200 NVL72 4-GPU node</td>
+            <td>Per Config-Hour</td>
+            <td class="money default-price"><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">$10.50</a></td>
+            <td><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">coreweave.com</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="GB200%20NVL72" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="GB200%20NVL72" data-price-basis="cloud" data-default-price="10.5" data-decimals="2"></span></td>
+            <td>Public on-demand example lists GB200 NVL72 at $42.00/hr with 4 GPUs; per-GPU price is calculated.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>B300 270GB SXM</td>
+            <td>NVIDIA HGX B300</td>
+            <td>Quote Required</td>
+            <td class="money default-price"></td>
+            <td><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">coreweave.com</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="B300%20270GB%20SXM" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="B300%20270GB%20SXM" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>Listed availability with no public on-demand price; enter a quoted price to use in TCO.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>B200 180GB SXM</td>
+            <td>NVIDIA B200 SXM6 180 GB 8x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$6.69</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="B200%20180GB%20SXM" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="B200%20180GB%20SXM" data-price-basis="cloud" data-default-price="6.69" data-decimals="2"></span></td>
+            <td>Public on-demand example lists B200 SXM6 180 GB at $6.69/GPU/hr for 8x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>RTX PRO 6000 Blackwell Server Edition</td>
+            <td>NVIDIA RTX PRO 6000 Blackwell Server Edition 8-GPU node</td>
+            <td>Per Config-Hour</td>
+            <td class="money default-price"><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">$2.50</a></td>
+            <td><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">coreweave.com</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="RTX%20PRO%206000%20Blackwell%20Server%20Edition" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="RTX%20PRO%206000%20Blackwell%20Server%20Edition" data-price-basis="cloud" data-default-price="2.5" data-decimals="2"></span></td>
+            <td>Public on-demand example lists RTX PRO 6000 Blackwell Server Edition at $20.00/hr with 8 GPUs; per-GPU price is calculated.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>RTX 6000 Ada 48GB</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="RTX%206000%20Ada%2048GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="RTX%206000%20Ada%2048GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>H200 141GB SXM</td>
+            <td>NVIDIA HGX H200 8-GPU node</td>
+            <td>Per Config-Hour</td>
+            <td class="money default-price"><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">$6.31</a></td>
+            <td><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">coreweave.com</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="H200%20141GB%20SXM" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="H200%20141GB%20SXM" data-price-basis="cloud" data-default-price="6.305" data-decimals="2"></span></td>
+            <td>Public on-demand example lists H200 at $50.44/hr with 8 GPUs; per-GPU price is calculated.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>H100 80GB SXM</td>
+            <td>NVIDIA H100 SXM 80 GB 8x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$3.99</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="H100%2080GB%20SXM" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20SXM" data-price-basis="cloud" data-default-price="3.99" data-decimals="2"></span></td>
+            <td>Public on-demand example lists H100 SXM 80 GB at $3.99/GPU/hr for 8x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>H100 80GB PCIe</td>
+            <td>NVIDIA H100 PCIe 80 GB 1x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$3.29</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="H100%2080GB%20PCIe" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20PCIe" data-price-basis="cloud" data-default-price="3.29" data-decimals="2"></span></td>
+            <td>Public on-demand example lists H100 PCIe 80 GB at $3.29/GPU/hr for 1x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>H100 NVL 94GB</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="H100%20NVL%2094GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="H100%20NVL%2094GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>GH200 96GB</td>
+            <td>NVIDIA GH200 96 GB 1x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$2.29</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="GH200%2096GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="GH200%2096GB" data-price-basis="cloud" data-default-price="2.29" data-decimals="2"></span></td>
+            <td>Public on-demand example lists GH200 96 GB at $2.29/GPU/hr for 1x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>A100 80GB SXM</td>
+            <td>NVIDIA A100 SXM 80 GB 8x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$2.79</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="A100%2080GB%20SXM" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20SXM" data-price-basis="cloud" data-default-price="2.79" data-decimals="2"></span></td>
+            <td>Public on-demand example lists A100 SXM 80 GB at $2.79/GPU/hr for 8x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>A100 80GB PCIe</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="A100%2080GB%20PCIe" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20PCIe" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>A100 40GB SXM</td>
+            <td>NVIDIA A100 SXM 40 GB 8x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$1.99</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="A100%2040GB%20SXM" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20SXM" data-price-basis="cloud" data-default-price="1.99" data-decimals="2"></span></td>
+            <td>Public on-demand example lists A100 SXM 40 GB at $1.99/GPU/hr for 8x and 1x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>A100 40GB PCIe</td>
+            <td>NVIDIA A100 PCIe 40 GB 4x/2x/1x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$1.99</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="A100%2040GB%20PCIe" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20PCIe" data-price-basis="cloud" data-default-price="1.99" data-decimals="2"></span></td>
+            <td>Public on-demand example lists A100 PCIe 40 GB at $1.99/GPU/hr for 4x, 2x, and 1x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>L40S 48GB</td>
+            <td>NVIDIA L40S 8-GPU node</td>
+            <td>Per Config-Hour</td>
+            <td class="money default-price"><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">$2.25</a></td>
+            <td><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">coreweave.com</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="L40S%2048GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="L40S%2048GB" data-price-basis="cloud" data-default-price="2.25" data-decimals="2"></span></td>
+            <td>Public on-demand example lists L40S at $18.00/hr with 8 GPUs; per-GPU price is calculated.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>L40 48GB</td>
+            <td>NVIDIA L40 8-GPU node</td>
+            <td>Per Config-Hour</td>
+            <td class="money default-price"><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">$1.25</a></td>
+            <td><a href="https://www.coreweave.com/pricing" target="_blank" rel="noopener noreferrer">coreweave.com</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="L40%2048GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="L40%2048GB" data-price-basis="cloud" data-default-price="1.25" data-decimals="2"></span></td>
+            <td>Public on-demand example lists L40 at $10.00/hr with 8 GPUs; per-GPU price is calculated.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>L4 24GB</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="L4%2024GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="L4%2024GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>A40 48GB</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="A40%2048GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A40%2048GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>A30 24GB</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="A30%2024GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A30%2024GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>A10 24GB</td>
+            <td>NVIDIA A10 24 GB 1x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$1.29</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="A10%2024GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A10%2024GB" data-price-basis="cloud" data-default-price="1.29" data-decimals="2"></span></td>
+            <td>Public on-demand example lists A10 24 GB at $1.29/GPU/hr for 1x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>A2 16GB</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="A2%2016GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A2%2016GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>A6000 48GB</td>
+            <td>NVIDIA A6000 48 GB 4x/2x/1x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$1.09</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="A6000%2048GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="A6000%2048GB" data-price-basis="cloud" data-default-price="1.09" data-decimals="2"></span></td>
+            <td>Public on-demand example lists A6000 48 GB at $1.09/GPU/hr for 4x, 2x, and 1x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>Quadro RTX 6000 24GB</td>
+            <td>NVIDIA Quadro RTX 6000 24 GB 1x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$0.69</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="Quadro%20RTX%206000%2024GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="Quadro%20RTX%206000%2024GB" data-price-basis="cloud" data-default-price="0.69" data-decimals="2"></span></td>
+            <td>Public on-demand example lists Quadro RTX 6000 24 GB at $0.69/GPU/hr for 1x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>T4 16GB</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="T4%2016GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="T4%2016GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Tesla V100 32GB</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="Tesla%20V100%2032GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="Tesla%20V100%2032GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Tesla V100 16GB</td>
+            <td>NVIDIA Tesla V100 16 GB 8x instance</td>
+            <td>Per GPU-Hour</td>
+            <td class="money default-price"><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">$0.79</a></td>
+            <td><a href="https://lambda.ai/pricing" target="_blank" rel="noopener noreferrer">lambda.ai</a></td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="Tesla%20V100%2016GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="Tesla%20V100%2016GB" data-price-basis="cloud" data-default-price="0.79" data-decimals="2"></span></td>
+            <td>Public on-demand example lists Tesla V100 16 GB at $0.79/GPU/hr for 8x instances.</td>
+            <td>2026-05-28</td>
+          </tr>
+          <tr>
+            <td>P100 16GB</td>
+            <td></td>
+            <td>No Public Price</td>
+            <td class="money default-price"></td>
+            <td>No public source</td>
+            <td><input class="price-input" type="number" min="0" step="0.01" inputmode="decimal" data-price-sku="P100%2016GB" data-price-basis="cloud" /></td>
+            <td class="money"><span data-effective-price data-price-sku="P100%2016GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No public cloud price configured.</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const storageKey = "gpuTcoSkuPriceOverrides";
+      const saveStatus = document.getElementById("priceSaveStatus");
+      let currentState = null;
+      let saveTimer = null;
+      let skuPriceOverrides = {};
+
+      function normalizePriceOverride(value) {
+        if (value === "" || value === null || value === undefined) return null;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+      }
+      function normalizeSkuPriceOverrides(input) {
+        if (!input || typeof input !== "object") return {};
+        return Object.fromEntries(Object.entries(input).map(([sku, entry]) => [
+          sku,
+          {
+            cloud: normalizePriceOverride(entry?.cloud),
+            onPrem: normalizePriceOverride(entry?.onPrem),
+          },
+        ]));
+      }
+      function mergeSkuPriceOverrides(primary, fallback) {
+        const merged = normalizeSkuPriceOverrides(primary);
+        for (const [sku, entry] of Object.entries(normalizeSkuPriceOverrides(fallback))) {
+          if (!merged[sku]) merged[sku] = { cloud: null, onPrem: null };
+          if (merged[sku].cloud === null) merged[sku].cloud = entry.cloud;
+          if (merged[sku].onPrem === null) merged[sku].onPrem = entry.onPrem;
+        }
+        return merged;
+      }
+      function overlaySkuPriceOverrides(primary, fallback) {
+        const merged = normalizeSkuPriceOverrides(fallback);
+        for (const [sku, entry] of Object.entries(normalizeSkuPriceOverrides(primary))) {
+          merged[sku] = entry;
+        }
+        return merged;
+      }
+      function storedSkuPriceOverrides() {
+        try {
+          return normalizeSkuPriceOverrides(JSON.parse(window.localStorage.getItem(storageKey) || "{}"));
+        } catch (error) {
+          return {};
+        }
+      }
+      function storeSkuPriceOverrides() {
+        try {
+          window.localStorage.setItem(storageKey, JSON.stringify(skuPriceOverrides));
+        } catch (error) {}
+      }
+      function formatMoney(value, decimals) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed) || parsed <= 0) return "";
+        return "$" + parsed.toLocaleString("en-US", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals,
+        });
+      }
+      function overrideFor(sku, basis) {
+        return normalizePriceOverride(skuPriceOverrides[sku]?.[basis]);
+      }
+      function basisKey(basis) {
+        return basis === "Cloud" ? "cloud" : "onPrem";
+      }
+      function ensureOverrideEntry(sku) {
+        if (!skuPriceOverrides[sku]) skuPriceOverrides[sku] = { cloud: null, onPrem: null };
+        return skuPriceOverrides[sku];
+      }
+      function stateWithCurrentOverrides() {
+        const nextState = { ...currentState, skuPriceOverrides };
+        nextState.migrationPaths = (currentState?.migrationPaths || []).map((path) => ({
+          ...path,
+          currentPriceOverride: overrideFor(path.currentSku, basisKey(path.currentBasis)),
+          targetPriceOverride: overrideFor(path.targetSku, basisKey(path.targetBasis)),
+        }));
+        return nextState;
+      }
+      function applyOverrides(updateInputs = true) {
+        document.querySelectorAll("[data-price-sku][data-price-basis]").forEach((element) => {
+          const sku = decodeURIComponent(element.dataset.priceSku || "");
+          const basis = element.dataset.priceBasis;
+          const override = overrideFor(sku, basis);
+          if (element.matches("input")) {
+            if (updateInputs) element.value = override ?? "";
+            return;
+          }
+          const defaultPrice = normalizePriceOverride(element.dataset.defaultPrice);
+          const decimals = Number(element.dataset.decimals || 2);
+          element.textContent = formatMoney(override ?? defaultPrice, decimals);
+        });
+      }
+      async function saveState() {
+        if (!currentState) return;
+        if (saveStatus) saveStatus.textContent = "Saving...";
+        try {
+          const response = await fetch("/api/save-state", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(stateWithCurrentOverrides()),
+          });
+          if (!response.ok) throw new Error("Save failed");
+          const payload = await response.json();
+          currentState = payload.savedState || { ...currentState, skuPriceOverrides };
+          if (saveStatus) saveStatus.textContent = "Saved to Excel";
+        } catch (error) {
+          if (saveStatus) saveStatus.textContent = "Save error";
+        }
+      }
+      function scheduleSave() {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(saveState, 600);
+      }
+      document.querySelectorAll(".price-input").forEach((input) => {
+        input.addEventListener("input", () => {
+          const sku = decodeURIComponent(input.dataset.priceSku || "");
+          const basis = input.dataset.priceBasis;
+          if (!sku || (basis !== "cloud" && basis !== "onPrem")) return;
+          ensureOverrideEntry(sku)[basis] = normalizePriceOverride(input.value);
+          storeSkuPriceOverrides();
+          applyOverrides(false);
+          scheduleSave();
+        });
+      });
+      async function loadState() {
+        skuPriceOverrides = storedSkuPriceOverrides();
+        applyOverrides();
+        try {
+          const response = await fetch("/api/state");
+          if (!response.ok) throw new Error("State load failed");
+          const payload = await response.json();
+          currentState = payload.state;
+          skuPriceOverrides = overlaySkuPriceOverrides(skuPriceOverrides, payload.state?.skuPriceOverrides);
+          storeSkuPriceOverrides();
+          applyOverrides();
+          if (saveStatus) saveStatus.textContent = "Saved";
+        } catch (error) {
+          if (saveStatus) saveStatus.textContent = "Local only";
+        }
+      }
+      window.addEventListener("storage", (event) => {
+        if (event.key !== storageKey) return;
+        skuPriceOverrides = overlaySkuPriceOverrides(storedSkuPriceOverrides(), skuPriceOverrides);
+        applyOverrides();
+      });
+      loadState();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1468 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GPU SKU Upgrade TCO Calculator</title>
+  <style>
+    :root {
+      --nvidia: #76b900;
+      --ink: #111827;
+      --muted: #5b6575;
+      --line: #d7dbe0;
+      --soft: #f2f4f7;
+      --gain: #eaf7d8;
+      --panel: #ffffff;
+      --black: #000000;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f7f7f7;
+      color: var(--ink);
+      font-family: "NVIDIA Sans", Aptos, Arial, sans-serif;
+      font-size: 15px;
+    }
+    .app {
+      width: 100%;
+      max-width: none;
+      margin: 0 auto;
+      padding: 10px;
+    }
+    .title {
+      background: var(--black);
+      color: #fff;
+      padding: 12px 14px;
+      font-size: 21px;
+      font-weight: 700;
+      border: 2px solid var(--black);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      margin-top: 10px;
+    }
+    .grid > section {
+      min-width: 0;
+    }
+    .section {
+      border: 2px solid var(--black);
+      background: var(--panel);
+      margin-bottom: 8px;
+      overflow-x: auto;
+    }
+    .section h2 {
+      margin: 0;
+      padding: 9px 11px;
+      background: var(--nvidia);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .section-toggle {
+      width: 100%;
+      min-height: 42px;
+      border: 0;
+      background: var(--nvidia);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font: inherit;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 9px 11px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .section-toggle:focus-visible {
+      outline: 2px solid var(--black);
+      outline-offset: -2px;
+    }
+    .section-toggle .override-toggle-icon {
+      border-color: rgba(255, 255, 255, 0.75);
+      color: var(--ink);
+    }
+    .section-body[hidden] {
+      display: none;
+    }
+    .section-note {
+      padding: 7px 9px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px 10px;
+      padding: 8px;
+    }
+    .full { grid-column: 1 / -1; }
+    label {
+      display: grid;
+      gap: 4px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+      min-width: 0;
+    }
+    input, select {
+      min-height: 34px;
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      border-radius: 0;
+      padding: 5px 7px;
+      width: 100%;
+    }
+    input[readonly] {
+      background: var(--soft);
+      font-weight: 700;
+    }
+    .scale-qty input {
+      text-align: right;
+      min-width: 0;
+    }
+    .mini {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .override-box {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      margin-top: 2px;
+      overflow: hidden;
+    }
+    .override-toggle {
+      width: 100%;
+      min-height: 34px;
+      border: 0;
+      background: var(--soft);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 9px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .override-toggle:focus-visible {
+      outline: 2px solid var(--nvidia);
+      outline-offset: -2px;
+    }
+    .override-toggle-label {
+      flex: 1;
+    }
+    .override-toggle-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1;
+    }
+    .override-grid {
+      display: grid;
+      grid-template-columns: minmax(240px, 360px);
+      gap: 6px 8px;
+    }
+    .sku-override-table {
+      min-width: 0;
+    }
+    .sku-override-table[hidden] {
+      display: none;
+    }
+    .sku-override-table th:nth-child(1),
+    .sku-override-table td:nth-child(1) {
+      text-align: left;
+      width: 26%;
+    }
+    .sku-override-table th:nth-child(2),
+    .sku-override-table td:nth-child(2),
+    .sku-override-table th:nth-child(4),
+    .sku-override-table td:nth-child(4) {
+      width: 16%;
+    }
+    .sku-override-table th:nth-child(3),
+    .sku-override-table td:nth-child(3),
+    .sku-override-table th:nth-child(5),
+    .sku-override-table td:nth-child(5) {
+      width: 21%;
+    }
+    .sku-override-table input {
+      text-align: right;
+    }
+    .default-price {
+      color: var(--muted);
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .empty-row {
+      color: var(--muted);
+      font-weight: 700;
+      text-align: left;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .path-table {
+      margin-top: 2px;
+      table-layout: fixed;
+      min-width: 0;
+    }
+    .path-table th:nth-child(1), .path-table td:nth-child(1) {
+      width: 11%;
+    }
+    .path-table th:nth-child(2), .path-table td:nth-child(2) {
+      width: 19%;
+    }
+    .path-table th:nth-child(3), .path-table td:nth-child(3) {
+      width: 7%;
+    }
+    .path-table th:nth-child(4), .path-table td:nth-child(4) {
+      width: 8%;
+    }
+    .path-table th:nth-child(5), .path-table td:nth-child(5) {
+      width: 11%;
+    }
+    .path-table th:nth-child(6), .path-table td:nth-child(6) {
+      width: 19%;
+    }
+    .path-table th:nth-child(7), .path-table td:nth-child(7) {
+      width: 7%;
+    }
+    .path-table th:nth-child(8), .path-table td:nth-child(8) {
+      width: 8%;
+    }
+    .path-table th:nth-child(9), .path-table td:nth-child(9) {
+      width: 6%;
+    }
+    .path-table th:nth-child(10), .path-table td:nth-child(10) {
+      width: 4%;
+    }
+    .path-table input {
+      text-align: right;
+    }
+    .path-table select {
+      font-size: 14px;
+      min-height: 34px;
+      padding: 5px 7px;
+    }
+    .path-table input {
+      min-height: 34px;
+      padding: 5px 7px;
+    }
+    .path-group td {
+      background: var(--soft);
+      font-weight: 700;
+      text-align: left;
+    }
+    .scenario-super th {
+      background: var(--soft);
+      color: var(--ink);
+      text-align: center;
+      border-color: var(--line);
+    }
+    .scenario-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding: 7px 0 0;
+    }
+    .path-group button, .scenario-actions button, .remove-row {
+      border: 1px solid var(--black);
+      background: var(--black);
+      color: #fff;
+      min-width: 30px;
+      min-height: 30px;
+      padding: 0 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .path-group button {
+      float: right;
+      min-width: 30px;
+    }
+    .remove-row {
+      background: #fff;
+      color: var(--black);
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 7px 7px;
+      text-align: right;
+      vertical-align: middle;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    th:first-child, td:first-child { text-align: left; }
+    thead th {
+      background: #000;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .headline td {
+      font-size: 15px;
+      font-weight: 700;
+      background: #fff;
+    }
+    .headline, .scale-table {
+      min-width: 0;
+    }
+    .headline td, .scale-table td {
+      white-space: nowrap;
+      overflow-wrap: normal;
+      font-variant-numeric: tabular-nums;
+    }
+    .headline th, .scale-table th {
+      overflow-wrap: normal;
+    }
+    .headline .gain, .gain {
+      background: var(--nvidia);
+      color: #fff;
+      font-weight: 700;
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
+      padding: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    .summary-gpu-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .metric {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      padding: 7px;
+      min-width: 0;
+    }
+    .metric b {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .metric span {
+      display: block;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+    .source-tabs {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 8px;
+      align-items: center;
+      padding: 9px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .top-source-tabs {
+      margin-top: 8px;
+    }
+    .bottom-source-tabs {
+      margin-top: 10px;
+    }
+    .bottom-source-tabs {
+      display: block;
+      padding: 0;
+      overflow: hidden;
+    }
+    .hidden-workbook-list {
+      padding: 9px;
+      border-top: 1px solid var(--line);
+    }
+    .hidden-workbook-list[hidden] {
+      display: none;
+    }
+    .tab-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--ink);
+    }
+    .tab-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      padding: 5px 9px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .tab-pill[aria-selected="true"] {
+      border-color: var(--black);
+      background: var(--black);
+      color: #fff;
+    }
+    .tab-pill:focus-visible {
+      outline: 2px solid var(--nvidia);
+      outline-offset: 2px;
+    }
+    .warning {
+      margin: 12px;
+      padding: 10px;
+      border: 1px solid #e5d6a8;
+      background: #fff7e6;
+      color: #6b4e16;
+      display: none;
+    }
+    .warning.show { display: block; }
+    @media (max-width: 1060px) {
+      .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 680px) {
+      .fields { grid-template-columns: 1fr; }
+      .override-grid { grid-template-columns: 1fr; }
+      .source-tabs { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="title">GPU SKU Upgrade TCO Calculator</div>
+    <div class="source-tabs top-source-tabs">
+      <span>Core Source Tabs</span>
+      <div class="tab-list" role="tablist" aria-label="Source tabs">
+        <a class="tab-pill" href="sheet_previews/cloud_price_inputs.html" role="tab" data-source-tab="cloudPriceInputs" aria-selected="true">Cloud Price Inputs</a>
+        <a class="tab-pill" href="sheet_previews/on_prem_price_inputs.html" role="tab" data-source-tab="onPremPriceInputs" aria-selected="false">On-Prem Price Inputs</a>
+        <a class="tab-pill" href="sheet_previews/sku_performance_guidelines.html" role="tab" data-source-tab="skuPerformanceGuidelines" aria-selected="false">SKU Performance Guidelines</a>
+        <a class="tab-pill" href="sheet_previews/sku_dropdown_lists.html" role="tab" data-source-tab="skuDropdownLists" aria-selected="false">SKU Dropdown Lists</a>
+      </div>
+    </div>
+    <div class="grid">
+      <section>
+        <div class="section">
+          <button class="section-toggle" type="button" id="selectedDeploymentToggle" aria-expanded="false" aria-controls="selectedDeploymentBody">
+            <span class="override-toggle-icon" id="selectedDeploymentToggleIconStart" aria-hidden="true">+</span>
+            <span class="override-toggle-label">Selected Deployment Scenarios</span>
+            <span class="override-toggle-icon" id="selectedDeploymentToggleIcon" aria-hidden="true">+</span>
+          </button>
+          <div class="section-body fields" id="selectedDeploymentBody" hidden>
+            <div class="full">
+              <table class="path-table">
+                <thead>
+                  <tr class="scenario-super">
+                    <th colspan="4">Current Deployment Scenario</th>
+                    <th colspan="4">Future Deployment Scenario</th>
+                    <th colspan="2"></th>
+                  </tr>
+                  <tr>
+                    <th>Current Deployment</th>
+                    <th>GPU Type</th>
+                    <th>GPU %</th>
+                    <th>GPU Qty</th>
+                    <th>Future Deployment</th>
+                    <th>GPU Type</th>
+                    <th>GPU %</th>
+                    <th>GPU Qty</th>
+                    <th>Perf</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="pathRows"></tbody>
+              </table>
+              <div class="scenario-actions">
+                <button class="path-group" type="button" data-add-path="scenario">+ Add Scenario Row</button>
+              </div>
+            </div>
+            <label>Current GPUs
+              <input id="gpuQuantity" type="text" readonly />
+            </label>
+            <label>Annual GPU Hours (assumes 70% utilization)
+              <input id="annualGpuHours" type="text" readonly />
+            </label>
+            <label>Exemplar NVIDIA RA Perf Improvement
+              <input id="exemplar" type="number" step="0.1" min="0" />
+            </label>
+            <div class="override-box full" id="skuOverridePanel">
+              <button class="override-toggle" type="button" id="skuOverrideToggle" aria-expanded="false" aria-controls="skuOverrideTable">
+                <span class="override-toggle-icon" id="skuOverrideToggleIconStart" aria-hidden="true">+</span>
+                <span class="override-toggle-label">Manual SKU Price Override</span>
+                <span class="override-toggle-icon" id="skuOverrideToggleIcon" aria-hidden="true">+</span>
+              </button>
+              <table class="sku-override-table" id="skuOverrideTable" hidden>
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Cloud Default $/GPU-Hour</th>
+                    <th>Cloud $/GPU-Hour Override</th>
+                    <th>On Prem Default $/GPU Capex</th>
+                    <th>On Prem $/GPU Capex Override</th>
+                  </tr>
+                </thead>
+                <tbody id="skuOverrideRows"></tbody>
+              </table>
+            </div>
+            <div class="mini full"><span id="saveStatus">Saved</span></div>
+          </div>
+        </div>
+      </section>
+      <section>
+        <div class="section">
+          <button class="section-toggle" type="button" id="scaleDeploymentToggle" aria-expanded="false" aria-controls="scaleDeploymentBody">
+            <span class="override-toggle-icon" id="scaleDeploymentToggleIconStart" aria-hidden="true">+</span>
+            <span class="override-toggle-label">Scale Deployment TCO</span>
+            <span class="override-toggle-icon" id="scaleDeploymentToggleIcon" aria-hidden="true">+</span>
+          </button>
+          <div class="section-body" id="scaleDeploymentBody" hidden>
+          <table class="scale-table">
+            <thead>
+              <tr>
+                <th>Scenario GPU Qty</th>
+                <th>Sum Avg Sku Performance Factor</th>
+                <th>Combined Sku and Exemplar NVIDIA RA Performance Factor</th>
+                <th>Future GPU's Required</th>
+                <th>Current Annualized TCO ($M)</th>
+                <th>Future Annualized TCO ($M)</th>
+                <th>Annualized TCO Savings ($M)</th>
+                <th>Savings %</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="scale-qty"><input id="scaleQty0" type="number" min="1" step="1" /></td>
+                <td id="scalePerf0"></td>
+                <td id="scaleExemplar0"></td>
+                <td id="scaleTargetGpus0"></td>
+                <td id="scaleCurrentTco0"></td>
+                <td id="scaleTargetTco0"></td>
+                <td id="scaleSavings0" class="gain"></td>
+                <td id="scaleSavingsPct0" class="gain"></td>
+              </tr>
+              <tr>
+                <td class="scale-qty"><input id="scaleQty1" type="number" min="1" step="1" /></td>
+                <td id="scalePerf1"></td>
+                <td id="scaleExemplar1"></td>
+                <td id="scaleTargetGpus1"></td>
+                <td id="scaleCurrentTco1"></td>
+                <td id="scaleTargetTco1"></td>
+                <td id="scaleSavings1" class="gain"></td>
+                <td id="scaleSavingsPct1" class="gain"></td>
+              </tr>
+              <tr>
+                <td class="scale-qty"><input id="scaleQty2" type="number" min="1" step="1" /></td>
+                <td id="scalePerf2"></td>
+                <td id="scaleExemplar2"></td>
+                <td id="scaleTargetGpus2"></td>
+                <td id="scaleCurrentTco2"></td>
+                <td id="scaleTargetTco2"></td>
+                <td id="scaleSavings2" class="gain"></td>
+                <td id="scaleSavingsPct2" class="gain"></td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <div class="section">
+          <button class="section-toggle" type="button" id="summaryTcoToggle" aria-expanded="false" aria-controls="summaryTcoBody">
+            <span class="override-toggle-icon" id="summaryTcoToggleIconStart" aria-hidden="true">+</span>
+            <span class="override-toggle-label">Summary TCO</span>
+            <span class="override-toggle-icon" id="summaryTcoToggleIcon" aria-hidden="true">+</span>
+          </button>
+          <div class="section-body" id="summaryTcoBody" hidden>
+          <div class="section-note">Annualized view: cloud uses 1 year of GPU-hour usage; on-prem capex is annualized over the on-prem term.</div>
+          <div class="meta">
+            <div class="summary-gpu-row">
+              <div class="metric"><b>Current GPU's</b><span id="summaryCurrentGpus"></span></div>
+              <div class="metric"><b>GPU Reduction</b><span id="summaryGpuReduction"></span></div>
+              <div class="metric"><b>Future GPU's Required</b><span id="targetGpus"></span></div>
+            </div>
+            <div class="metric"><b>Current Basis</b><span id="currentBasis"></span></div>
+            <div class="metric"><b>Future Basis</b><span id="targetBasis"></span></div>
+            <div class="metric"><b>Sum Avg Sku Performance Factor</b><span id="perfFactor"></span></div>
+            <div class="metric"><b>Current TCO / Source GPU</b><span id="currentCostPerSourceGpu"></span></div>
+            <div class="metric"><b>Future TCO / Source GPU Eq.</b><span id="targetCostPerSourceGpu"></span></div>
+          </div>
+          <div id="warning" class="warning"></div>
+          <table class="headline">
+            <thead>
+              <tr>
+                <th>Current Annualized TCO ($M)</th>
+                <th>Future Annualized TCO w/o Exemplar NVIDIA RA ($M)</th>
+                <th>Future Annualized GPU TCO ($M)</th>
+                <th>Annualized Exemplar NVIDIA RA TCO Savings ($M)</th>
+                <th>Annualized TCO Savings ($M)</th>
+                <th>Savings %</th>
+                <th>GPU Reduction</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td id="currentTco"></td>
+                <td id="targetTcoNoExemplar"></td>
+                <td id="targetTco"></td>
+                <td id="exemplarImpact"></td>
+                <td id="tcoSavings" class="gain"></td>
+                <td id="savingsPct" class="gain"></td>
+                <td id="gpuReduction"></td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="source-tabs bottom-source-tabs">
+      <button class="override-toggle" type="button" id="hiddenWorkbookToggle" aria-expanded="false" aria-controls="hiddenWorkbookTabs">
+        <span class="override-toggle-icon" id="hiddenWorkbookToggleIconStart" aria-hidden="true">+</span>
+        <span class="override-toggle-label">Hidden Workbooks</span>
+        <span class="override-toggle-icon" id="hiddenWorkbookToggleIcon" aria-hidden="true">+</span>
+      </button>
+      <div class="tab-list hidden-workbook-list" id="hiddenWorkbookTabs" role="tablist" aria-label="Hidden workbook tabs" hidden>
+        <a class="tab-pill" href="sheet_previews/a10_baseline_sku_perf.html" role="tab" data-source-tab="a10BaselineSkuPerf" aria-selected="false">A10 Baseline SKU Perf</a>
+        <a class="tab-pill" href="sheet_previews/a10_to_h100.html" role="tab" data-source-tab="a10ToH100" aria-selected="false">A10 to H100</a>
+        <a class="tab-pill" href="sheet_previews/a10_to_h200.html" role="tab" data-source-tab="a10ToH200" aria-selected="false">A10 to H200</a>
+        <a class="tab-pill" href="sheet_previews/a10_to_b200.html" role="tab" data-source-tab="a10ToB200" aria-selected="false">A10 to B200</a>
+        <a class="tab-pill" href="sheet_previews/h100_to_b200.html" role="tab" data-source-tab="h100ToB200" aria-selected="false">H100 to B200</a>
+        <a class="tab-pill" href="sheet_previews/a100_to_b200.html" role="tab" data-source-tab="a100ToB200" aria-selected="false">A100 to B200</a>
+      </div>
+    </div>
+  </main>
+  <script>
+    const data = {"skus":["GB300 NVL72","GB200 NVL72","B300 270GB SXM","B200 180GB SXM","RTX PRO 6000 Blackwell Server Edition","RTX 6000 Ada 48GB","H200 141GB SXM","H100 80GB SXM","H100 80GB PCIe","H100 NVL 94GB","GH200 96GB","A100 80GB SXM","A100 80GB PCIe","A100 40GB SXM","A100 40GB PCIe","L40S 48GB","L40 48GB","L4 24GB","A40 48GB","A30 24GB","A10 24GB","A2 16GB","A6000 48GB","Quadro RTX 6000 24GB","T4 16GB","Tesla V100 32GB","Tesla V100 16GB","P100 16GB"],"pathDefinitions":[{"id":"cloudToCloud","label":"Cloud to Cloud","currentBasis":"Cloud","targetBasis":"Cloud"},{"id":"onPremToCloud","label":"On-Prem to Cloud","currentBasis":"On-Prem","targetBasis":"Cloud"},{"id":"cloudToOnPrem","label":"Cloud to On-Prem","currentBasis":"Cloud","targetBasis":"On-Prem"},{"id":"onPremToOnPrem","label":"On-Prem to On-Prem","currentBasis":"On-Prem","targetBasis":"On-Prem"}],"workloadOptions":["Training","Inference","Validation/SIM"],"performance":{"GB300 NVL72":7.2,"GB200 NVL72":6,"B300 270GB SXM":5.25,"B200 180GB SXM":4.5,"RTX PRO 6000 Blackwell Server Edition":1.25,"RTX 6000 Ada 48GB":0.75,"H200 141GB SXM":3,"H100 80GB SXM":2.1,"H100 80GB PCIe":1.9,"H100 NVL 94GB":2.3,"GH200 96GB":2,"A100 80GB SXM":1.25,"A100 80GB PCIe":1.1,"A100 40GB SXM":0.95,"A100 40GB PCIe":0.85,"L40S 48GB":1,"L40 48GB":0.8,"L4 24GB":0.45,"A40 48GB":0.6,"A30 24GB":0.55,"A10 24GB":0.35,"A2 16GB":0.1,"A6000 48GB":0.65,"Quadro RTX 6000 24GB":0.22,"T4 16GB":0.15,"Tesla V100 32GB":0.25,"Tesla V100 16GB":0.2,"P100 16GB":0.12},"cloudPrices":{"B200 180GB SXM":{"sku":"B200 180GB SXM","config":"NVIDIA B200 SXM6 180 GB 8x instance","dollarsPerGpuHour":6.69,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists B200 SXM6 180 GB at $6.69/GPU/hr for 8x instances."},"H100 80GB SXM":{"sku":"H100 80GB SXM","config":"NVIDIA H100 SXM 80 GB 8x instance","dollarsPerGpuHour":3.99,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists H100 SXM 80 GB at $3.99/GPU/hr for 8x instances."},"A100 80GB SXM":{"sku":"A100 80GB SXM","config":"NVIDIA A100 SXM 80 GB 8x instance","dollarsPerGpuHour":2.79,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A100 SXM 80 GB at $2.79/GPU/hr for 8x instances."},"A100 40GB SXM":{"sku":"A100 40GB SXM","config":"NVIDIA A100 SXM 40 GB 8x instance","dollarsPerGpuHour":1.99,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A100 SXM 40 GB at $1.99/GPU/hr for 8x and 1x instances."},"Tesla V100 16GB":{"sku":"Tesla V100 16GB","config":"NVIDIA Tesla V100 16 GB 8x instance","dollarsPerGpuHour":0.79,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists Tesla V100 16 GB at $0.79/GPU/hr for 8x instances."},"A100 40GB PCIe":{"sku":"A100 40GB PCIe","config":"NVIDIA A100 PCIe 40 GB 4x/2x/1x instance","dollarsPerGpuHour":1.99,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A100 PCIe 40 GB at $1.99/GPU/hr for 4x, 2x, and 1x instances."},"A6000 48GB":{"sku":"A6000 48GB","config":"NVIDIA A6000 48 GB 4x/2x/1x instance","dollarsPerGpuHour":1.09,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A6000 48 GB at $1.09/GPU/hr for 4x, 2x, and 1x instances."},"GH200 96GB":{"sku":"GH200 96GB","config":"NVIDIA GH200 96 GB 1x instance","dollarsPerGpuHour":2.29,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists GH200 96 GB at $2.29/GPU/hr for 1x instances."},"H100 80GB PCIe":{"sku":"H100 80GB PCIe","config":"NVIDIA H100 PCIe 80 GB 1x instance","dollarsPerGpuHour":3.29,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists H100 PCIe 80 GB at $3.29/GPU/hr for 1x instances."},"A10 24GB":{"sku":"A10 24GB","config":"NVIDIA A10 24 GB 1x instance","dollarsPerGpuHour":1.29,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A10 24 GB at $1.29/GPU/hr for 1x instances."},"Quadro RTX 6000 24GB":{"sku":"Quadro RTX 6000 24GB","config":"NVIDIA Quadro RTX 6000 24 GB 1x instance","dollarsPerGpuHour":0.69,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists Quadro RTX 6000 24 GB at $0.69/GPU/hr for 1x instances."},"GB200 NVL72":{"sku":"GB200 NVL72","config":"NVIDIA GB200 NVL72 4-GPU node","dollarsPerGpuHour":10.5,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists GB200 NVL72 at $42.00/hr with 4 GPUs; per-GPU price is calculated."},"RTX PRO 6000 Blackwell Server Edition":{"sku":"RTX PRO 6000 Blackwell Server Edition","config":"NVIDIA RTX PRO 6000 Blackwell Server Edition 8-GPU node","dollarsPerGpuHour":2.5,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists RTX PRO 6000 Blackwell Server Edition at $20.00/hr with 8 GPUs; per-GPU price is calculated."},"H200 141GB SXM":{"sku":"H200 141GB SXM","config":"NVIDIA HGX H200 8-GPU node","dollarsPerGpuHour":6.305,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists H200 at $50.44/hr with 8 GPUs; per-GPU price is calculated."},"L40 48GB":{"sku":"L40 48GB","config":"NVIDIA L40 8-GPU node","dollarsPerGpuHour":1.25,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists L40 at $10.00/hr with 8 GPUs; per-GPU price is calculated."},"L40S 48GB":{"sku":"L40S 48GB","config":"NVIDIA L40S 8-GPU node","dollarsPerGpuHour":2.25,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists L40S at $18.00/hr with 8 GPUs; per-GPU price is calculated."},"GB300 NVL72":{"sku":"GB300 NVL72","config":"NVIDIA GB300 NVL72","dollarsPerGpuHour":0,"source":"https://www.coreweave.com/pricing","notes":"Listed availability with no public on-demand price; enter a quoted price to use in TCO."},"B300 270GB SXM":{"sku":"B300 270GB SXM","config":"NVIDIA HGX B300","dollarsPerGpuHour":0,"source":"https://www.coreweave.com/pricing","notes":"Listed availability with no public on-demand price; enter a quoted price to use in TCO."}},"onPremPrices":{"GB300 NVL72":{"sku":"GB300 NVL72","capexPerGpu":87500,"basis":"Public rack-derived estimate","source":"Tom's Hardware rack estimate","sourceUrl":"https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems","notes":"Derived from public GB300 NVL72 rack range of roughly $6.0M-$6.5M divided by 72 GPUs; rounded planning estimate. Vendor quote should replace this.","lastChecked":"2026-06-11"},"GB200 NVL72":{"sku":"GB200 NVL72","capexPerGpu":43000,"basis":"Public rack-derived estimate","source":"Tom's Hardware rack estimate","sourceUrl":"https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems","notes":"Derived from public GB200 NVL72 rack range of roughly $2.8M-$3.4M divided by 72 GPUs; midpoint is about $43.1K/GPU.","lastChecked":"2026-06-11"},"B300 270GB SXM":{"sku":"B300 270GB SXM","capexPerGpu":50000,"basis":"Quote required","source":"No direct public standalone price found","sourceUrl":"","notes":"No reliable public standalone B300 price found in search; keep editable planning assumption until vendor quote is available.","lastChecked":"2026-06-11"},"B200 180GB SXM":{"sku":"B200 180GB SXM","capexPerGpu":35000,"basis":"Public range midpoint","source":"Investors.com / CNBC-reported Blackwell range","sourceUrl":"https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/","notes":"Midpoint of public Blackwell GPU estimate range of $30K-$40K. Actual B200/NVL pricing is quote-dependent.","lastChecked":"2026-06-11"},"RTX PRO 6000 Blackwell Server Edition":{"sku":"RTX PRO 6000 Blackwell Server Edition","capexPerGpu":8565,"basis":"Public retailer listing","source":"Tom's Hardware coverage of Connection listing","sourceUrl":"https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada","notes":"Uses published RTX Pro 6000 Blackwell listing price. Server Edition may be sold inside systems; replace with server quote when available.","lastChecked":"2026-06-11"},"RTX 6000 Ada 48GB":{"sku":"RTX 6000 Ada 48GB","capexPerGpu":6800,"basis":"Derived from public listing","source":"Tom's Hardware RTX Pro comparison","sourceUrl":"https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada","notes":"Derived from RTX Pro 6000 Blackwell listed at $8,565 and described as 26% above RTX 6000 Ada; rounded.","lastChecked":"2026-06-11"},"H200 141GB SXM":{"sku":"H200 141GB SXM","capexPerGpu":30000,"basis":"Public estimate","source":"Tom's Hardware H200 article","sourceUrl":"https://www.tomshardware.com/pc-components/gpus/busted-12vhpwr-connector-sidelines-usd30-000-h200-hopper-gpu-repair-technician-saves-the-data-center-day-by-fixing-power-port","notes":"Public article states Nvidia H200 GPU retails around $30K; replace with quote for specific SXM/PCIe configuration.","lastChecked":"2026-06-11"},"H100 80GB SXM":{"sku":"H100 80GB SXM","capexPerGpu":25000,"basis":"Public range midpoint","source":"Investors.com analyst estimate","sourceUrl":"https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/","notes":"Uses midpoint/low end of public H100 estimate range of $20K-$30K. Replace with quote for SXM configuration.","lastChecked":"2026-06-11"},"H100 80GB PCIe":{"sku":"H100 80GB PCIe","capexPerGpu":25000,"basis":"Public range midpoint","source":"Investors.com analyst estimate","sourceUrl":"https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/","notes":"Uses public H100 estimate range of $20K-$30K. Replace with quote for PCIe configuration.","lastChecked":"2026-06-11"},"H100 NVL 94GB":{"sku":"H100 NVL 94GB","capexPerGpu":30000,"basis":"Public range upper estimate","source":"Investors.com analyst estimate","sourceUrl":"https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/","notes":"Uses upper end of public H100 estimate range because NVL/high-memory configuration should carry a premium. Replace with quote.","lastChecked":"2026-06-11"},"GH200 96GB":{"sku":"GH200 96GB","capexPerGpu":50000,"basis":"Quote required","source":"No direct public standalone price found","sourceUrl":"","notes":"No reliable public standalone GH200 price found in search; keep editable planning assumption until vendor quote is available.","lastChecked":"2026-06-11"},"A100 80GB SXM":{"sku":"A100 80GB SXM","capexPerGpu":8500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A100 80GB PCIe":{"sku":"A100 80GB PCIe","capexPerGpu":13500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A100 40GB SXM":{"sku":"A100 40GB SXM","capexPerGpu":5000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A100 40GB PCIe":{"sku":"A100 40GB PCIe","capexPerGpu":6000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"L40S 48GB":{"sku":"L40S 48GB","capexPerGpu":9000,"basis":"Internal planning assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"L40 48GB":{"sku":"L40 48GB","capexPerGpu":6959,"basis":"Internal planning assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"L4 24GB":{"sku":"L4 24GB","capexPerGpu":2800,"basis":"Internal planning assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A40 48GB":{"sku":"A40 48GB","capexPerGpu":2500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A30 24GB":{"sku":"A30 24GB","capexPerGpu":2250,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A10 24GB":{"sku":"A10 24GB","capexPerGpu":3000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A2 16GB":{"sku":"A2 16GB","capexPerGpu":900,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A6000 48GB":{"sku":"A6000 48GB","capexPerGpu":4500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"Quadro RTX 6000 24GB":{"sku":"Quadro RTX 6000 24GB","capexPerGpu":1000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"T4 16GB":{"sku":"T4 16GB","capexPerGpu":700,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"Tesla V100 32GB":{"sku":"Tesla V100 32GB","capexPerGpu":700,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"Tesla V100 16GB":{"sku":"Tesla V100 16GB","capexPerGpu":350,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"P100 16GB":{"sku":"P100 16GB","capexPerGpu":177,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"}},"defaults":{"currentCloudMix":75,"currentOnPremMix":25,"targetCloudMix":75,"targetOnPremMix":25,"currentCloudSku":"T4 16GB","currentOnPremSku":"H100 80GB SXM","targetCloudSku":"RTX PRO 6000 Blackwell Server Edition","targetOnPremSku":"B200 180GB SXM","gpuQuantity":20000,"annualUtilizationHours":6000,"cloudTermYears":1,"onPremAmortizationYears":3,"exemplar":15,"manualPerfOverride":null,"currentCloudPriceOverride":null,"currentOnPremPriceOverride":null,"targetCloudPriceOverride":null,"targetOnPremPriceOverride":null,"scaleQuantities":[5000,10000,50000],"skuPriceOverrides":{"T4 16GB":{"cloud":1.5,"onPrem":null},"RTX PRO 6000 Blackwell Server Edition":{"cloud":null,"onPrem":null},"H100 80GB SXM":{"cloud":null,"onPrem":null},"B200 180GB SXM":{"cloud":null,"onPrem":null}},"migrationPaths":[{"id":"cloudToCloud","label":"Cloud to Cloud","currentBasis":"Cloud","targetBasis":"Cloud","gpuQty":5000,"currentSku":"T4 16GB","targetSku":"RTX PRO 6000 Blackwell Server Edition","currentPriceOverride":1.5,"targetPriceOverride":null,"workload":"Training","targetGpuQty":5000},{"id":"onPremToCloud","label":"On-Prem to Cloud","currentBasis":"On-Prem","targetBasis":"Cloud","gpuQty":2500,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":2500},{"id":"onPremToCloud","label":"On-Prem to Cloud","currentBasis":"On-Prem","targetBasis":"Cloud","gpuQty":2500,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":2500},{"id":"cloudToOnPrem","label":"Cloud to On-Prem","currentBasis":"Cloud","targetBasis":"On-Prem","gpuQty":5000,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":5000},{"id":"cloudToCloud","label":"Cloud to Cloud","currentBasis":"Cloud","targetBasis":"Cloud","gpuQty":5000,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":5000}]}};
+    const pathDefinitions = data.pathDefinitions;
+    const maxMigrationRows = 12;
+    const assumedAnnualUtilizationHours = Number(data.defaults.annualUtilizationHours) || 6000;
+    const ids = [
+      "exemplar", "scaleQty0", "scaleQty1", "scaleQty2"
+    ];
+    const el = Object.fromEntries([...ids, "annualGpuHours", "gpuQuantity", "pathRows", "currentBasis",
+      "targetBasis", "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "targetGpus", "currentTco", "targetTco",
+      "currentCostPerSourceGpu", "targetCostPerSourceGpu", "tcoSavings", "savingsPct", "targetTcoNoExemplar", "exemplarImpact", "gpuReduction",
+      "scalePerf0", "scaleExemplar0", "scaleTargetGpus0", "scaleCurrentTco0", "scaleTargetTco0", "scaleSavings0", "scaleSavingsPct0",
+      "scalePerf1", "scaleExemplar1", "scaleTargetGpus1", "scaleCurrentTco1", "scaleTargetTco1", "scaleSavings1", "scaleSavingsPct1",
+      "scalePerf2", "scaleExemplar2", "scaleTargetGpus2", "scaleCurrentTco2", "scaleTargetTco2", "scaleSavings2", "scaleSavingsPct2",
+      "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", "selectedDeploymentBody",
+      "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", "scaleDeploymentBody",
+      "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", "summaryTcoBody",
+      "skuOverridePanel", "skuOverrideToggle", "skuOverrideToggleIconStart", "skuOverrideToggleIcon", "skuOverrideTable",
+      "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
+      "skuOverrideRows", "warning", "saveStatus"].map((id) => [id, document.getElementById(id)]));
+    let migrationRows = [];
+    let skuPriceOverrides = {};
+    const scaleSourceTabs = ["cloudPriceInputs", "onPremPriceInputs", "skuPerformanceGuidelines", "a10BaselineSkuPerf", "a10ToH100", "a10ToH200", "a10ToB200", "h100ToB200", "a100ToB200", "skuDropdownLists"];
+    const scaleSourceTabStorageKey = "gpuTcoScaleFactorSourceTab";
+    const skuPriceOverrideStorageKey = "gpuTcoSkuPriceOverrides";
+    const skuOverrideExpandedStorageKey = "gpuTcoSkuOverrideExpanded";
+    const hiddenWorkbookExpandedStorageKey = "gpuTcoHiddenWorkbookExpanded";
+    const selectedDeploymentExpandedStorageKey = "gpuTcoSelectedDeploymentExpanded";
+    const scaleDeploymentExpandedStorageKey = "gpuTcoScaleDeploymentExpanded";
+    const summaryTcoExpandedStorageKey = "gpuTcoSummaryTcoExpanded";
+    const noneSkuOptionValue = "__NONE__";
+    let activeScaleSourceTab = scaleSourceTabs[0];
+
+    function storedScaleSourceTab() {
+      try {
+        return window.localStorage.getItem(scaleSourceTabStorageKey);
+      } catch (error) {
+        return null;
+      }
+    }
+    function storedSkuOverrideExpanded() {
+      try {
+        return window.localStorage.getItem(skuOverrideExpandedStorageKey) === "true";
+      } catch (error) {
+        return false;
+      }
+    }
+    function storedExpanded(storageKey) {
+      try {
+        return window.localStorage.getItem(storageKey) === "true";
+      } catch (error) {
+        return false;
+      }
+    }
+    function setExpandableSection(bodyId, toggleId, startIconId, endIconId, storageKey, expanded, persist = false) {
+      el[bodyId].hidden = !expanded;
+      el[toggleId].setAttribute("aria-expanded", expanded ? "true" : "false");
+      el[startIconId].textContent = expanded ? "-" : "+";
+      el[endIconId].textContent = expanded ? "-" : "+";
+      if (persist) {
+        try {
+          window.localStorage.setItem(storageKey, expanded ? "true" : "false");
+        } catch (error) {}
+      }
+    }
+    function setSkuOverrideExpanded(expanded, persist = false) {
+      el.skuOverrideTable.hidden = !expanded;
+      el.skuOverrideToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+      el.skuOverrideToggleIconStart.textContent = expanded ? "-" : "+";
+      el.skuOverrideToggleIcon.textContent = expanded ? "-" : "+";
+      if (persist) {
+        try {
+          window.localStorage.setItem(skuOverrideExpandedStorageKey, expanded ? "true" : "false");
+        } catch (error) {}
+      }
+    }
+    function storedHiddenWorkbooksExpanded() {
+      try {
+        return window.localStorage.getItem(hiddenWorkbookExpandedStorageKey) === "true";
+      } catch (error) {
+        return false;
+      }
+    }
+    function setHiddenWorkbooksExpanded(expanded, persist = false) {
+      el.hiddenWorkbookTabs.hidden = !expanded;
+      el.hiddenWorkbookToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+      el.hiddenWorkbookToggleIconStart.textContent = expanded ? "-" : "+";
+      el.hiddenWorkbookToggleIcon.textContent = expanded ? "-" : "+";
+      if (persist) {
+        try {
+          window.localStorage.setItem(hiddenWorkbookExpandedStorageKey, expanded ? "true" : "false");
+        } catch (error) {}
+      }
+    }
+    function setActiveScaleSourceTab(value, persist = false) {
+      activeScaleSourceTab = scaleSourceTabs.includes(value) ? value : scaleSourceTabs[0];
+      document.querySelectorAll("[data-source-tab]").forEach((button) => {
+        const active = button.dataset.sourceTab === activeScaleSourceTab;
+        button.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      if (persist) {
+        try {
+          window.localStorage.setItem(scaleSourceTabStorageKey, activeScaleSourceTab);
+        } catch (error) {}
+      }
+    }
+
+    function normalizeMix(input) {
+      const raw = Number(input);
+      if (!Number.isFinite(raw)) return 0;
+      const factor = raw > 1 ? raw / 100 : raw;
+      return Math.max(0, Math.min(1, factor));
+    }
+    function pctInput(factor) {
+      const value = Number(factor || 0);
+      const pct = value > 1 ? value : value * 100;
+      return Math.round(pct * 10) / 10;
+    }
+    function fmtMoney(value) {
+      if (!Number.isFinite(value)) return "";
+      const roundedMillions = Math.round(value / 1000000 / 5) * 5;
+      const formatted = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.abs(roundedMillions));
+      return (roundedMillions < 0 ? "-$" : "$") + formatted + "M";
+    }
+    function fmtCurrency(value) {
+      if (!Number.isFinite(value)) return "";
+      const rounded = Math.round(value);
+      const formatted = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.abs(rounded));
+      return (rounded < 0 ? "-$" : "$") + formatted;
+    }
+    function fmtNumber(value) {
+      if (!Number.isFinite(value)) return "";
+      return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
+    }
+    function fmtFactor(value) {
+      if (!Number.isFinite(value)) return "";
+      return String(Math.round(value * 100) / 100) + "x";
+    }
+    function fmtPct(value) {
+      if (!Number.isFinite(value)) return "";
+      return String(Math.round(value * 1000) / 10) + "%";
+    }
+    function numberValue(id) {
+      const raw = el[id].value;
+      if (raw === "") return null;
+      const parsed = Number(raw);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    function activeSku(primary, fallback) {
+      return primary || fallback || "";
+    }
+    function perf(sku) {
+      return Number(data.performance[sku]) || 0;
+    }
+    function cloudHourly(sku, override) {
+      if (override !== null && Number.isFinite(override)) return override;
+      return Number(data.cloudPrices[sku]?.dollarsPerGpuHour) || 0;
+    }
+    function onPremCapex(sku, override) {
+      if (override !== null && Number.isFinite(override)) return override;
+      return Number(data.onPremPrices[sku]?.capexPerGpu) || 0;
+    }
+    function ratio(currentSku, targetSku) {
+      const current = perf(currentSku);
+      const target = perf(targetSku);
+      if (current > 0 && target > 0) return Math.max(0.01, target / current);
+      return 1;
+    }
+    function scenarioBasis(cloudMix, onPremMix) {
+      if (onPremMix <= 0) return "Cloud";
+      if (cloudMix <= 0) return "On-Prem";
+      return "Hybrid";
+    }
+    function deploymentPathLabel(path) {
+      const definition = pathDefinitionFor(path);
+      return definition.currentBasis + " to " + definition.targetBasis;
+    }
+    function activeDeploymentPathLabels(paths) {
+      const labels = [];
+      const seen = new Set();
+      for (const path of paths) {
+        const currentQty = normalizeGpuQty(path.gpuQty);
+        const targetQty = normalizeGpuQty(path.targetGpuQty ?? path.gpuQty);
+        if (currentQty <= 0 && targetQty <= 0) continue;
+        const label = deploymentPathLabel(path);
+        if (seen.has(label)) continue;
+        seen.add(label);
+        labels.push(label);
+      }
+      return labels;
+    }
+    function scenarioBasisLabel(cloudMix, onPremMix, paths) {
+      const basis = scenarioBasis(cloudMix, onPremMix);
+      if (basis !== "Hybrid") return basis;
+      const pathLabels = activeDeploymentPathLabels(paths);
+      return "Hybrid (" + (pathLabels.length ? pathLabels.join("; ") : "Cloud + On-Prem") + ")";
+    }
+    function definitionForBases(currentBasis, targetBasis) {
+      return pathDefinitions.find((definition) =>
+        definition.currentBasis === currentBasis && definition.targetBasis === targetBasis
+      ) || pathDefinitions[0];
+    }
+    function pathDefinitionFor(path) {
+      if (path.currentBasis && path.targetBasis) {
+        return definitionForBases(path.currentBasis, path.targetBasis);
+      }
+      return pathDefinitions.find((definition) => definition.id === path.id)
+        || pathDefinitions.find((definition) => definition.label === path.label)
+        || pathDefinitions[0];
+    }
+    function normalizeGpuQty(value) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) return 0;
+      return Math.max(0, Math.round(parsed));
+    }
+    function normalizePriceOverride(value) {
+      if (value === "" || value === null || value === undefined) return null;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+    }
+    function normalizeWorkload(value) {
+      const text = String(value || "").trim();
+      return data.workloadOptions.includes(text) ? text : data.workloadOptions[0];
+    }
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;");
+    }
+    function normalizeSkuPriceOverrides(input) {
+      if (!input || typeof input !== "object") return {};
+      return Object.fromEntries(Object.entries(input).map(([sku, entry]) => [
+        sku,
+        {
+          cloud: normalizePriceOverride(entry?.cloud),
+          onPrem: normalizePriceOverride(entry?.onPrem),
+        },
+      ]));
+    }
+    function storedSkuPriceOverrides() {
+      try {
+        return normalizeSkuPriceOverrides(JSON.parse(window.localStorage.getItem(skuPriceOverrideStorageKey) || "{}"));
+      } catch (error) {
+        return {};
+      }
+    }
+    function storeSkuPriceOverrides() {
+      try {
+        window.localStorage.setItem(skuPriceOverrideStorageKey, JSON.stringify(skuPriceOverrides));
+      } catch (error) {}
+    }
+    function mergeSkuPriceOverrides(primary, fallback) {
+      const merged = normalizeSkuPriceOverrides(primary);
+      for (const [sku, entry] of Object.entries(normalizeSkuPriceOverrides(fallback))) {
+        if (!merged[sku]) merged[sku] = { cloud: null, onPrem: null };
+        if (merged[sku].cloud === null) merged[sku].cloud = entry.cloud;
+        if (merged[sku].onPrem === null) merged[sku].onPrem = entry.onPrem;
+      }
+      return merged;
+    }
+    function overlaySkuPriceOverrides(primary, fallback) {
+      const merged = normalizeSkuPriceOverrides(fallback);
+      for (const [sku, entry] of Object.entries(normalizeSkuPriceOverrides(primary))) {
+        merged[sku] = entry;
+      }
+      return merged;
+    }
+    function basisKey(basis) {
+      return basis === "Cloud" ? "cloud" : "onPrem";
+    }
+    function setSkuPriceOverrideFromPath(overrides, sku, basis, value) {
+      const normalized = normalizePriceOverride(value);
+      if (!sku || normalized === null) return;
+      if (!overrides[sku]) overrides[sku] = { cloud: null, onPrem: null };
+      const key = basisKey(basis);
+      if (overrides[sku][key] === null) overrides[sku][key] = normalized;
+    }
+    function skuPriceOverridesFromPaths(paths) {
+      const overrides = {};
+      for (const path of paths || []) {
+        const definition = pathDefinitionFor(path);
+        setSkuPriceOverrideFromPath(overrides, path.currentSku, definition.currentBasis, path.currentPriceOverride);
+        setSkuPriceOverrideFromPath(overrides, path.targetSku, definition.targetBasis, path.targetPriceOverride);
+      }
+      return overrides;
+    }
+    function ensureSkuPriceOverrideEntry(sku) {
+      if (!skuPriceOverrides[sku]) skuPriceOverrides[sku] = { cloud: null, onPrem: null };
+      return skuPriceOverrides[sku];
+    }
+    function selectedSkus() {
+      const seen = new Set();
+      const skus = [];
+      for (const row of migrationRows) {
+        for (const sku of [row.currentSku, row.targetSku]) {
+          if (sku && !seen.has(sku)) {
+            seen.add(sku);
+            skus.push(sku);
+          }
+        }
+      }
+      return skus;
+    }
+    function manualOverrideSkus() {
+      const skus = selectedSkus();
+      const seen = new Set(skus);
+      for (const [sku, entry] of Object.entries(normalizeSkuPriceOverrides(skuPriceOverrides))) {
+        if (!sku || seen.has(sku)) continue;
+        if (entry.cloud !== null || entry.onPrem !== null) {
+          seen.add(sku);
+          skus.push(sku);
+        }
+      }
+      return skus;
+    }
+    function priceOverrideForSku(sku, basis) {
+      if (!sku) return null;
+      return normalizePriceOverride(skuPriceOverrides[sku]?.[basisKey(basis)]);
+    }
+    function defaultPriceFor(sku, basis) {
+      return basis === "Cloud"
+        ? Number(data.cloudPrices[sku]?.dollarsPerGpuHour)
+        : Number(data.onPremPrices[sku]?.capexPerGpu);
+    }
+    function pricePlaceholder(sku, basis) {
+      const value = defaultPriceFor(sku, basis);
+      return Number.isFinite(value) && value > 0 ? String(value) : "";
+    }
+    function fmtUnitPrice(value, decimals) {
+      if (!Number.isFinite(value) || value <= 0) return "No public source";
+      return "$" + value.toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+    }
+    function defaultPriceLabel(sku, basis) {
+      const value = defaultPriceFor(sku, basis);
+      if (basis === "Cloud") return fmtUnitPrice(value, 2);
+      return Number.isFinite(value) && value > 0
+        ? "$" + value.toLocaleString("en-US", { maximumFractionDigits: 0 })
+        : "No estimate";
+    }
+    function currentUnitCost(basis, sku, utilization, cloudTermYears, onPremYears, override) {
+      if (basis === "Cloud") {
+        return cloudHourly(sku, override) * utilization * cloudTermYears;
+      }
+      return onPremCapex(sku, override) / onPremYears;
+    }
+    function targetUnitCost(basis, sku, utilization, cloudTermYears, onPremYears, override) {
+      if (basis === "Cloud") {
+        return cloudHourly(sku, override) * utilization * cloudTermYears;
+      }
+      return onPremCapex(sku, override) / onPremYears;
+    }
+    function migrationPathsFromInputs() {
+      return migrationRows.map((row) => {
+        const definition = pathDefinitionFor(row);
+        return {
+          ...definition,
+          workload: normalizeWorkload(row.workload),
+          gpuQty: normalizeGpuQty(row.gpuQty),
+          targetGpuQty: normalizeGpuQty(row.targetGpuQty ?? row.gpuQty),
+          currentSku: row.currentSku || "",
+          targetSku: row.targetSku || "",
+          currentPriceOverride: priceOverrideForSku(row.currentSku, definition.currentBasis),
+          targetPriceOverride: priceOverrideForSku(row.targetSku, definition.targetBasis),
+        };
+      });
+    }
+    function collectState() {
+      return {
+        migrationPaths: migrationPathsFromInputs().map((path) => ({
+          id: path.id,
+          label: path.label,
+          workload: path.workload,
+          gpuQty: path.gpuQty,
+          targetGpuQty: path.targetGpuQty,
+          currentSku: path.currentSku,
+          targetSku: path.targetSku,
+          currentPriceOverride: path.currentPriceOverride,
+          targetPriceOverride: path.targetPriceOverride,
+        })),
+        gpuQuantity: migrationPathsFromInputs().reduce((sum, path) => sum + path.gpuQty, 0),
+        annualUtilizationHours: assumedAnnualUtilizationHours,
+        exemplar: numberValue("exemplar"),
+        manualPerfOverride: null,
+        skuPriceOverrides,
+        scaleQuantities: [numberValue("scaleQty0"), numberValue("scaleQty1"), numberValue("scaleQty2")],
+      };
+    }
+    let saveTimer = null;
+    let staticPreviewMode = false;
+    async function saveToExcel() {
+      if (staticPreviewMode) {
+        el.saveStatus.textContent = "Static preview";
+        return;
+      }
+      el.saveStatus.textContent = "Saving...";
+      try {
+        const response = await fetch("/api/save-state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(collectState()),
+        });
+        if (!response.ok) throw new Error("Save failed");
+        el.saveStatus.textContent = "Saved to Excel";
+      } catch (error) {
+        staticPreviewMode = true;
+        el.saveStatus.textContent = "Static preview";
+      }
+    }
+    function scheduleSave() {
+      window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(saveToExcel, 600);
+    }
+    function calcForQty(qty) {
+      const utilization = assumedAnnualUtilizationHours;
+      const cloudTermYears = Number(data.defaults.cloudTermYears) || 1;
+      const onPremYears = Number(data.defaults.onPremAmortizationYears) || 3;
+      const exemplar = normalizeMix(el.exemplar.value);
+      const exemplarFactor = 1 + exemplar;
+      const manualPerf = null;
+
+      const paths = migrationPathsFromInputs();
+      const baseQty = paths.reduce((sum, path) => sum + path.gpuQty, 0);
+      const targetBaseQty = paths.reduce((sum, path) => sum + (path.targetGpuQty ?? path.gpuQty), 0);
+      const currentCloudQty = paths.filter((path) => path.currentBasis === "Cloud").reduce((sum, path) => sum + path.gpuQty, 0);
+      const currentOnPremQty = paths.filter((path) => path.currentBasis === "On-Prem").reduce((sum, path) => sum + path.gpuQty, 0);
+      const targetCloudSourceQty = paths.filter((path) => path.targetBasis === "Cloud").reduce((sum, path) => sum + (path.targetGpuQty ?? path.gpuQty), 0);
+      const targetOnPremSourceQty = paths.filter((path) => path.targetBasis === "On-Prem").reduce((sum, path) => sum + (path.targetGpuQty ?? path.gpuQty), 0);
+      const currentCloudMix = baseQty > 0 ? currentCloudQty / baseQty : 0;
+      const currentOnPremMix = baseQty > 0 ? currentOnPremQty / baseQty : 0;
+      const targetCloudMix = targetBaseQty > 0 ? targetCloudSourceQty / targetBaseQty : 0;
+      const targetOnPremMix = targetBaseQty > 0 ? targetOnPremSourceQty / targetBaseQty : 0;
+
+      let currentTco = 0;
+      let targetTco = 0;
+      let targetTcoNoExemplar = 0;
+      let targetGpus = 0;
+      let weightedPerf = 0;
+      const pathResults = paths.map((path) => {
+        const automaticPerf = ratio(path.currentSku, path.targetSku);
+        const perfFactor = manualPerf && manualPerf > 0 ? manualPerf : automaticPerf;
+        const sourceQty = baseQty > 0 ? Math.round(qty * path.gpuQty / baseQty) : 0;
+        const targetSourceQty = targetBaseQty > 0 ? Math.round(qty * (path.targetGpuQty ?? path.gpuQty) / targetBaseQty) : sourceQty;
+        const targetMultiplier = path.targetBasis === "Cloud" ? exemplarFactor : 1;
+        const targetQty = targetSourceQty <= 0 ? 0 : Math.ceil(targetSourceQty / (perfFactor * targetMultiplier));
+        const targetQtyNoExemplar = targetSourceQty <= 0 ? 0 : Math.ceil(targetSourceQty / perfFactor);
+        const currentAnnual = currentUnitCost(path.currentBasis, path.currentSku, utilization, cloudTermYears, onPremYears, path.currentPriceOverride);
+        const targetAnnual = targetUnitCost(path.targetBasis, path.targetSku, utilization, cloudTermYears, onPremYears, path.targetPriceOverride);
+        const pathCurrentTco = sourceQty * currentAnnual;
+        const pathTargetTco = targetQty * targetAnnual;
+        const pathTargetNoExemplar = targetQtyNoExemplar * targetAnnual;
+        currentTco += pathCurrentTco;
+        targetTco += pathTargetTco;
+        targetTcoNoExemplar += pathTargetNoExemplar;
+        targetGpus += targetQty;
+        weightedPerf += (path.targetGpuQty ?? path.gpuQty) * perfFactor;
+        return { ...path, automaticPerf, perfFactor, sourceQty, targetSourceQty, targetQty, currentAnnual, targetAnnual };
+      });
+      const perfFactor = targetBaseQty > 0 ? weightedPerf / targetBaseQty : 0;
+      const savings = currentTco - targetTco;
+      const gpuReduction = targetGpus - qty;
+      const currentCostPerSourceGpu = qty > 0 ? currentTco / qty : 0;
+      const targetCostPerSourceGpu = qty > 0 ? targetTco / qty : 0;
+      const warnings = [];
+      if (baseQty <= 0) warnings.push("Add current GPU quantities in the deployment scenario inputs.");
+      if (targetBaseQty <= 0) warnings.push("Add future GPU quantities in the deployment scenario inputs.");
+      for (const path of pathResults) {
+        if (path.gpuQty <= 0) continue;
+        if (!path.currentSku || !path.targetSku) warnings.push(path.label + " needs both SKUs selected.");
+        if (path.currentAnnual <= 0) {
+          const inputLabel = path.currentBasis === "Cloud" ? "Cloud $/GPU-Hour" : "On-Prem $/GPU Capex";
+          warnings.push(path.label + " current " + path.currentBasis + " price is missing for " + (path.currentSku || "the selected SKU") + "; add a " + inputLabel + " override.");
+        }
+        if (path.targetAnnual <= 0) {
+          const inputLabel = path.targetBasis === "Cloud" ? "Cloud $/GPU-Hour" : "On-Prem $/GPU Capex";
+          warnings.push(path.label + " future " + path.targetBasis + " price is missing for " + (path.targetSku || "the selected SKU") + "; add a " + inputLabel + " override.");
+        }
+      }
+
+      return {
+        currentOnPremMix, currentCloudMix, targetOnPremMix, targetCloudMix, exemplarFactor,
+        perfFactor, targetGpus, gpuReduction, currentTco, targetTco,
+        targetTcoNoExemplar, exemplarImpact: targetTcoNoExemplar - targetTco, savings,
+        currentCostPerSourceGpu, targetCostPerSourceGpu,
+        savingsPct: currentTco > 0 ? savings / currentTco : 0, warnings, pathResults,
+        currentBasis: scenarioBasisLabel(currentCloudMix, currentOnPremMix, paths),
+        targetBasis: scenarioBasisLabel(targetCloudMix, targetOnPremMix, paths),
+      };
+    }
+    function update() {
+      const qty = migrationPathsFromInputs().reduce((sum, path) => sum + path.gpuQty, 0);
+      el.gpuQuantity.value = fmtNumber(qty);
+      el.annualGpuHours.value = fmtNumber(qty * assumedAnnualUtilizationHours);
+      const result = calcForQty(qty);
+      el.currentBasis.textContent = result.currentBasis;
+      el.targetBasis.textContent = result.targetBasis;
+      el.summaryCurrentGpus.textContent = fmtNumber(qty);
+      el.summaryGpuReduction.textContent = fmtNumber(result.gpuReduction);
+      el.perfFactor.textContent = fmtFactor(result.perfFactor);
+      el.targetGpus.textContent = fmtNumber(result.targetGpus);
+      el.currentCostPerSourceGpu.textContent = fmtCurrency(result.currentCostPerSourceGpu);
+      el.targetCostPerSourceGpu.textContent = fmtCurrency(result.targetCostPerSourceGpu);
+      el.currentTco.textContent = fmtMoney(result.currentTco);
+      el.targetTco.textContent = fmtMoney(result.targetTco);
+      el.tcoSavings.textContent = fmtMoney(result.savings);
+      el.savingsPct.textContent = fmtPct(result.savingsPct);
+      el.targetTcoNoExemplar.textContent = fmtMoney(result.targetTcoNoExemplar);
+      el.exemplarImpact.textContent = fmtMoney(result.exemplarImpact);
+      el.gpuReduction.textContent = fmtNumber(result.gpuReduction);
+      el.warning.textContent = result.warnings.join(" ");
+      el.warning.className = result.warnings.length ? "warning show" : "warning";
+      result.pathResults.forEach((path, index) => {
+        const cell = document.querySelector("[data-path-perf='" + index + "']");
+        if (cell) cell.textContent = fmtFactor(path.perfFactor);
+      });
+
+      for (let i = 0; i < 3; i += 1) {
+        const scaleQty = numberValue("scaleQty" + i) || 0;
+        const row = calcForQty(scaleQty);
+        el["scalePerf" + i].textContent = fmtFactor(row.perfFactor);
+        el["scaleExemplar" + i].textContent = fmtFactor(row.perfFactor * row.exemplarFactor);
+        el["scaleTargetGpus" + i].textContent = fmtNumber(row.targetGpus);
+        el["scaleCurrentTco" + i].textContent = fmtMoney(row.currentTco);
+        el["scaleTargetTco" + i].textContent = fmtMoney(row.targetTco);
+        el["scaleSavings" + i].textContent = fmtMoney(row.savings);
+        el["scaleSavingsPct" + i].textContent = fmtPct(row.savingsPct);
+      }
+    }
+    function fillSelect(select, value) {
+      select.innerHTML = [
+        "<option value=\"\"></option>",
+        "<option value=\"" + noneSkuOptionValue + "\">None</option>",
+        ...data.skus.map((sku) => "<option value=\"" + escapeHtml(sku) + "\">" + escapeHtml(sku) + "</option>"),
+      ].join("");
+      select.value = value || "";
+    }
+    function skuOptions(value) {
+      return [
+        "<option value=\"\"></option>",
+        "<option value=\"" + noneSkuOptionValue + "\">None</option>",
+        ...data.skus.map((sku) => {
+          const escaped = escapeHtml(sku);
+          return "<option value=\"" + escaped + "\"" + (sku === value ? " selected" : "") + ">" + escaped + "</option>";
+        }),
+      ].join("");
+    }
+    function workloadSelectOptions(value) {
+      const selectedValue = normalizeWorkload(value);
+      return data.workloadOptions.map((option) => {
+        const escaped = escapeHtml(option);
+        return "<option value=\"" + escaped + "\"" + (option === selectedValue ? " selected" : "") + ">" + escaped + "</option>";
+      }).join("");
+    }
+    function basisOptions(value) {
+      return ["Cloud", "On-Prem"].map((option) =>
+        "<option value=\"" + option + "\"" + (option === value ? " selected" : "") + ">" + option + "</option>"
+      ).join("");
+    }
+    function pctOf(value, total) {
+      if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) return "";
+      return String(Math.round(value / total * 1000) / 10);
+    }
+    function renderSkuOverrideRows() {
+      const skus = manualOverrideSkus();
+      if (!skus.length) {
+        el.skuOverrideRows.innerHTML = "<tr><td class=\"empty-row\" colspan=\"5\">Select SKUs in the deployment scenarios or enter prices in the Price Input tables to add override rows.</td></tr>";
+        return;
+      }
+      el.skuOverrideRows.innerHTML = skus.map((sku) => {
+        const entry = ensureSkuPriceOverrideEntry(sku);
+        const encodedSku = encodeURIComponent(sku);
+        return "<tr>" +
+          "<td>" + escapeHtml(sku) + "</td>" +
+          "<td class=\"default-price\">" + escapeHtml(defaultPriceLabel(sku, "Cloud")) + "</td>" +
+          "<td><input type=\"number\" min=\"0\" step=\"0.01\" data-sku=\"" + encodedSku + "\" data-sku-override=\"cloud\" placeholder=\"" + pricePlaceholder(sku, "Cloud") + "\" value=\"" + (entry.cloud ?? "") + "\" /></td>" +
+          "<td class=\"default-price\">" + escapeHtml(defaultPriceLabel(sku, "On-Prem")) + "</td>" +
+          "<td><input type=\"number\" min=\"0\" step=\"1\" data-sku=\"" + encodedSku + "\" data-sku-override=\"onPrem\" placeholder=\"" + pricePlaceholder(sku, "On-Prem") + "\" value=\"" + (entry.onPrem ?? "") + "\" /></td>" +
+          "</tr>";
+      }).join("");
+    }
+    function addPathRow() {
+      if (migrationRows.length >= maxMigrationRows) return;
+      const template = migrationRows[migrationRows.length - 1] || {};
+      const definition = definitionForBases(template.currentBasis || "Cloud", template.targetBasis || "Cloud");
+        migrationRows.push({
+          ...definition,
+          workload: template.workload || data.workloadOptions[0],
+          gpuQty: 0,
+          targetGpuQty: 0,
+          currentSku: template.currentSku || "",
+          targetSku: template.targetSku || "",
+        });
+      renderPathRows();
+      renderSkuOverrideRows();
+      update();
+      scheduleSave();
+    }
+    function removePathRow(index) {
+      migrationRows.splice(index, 1);
+      renderPathRows();
+      renderSkuOverrideRows();
+      update();
+      scheduleSave();
+    }
+    function renderPathRows() {
+      const currentTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.gpuQty), 0);
+      const futureTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.targetGpuQty ?? row.gpuQty), 0);
+      el.pathRows.innerHTML = migrationRows.map((row, index) => {
+        const definition = pathDefinitionFor(row);
+        const targetQty = normalizeGpuQty(row.targetGpuQty ?? row.gpuQty);
+        return (
+          "<tr>" +
+          "<td><select data-path-index=\"" + index + "\" data-path-field=\"currentBasis\">" + basisOptions(definition.currentBasis) + "</select></td>" +
+          "<td><select data-path-index=\"" + index + "\" data-path-field=\"currentSku\">" + skuOptions(row.currentSku) + "</select></td>" +
+          "<td><input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" data-path-index=\"" + index + "\" data-path-field=\"currentPct\" value=\"" + pctOf(row.gpuQty, currentTotal) + "\" /></td>" +
+          "<td><input type=\"number\" min=\"0\" step=\"1\" data-path-index=\"" + index + "\" data-path-field=\"gpuQty\" value=\"" + (row.gpuQty || "") + "\" /></td>" +
+          "<td><select data-path-index=\"" + index + "\" data-path-field=\"targetBasis\">" + basisOptions(definition.targetBasis) + "</select></td>" +
+          "<td><select data-path-index=\"" + index + "\" data-path-field=\"targetSku\">" + skuOptions(row.targetSku) + "</select></td>" +
+          "<td><input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" data-path-index=\"" + index + "\" data-path-field=\"targetPct\" value=\"" + pctOf(targetQty, futureTotal) + "\" /></td>" +
+          "<td><input type=\"number\" min=\"0\" step=\"1\" data-path-index=\"" + index + "\" data-path-field=\"targetGpuQty\" value=\"" + (targetQty || "") + "\" /></td>" +
+          "<td data-path-perf=\"" + index + "\"></td>" +
+          "<td><button class=\"remove-row\" type=\"button\" data-remove-path=\"" + index + "\">x</button></td>" +
+          "</tr>"
+        );
+      }).join("");
+    }
+    function setInput(id, value, transform = (v) => v) {
+      el[id].value = value === null || value === undefined ? "" : transform(value);
+    }
+    function applyState(state) {
+      if (!state) return;
+      if (Array.isArray(state.migrationPaths)) {
+        const stateGpuQuantity = Number(state.gpuQuantity) || 0;
+        const pathOverrides = skuPriceOverridesFromPaths(state.migrationPaths);
+        migrationRows = state.migrationPaths.slice(0, maxMigrationRows).map((path) => {
+          const definition = pathDefinitionFor(path);
+          const gpuQty = path.gpuQty !== undefined ? path.gpuQty : Math.round(stateGpuQuantity * normalizeMix(path.allocation));
+          return {
+            ...definition,
+            workload: normalizeWorkload(path.workload),
+            gpuQty,
+            targetGpuQty: path.targetGpuQty !== undefined ? normalizeGpuQty(path.targetGpuQty) : gpuQty,
+            currentSku: path.currentSku || "",
+            targetSku: path.targetSku || "",
+          };
+        });
+        skuPriceOverrides = overlaySkuPriceOverrides(
+          storedSkuPriceOverrides(),
+          mergeSkuPriceOverrides(pathOverrides, state.skuPriceOverrides)
+        );
+        renderPathRows();
+        renderSkuOverrideRows();
+      }
+      setInput("exemplar", state.exemplar);
+      if (state.scaleFactorSourceTab !== undefined) setActiveScaleSourceTab(state.scaleFactorSourceTab);
+      if (Array.isArray(state.scaleQuantities)) {
+        state.scaleQuantities.slice(0, 3).forEach((qty, index) => setInput("scaleQty" + index, qty));
+      }
+    }
+    async function loadSavedState() {
+      try {
+        const response = await fetch("/api/state");
+        if (!response.ok) throw new Error("State load failed");
+        const payload = await response.json();
+        applyState(payload.state);
+        update();
+        el.saveStatus.textContent = "Saved to Excel";
+      } catch (error) {
+        staticPreviewMode = true;
+        el.saveStatus.textContent = "Static preview";
+      }
+    }
+    const defaultGpuQuantity = Number(data.defaults.gpuQuantity) || 0;
+    const defaultMigrationPaths = (data.defaults.migrationPaths || []).slice(0, maxMigrationRows);
+    migrationRows = (data.defaults.migrationPaths || []).slice(0, maxMigrationRows).map((path) => {
+      const definition = pathDefinitionFor(path);
+      const gpuQty = path.gpuQty !== undefined ? path.gpuQty : Math.round(defaultGpuQuantity * normalizeMix(path.allocation));
+      return {
+        ...definition,
+        workload: normalizeWorkload(path.workload),
+        gpuQty,
+        targetGpuQty: path.targetGpuQty !== undefined ? normalizeGpuQty(path.targetGpuQty) : gpuQty,
+        currentSku: path.currentSku || "",
+        targetSku: path.targetSku || "",
+      };
+    });
+    skuPriceOverrides = overlaySkuPriceOverrides(
+      storedSkuPriceOverrides(),
+      mergeSkuPriceOverrides(skuPriceOverridesFromPaths(defaultMigrationPaths), data.defaults.skuPriceOverrides)
+    );
+    renderPathRows();
+    renderSkuOverrideRows();
+    setInput("exemplar", data.defaults.exemplar, pctInput);
+    (data.defaults.scaleQuantities || [3000, 10000, 50000]).slice(0, 3).forEach((qty, index) => setInput("scaleQty" + index, qty));
+    el.pathRows.addEventListener("input", (event) => {
+      const index = Number(event.target.dataset.pathIndex);
+      const field = event.target.dataset.pathField;
+      if (!Number.isInteger(index) || !field || !migrationRows[index]) return;
+      const currentTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.gpuQty), 0);
+      const futureTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.targetGpuQty ?? row.gpuQty), 0);
+      if (field === "gpuQty" || field === "targetGpuQty") {
+        migrationRows[index][field] = normalizeGpuQty(event.target.value);
+      } else if (field === "currentPct") {
+        migrationRows[index].gpuQty = Math.round(currentTotal * normalizeMix(event.target.value));
+      } else if (field === "targetPct") {
+        migrationRows[index].targetGpuQty = Math.round(futureTotal * normalizeMix(event.target.value));
+      } else if (field === "currentBasis" || field === "targetBasis") {
+        migrationRows[index][field] = event.target.value;
+        Object.assign(migrationRows[index], pathDefinitionFor(migrationRows[index]));
+      } else if (field === "workload") {
+        migrationRows[index][field] = normalizeWorkload(event.target.value);
+      } else {
+        migrationRows[index][field] = event.target.value === noneSkuOptionValue ? "" : event.target.value;
+      }
+      if ((field === "currentSku" || field === "targetSku") && event.target.value === noneSkuOptionValue) renderPathRows();
+      if (field === "currentSku" || field === "targetSku") renderSkuOverrideRows();
+      update();
+      scheduleSave();
+    });
+    el.pathRows.addEventListener("change", (event) => {
+      const index = Number(event.target.dataset.pathIndex);
+      const field = event.target.dataset.pathField;
+      if (!Number.isInteger(index) || !field || !migrationRows[index]) return;
+      const currentTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.gpuQty), 0);
+      const futureTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.targetGpuQty ?? row.gpuQty), 0);
+      if (field === "gpuQty" || field === "targetGpuQty") {
+        migrationRows[index][field] = normalizeGpuQty(event.target.value);
+      } else if (field === "currentPct") {
+        migrationRows[index].gpuQty = Math.round(currentTotal * normalizeMix(event.target.value));
+      } else if (field === "targetPct") {
+        migrationRows[index].targetGpuQty = Math.round(futureTotal * normalizeMix(event.target.value));
+      } else if (field === "currentBasis" || field === "targetBasis") {
+        migrationRows[index][field] = event.target.value;
+        Object.assign(migrationRows[index], pathDefinitionFor(migrationRows[index]));
+      } else if (field === "workload") {
+        migrationRows[index][field] = normalizeWorkload(event.target.value);
+      } else {
+        migrationRows[index][field] = event.target.value === noneSkuOptionValue ? "" : event.target.value;
+      }
+      if ((field === "currentSku" || field === "targetSku") && event.target.value === noneSkuOptionValue) renderPathRows();
+      if (field === "currentSku" || field === "targetSku") renderSkuOverrideRows();
+      update();
+      scheduleSave();
+    });
+    el.pathRows.addEventListener("click", (event) => {
+      const addPath = event.target.dataset.addPath;
+      const removeIndex = event.target.dataset.removePath;
+      if (addPath) addPathRow(addPath);
+      if (removeIndex !== undefined) removePathRow(Number(removeIndex));
+    });
+    function handleSkuOverrideInput(event) {
+      const sku = event.target.dataset.sku ? decodeURIComponent(event.target.dataset.sku) : "";
+      const field = event.target.dataset.skuOverride;
+      if (!sku || (field !== "cloud" && field !== "onPrem")) return;
+      ensureSkuPriceOverrideEntry(sku)[field] = normalizePriceOverride(event.target.value);
+      storeSkuPriceOverrides();
+      update();
+      scheduleSave();
+    }
+    el.skuOverrideRows.addEventListener("input", handleSkuOverrideInput);
+    el.skuOverrideRows.addEventListener("change", handleSkuOverrideInput);
+    el.skuOverrideToggle.addEventListener("click", () => {
+      setSkuOverrideExpanded(el.skuOverrideTable.hidden, true);
+    });
+    el.hiddenWorkbookToggle.addEventListener("click", () => {
+      setHiddenWorkbooksExpanded(el.hiddenWorkbookTabs.hidden, true);
+    });
+    el.selectedDeploymentToggle.addEventListener("click", () => {
+      setExpandableSection("selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey, el.selectedDeploymentBody.hidden, true);
+    });
+    el.scaleDeploymentToggle.addEventListener("click", () => {
+      setExpandableSection("scaleDeploymentBody", "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", scaleDeploymentExpandedStorageKey, el.scaleDeploymentBody.hidden, true);
+    });
+    el.summaryTcoToggle.addEventListener("click", () => {
+      setExpandableSection("summaryTcoBody", "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", summaryTcoExpandedStorageKey, el.summaryTcoBody.hidden, true);
+    });
+    window.addEventListener("storage", (event) => {
+      if (event.key !== skuPriceOverrideStorageKey) return;
+      skuPriceOverrides = overlaySkuPriceOverrides(storedSkuPriceOverrides(), skuPriceOverrides);
+      renderSkuOverrideRows();
+      update();
+    });
+    document.querySelectorAll("[data-source-tab]").forEach((button) => {
+      button.addEventListener("click", () => {
+        setActiveScaleSourceTab(button.dataset.sourceTab, true);
+      });
+    });
+    for (const id of ids) {
+      el[id].addEventListener("input", () => {
+        update();
+        scheduleSave();
+      });
+      el[id].addEventListener("change", () => {
+        update();
+        scheduleSave();
+      });
+    }
+    setActiveScaleSourceTab(storedScaleSourceTab() || data.defaults.scaleFactorSourceTab);
+    setExpandableSection("selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey, storedExpanded(selectedDeploymentExpandedStorageKey));
+    setExpandableSection("scaleDeploymentBody", "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", scaleDeploymentExpandedStorageKey, storedExpanded(scaleDeploymentExpandedStorageKey));
+    setExpandableSection("summaryTcoBody", "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", summaryTcoExpandedStorageKey, storedExpanded(summaryTcoExpandedStorageKey));
+    setSkuOverrideExpanded(storedSkuOverrideExpanded());
+    setHiddenWorkbooksExpanded(storedHiddenWorkbooksExpanded());
+    update();
+    loadSavedState();
+  </script>
+</body>
+</html>
