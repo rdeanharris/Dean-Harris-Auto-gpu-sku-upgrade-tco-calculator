@@ -191,29 +191,29 @@
       <span class="price-save-status" id="priceSaveStatus"></span>
     </div>
     <div class="preview">
-      <div class="source-note">On-prem defaults use public searchable estimates where available. Rows without a public URL remain editable assumptions and should be replaced with vendor quotes or actual purchase prices.</div>
+      <div class="source-note">On-prem defaults use public NVIDIA DGX system prices divided by GPU count where available. Override values remain open for customer OEM quotes, actual purchase prices, or alternate cloud/OEM assumptions.</div>
       <table class="source-table on_prem_price_inputs price-input-table">
         <colgroup><col /><col /><col /><col /><col /><col /><col /><col /></colgroup>
         <thead><tr><th>GPU SKU</th><th>Default Estimate $/GPU</th><th>Estimate Basis</th><th>Source</th><th>Override $/GPU Capex</th><th>Calculator $/GPU Capex</th><th>Notes</th><th>Last Checked</th></tr></thead>
         <tbody>
           <tr>
             <td>GB300 NVL72</td>
-            <td class="money default-price"><a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems" target="_blank" rel="noopener noreferrer">$87,500</a></td>
-            <td>Public rack-derived estimate</td>
-            <td><a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems" target="_blank" rel="noopener noreferrer">Tom's Hardware rack estimate</a></td>
+            <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$87,500</a></td>
+            <td>DGX-derived public estimate</td>
+            <td><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA EAIF Business Value Calculator</a></td>
             <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="GB300%20NVL72" data-price-basis="onPrem" /></td>
             <td class="money"><span data-effective-price data-price-sku="GB300%20NVL72" data-price-basis="onPrem" data-default-price="87500" data-decimals="0"></span></td>
-            <td>Derived from public GB300 NVL72 rack range of roughly $6.0M-$6.5M divided by 72 GPUs; rounded planning estimate. Vendor quote should replace this.</td>
+            <td>Leading default uses NVIDIA DGX rack pricing divided by 72 GPUs: $6.30M / 72 = $87.5K per GPU. Override with customer OEM quote when available.</td>
             <td>2026-06-11</td>
           </tr>
           <tr>
             <td>GB200 NVL72</td>
-            <td class="money default-price"><a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems" target="_blank" rel="noopener noreferrer">$43,000</a></td>
-            <td>Public rack-derived estimate</td>
-            <td><a href="https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems" target="_blank" rel="noopener noreferrer">Tom's Hardware rack estimate</a></td>
+            <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$43,000</a></td>
+            <td>DGX-derived public estimate</td>
+            <td><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA EAIF Business Value Calculator</a></td>
             <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="GB200%20NVL72" data-price-basis="onPrem" /></td>
             <td class="money"><span data-effective-price data-price-sku="GB200%20NVL72" data-price-basis="onPrem" data-default-price="43000" data-decimals="0"></span></td>
-            <td>Derived from public GB200 NVL72 rack range of roughly $2.8M-$3.4M divided by 72 GPUs; midpoint is about $43.1K/GPU.</td>
+            <td>Leading default uses NVIDIA DGX rack pricing divided by 72 GPUs: $3.096M / 72 = $43.0K per GPU. Override with customer OEM quote when available.</td>
             <td>2026-06-11</td>
           </tr>
           <tr>
@@ -228,12 +228,12 @@
           </tr>
           <tr>
             <td>B200 180GB SXM</td>
-            <td class="money default-price"><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">$35,000</a></td>
-            <td>Public range midpoint</td>
-            <td><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">Investors.com / CNBC-reported Blackwell range</a></td>
+            <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$70,000</a></td>
+            <td>DGX-derived public estimate</td>
+            <td><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA EAIF Business Value Calculator</a></td>
             <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="B200%20180GB%20SXM" data-price-basis="onPrem" /></td>
-            <td class="money"><span data-effective-price data-price-sku="B200%20180GB%20SXM" data-price-basis="onPrem" data-default-price="35000" data-decimals="0"></span></td>
-            <td>Midpoint of public Blackwell GPU estimate range of $30K-$40K. Actual B200/NVL pricing is quote-dependent.</td>
+            <td class="money"><span data-effective-price data-price-sku="B200%20180GB%20SXM" data-price-basis="onPrem" data-default-price="70000" data-decimals="0"></span></td>
+            <td>Leading default uses NVIDIA DGX B200 system pricing divided by 8 GPUs: $560K / 8 = $70.0K per GPU. Override with customer OEM quote when available.</td>
             <td>2026-06-11</td>
           </tr>
           <tr>
@@ -258,22 +258,22 @@
           </tr>
           <tr>
             <td>H200 141GB SXM</td>
-            <td class="money default-price"><a href="https://www.tomshardware.com/pc-components/gpus/busted-12vhpwr-connector-sidelines-usd30-000-h200-hopper-gpu-repair-technician-saves-the-data-center-day-by-fixing-power-port" target="_blank" rel="noopener noreferrer">$30,000</a></td>
-            <td>Public estimate</td>
-            <td><a href="https://www.tomshardware.com/pc-components/gpus/busted-12vhpwr-connector-sidelines-usd30-000-h200-hopper-gpu-repair-technician-saves-the-data-center-day-by-fixing-power-port" target="_blank" rel="noopener noreferrer">Tom's Hardware H200 article</a></td>
+            <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$62,500</a></td>
+            <td>DGX-derived public estimate</td>
+            <td><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA EAIF Business Value Calculator</a></td>
             <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="H200%20141GB%20SXM" data-price-basis="onPrem" /></td>
-            <td class="money"><span data-effective-price data-price-sku="H200%20141GB%20SXM" data-price-basis="onPrem" data-default-price="30000" data-decimals="0"></span></td>
-            <td>Public article states Nvidia H200 GPU retails around $30K; replace with quote for specific SXM/PCIe configuration.</td>
+            <td class="money"><span data-effective-price data-price-sku="H200%20141GB%20SXM" data-price-basis="onPrem" data-default-price="62500" data-decimals="0"></span></td>
+            <td>Leading default uses NVIDIA DGX H200 system pricing divided by 8 GPUs: $500K / 8 = $62.5K per GPU. Override with customer OEM quote when available.</td>
             <td>2026-06-11</td>
           </tr>
           <tr>
             <td>H100 80GB SXM</td>
-            <td class="money default-price"><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">$25,000</a></td>
-            <td>Public range midpoint</td>
-            <td><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">Investors.com analyst estimate</a></td>
+            <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$60,250</a></td>
+            <td>DGX-derived public estimate</td>
+            <td><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA EAIF Business Value Calculator</a></td>
             <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="H100%2080GB%20SXM" data-price-basis="onPrem" /></td>
-            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20SXM" data-price-basis="onPrem" data-default-price="25000" data-decimals="0"></span></td>
-            <td>Uses midpoint/low end of public H100 estimate range of $20K-$30K. Replace with quote for SXM configuration.</td>
+            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20SXM" data-price-basis="onPrem" data-default-price="60250" data-decimals="0"></span></td>
+            <td>Leading default uses NVIDIA DGX H100 system pricing divided by 8 GPUs: $482K / 8 = $60.25K per GPU. Override with customer OEM quote when available.</td>
             <td>2026-06-11</td>
           </tr>
           <tr>
@@ -288,12 +288,12 @@
           </tr>
           <tr>
             <td>H100 NVL 94GB</td>
-            <td class="money default-price"><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">$30,000</a></td>
-            <td>Public range upper estimate</td>
-            <td><a href="https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/" target="_blank" rel="noopener noreferrer">Investors.com analyst estimate</a></td>
+            <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$60,250</a></td>
+            <td>DGX-derived public estimate</td>
+            <td><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA EAIF Business Value Calculator</a></td>
             <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="H100%20NVL%2094GB" data-price-basis="onPrem" /></td>
-            <td class="money"><span data-effective-price data-price-sku="H100%20NVL%2094GB" data-price-basis="onPrem" data-default-price="30000" data-decimals="0"></span></td>
-            <td>Uses upper end of public H100 estimate range because NVL/high-memory configuration should carry a premium. Replace with quote.</td>
+            <td class="money"><span data-effective-price data-price-sku="H100%20NVL%2094GB" data-price-basis="onPrem" data-default-price="60250" data-decimals="0"></span></td>
+            <td>Leading default aligns high-memory H100 planning to DGX H100 per-GPU pricing: $482K / 8 = $60.25K per GPU. Override with customer OEM quote when available.</td>
             <td>2026-06-11</td>
           </tr>
           <tr>
@@ -308,12 +308,12 @@
           </tr>
           <tr>
             <td>A100 80GB SXM</td>
-            <td class="money default-price">$8,500</td>
-            <td>Used-market/internal assumption</td>
-            <td>No current public source configured</td>
+            <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$24,875</a></td>
+            <td>DGX-derived public estimate</td>
+            <td><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA DGX A100 launch price</a></td>
             <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A100%2080GB%20SXM" data-price-basis="onPrem" /></td>
-            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20SXM" data-price-basis="onPrem" data-default-price="8500" data-decimals="0"></span></td>
-            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20SXM" data-price-basis="onPrem" data-default-price="24875" data-decimals="0"></span></td>
+            <td>Leading default uses NVIDIA DGX A100 system pricing divided by 8 GPUs: $199K / 8 = $24.875K per GPU. Override with customer OEM quote when available.</td>
             <td>2026-06-11</td>
           </tr>
           <tr>
@@ -328,12 +328,12 @@
           </tr>
           <tr>
             <td>A100 40GB SXM</td>
-            <td class="money default-price">$5,000</td>
-            <td>Used-market/internal assumption</td>
-            <td>No current public source configured</td>
+            <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$24,875</a></td>
+            <td>DGX-derived public estimate</td>
+            <td><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA DGX A100 launch price</a></td>
             <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="A100%2040GB%20SXM" data-price-basis="onPrem" /></td>
-            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20SXM" data-price-basis="onPrem" data-default-price="5000" data-decimals="0"></span></td>
-            <td>Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.</td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20SXM" data-price-basis="onPrem" data-default-price="24875" data-decimals="0"></span></td>
+            <td>Leading default uses NVIDIA DGX A100 system pricing divided by 8 GPUs: $199K / 8 = $24.875K per GPU. Override with customer OEM quote when available.</td>
             <td>2026-06-11</td>
           </tr>
           <tr>
