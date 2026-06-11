@@ -1163,11 +1163,11 @@
         if (!path.currentSku || !path.targetSku) warnings.push(path.label + " needs both SKUs selected.");
         if (path.currentAnnual <= 0) {
           const inputLabel = path.currentBasis === "Cloud" ? "Cloud $/GPU-Hour" : "On-Prem $/GPU Capex";
-          warnings.push(path.label + " current " + path.currentBasis + " price is missing for " + (skuDisplayName(path.currentSku) || "the selected SKU") + "; add a " + inputLabel + " override.");
+          warnings.push(path.label + " current " + path.currentBasis + " price is missing for " + (skuDisplayName(path.currentSku, path.currentBasis) || "the selected SKU") + "; add a " + inputLabel + " override.");
         }
         if (path.targetAnnual <= 0) {
           const inputLabel = path.targetBasis === "Cloud" ? "Cloud $/GPU-Hour" : "On-Prem $/GPU Capex";
-          warnings.push(path.label + " future " + path.targetBasis + " price is missing for " + (skuDisplayName(path.targetSku) || "the selected SKU") + "; add a " + inputLabel + " override.");
+          warnings.push(path.label + " future " + path.targetBasis + " price is missing for " + (skuDisplayName(path.targetSku, path.targetBasis) || "the selected SKU") + "; add a " + inputLabel + " override.");
         }
       }
 
@@ -1181,11 +1181,11 @@
         targetBasis: scenarioBasisLabel(targetCloudMix, targetOnPremMix, paths),
       };
     }
-    function skuDisplayName(sku) {
+    function skuDisplayName(sku, basis = "") {
       const value = String(sku || "");
       const entry = data.onPremPrices[value];
       if (!value || /^DGX\b/i.test(value) || /^OEM\b/i.test(value)) return value;
-      if (entry?.basis && entry.basis.includes("DGX-derived")) return "DGX " + value;
+      if (basis === "On-Prem" && entry?.basis && entry.basis.includes("DGX-derived")) return "DGX " + value;
       return value;
     }
     function update() {
@@ -1227,21 +1227,21 @@
         el["scaleSavingsPct" + i].textContent = fmtPct(row.savingsPct);
       }
     }
-    function fillSelect(select, value) {
+    function fillSelect(select, value, basis = "") {
       select.innerHTML = [
         "<option value=\"\"></option>",
         "<option value=\"" + noneSkuOptionValue + "\">None</option>",
-        ...data.skus.map((sku) => "<option value=\"" + escapeHtml(sku) + "\">" + escapeHtml(skuDisplayName(sku)) + "</option>"),
+        ...data.skus.map((sku) => "<option value=\"" + escapeHtml(sku) + "\">" + escapeHtml(skuDisplayName(sku, basis)) + "</option>"),
       ].join("");
       select.value = value || "";
     }
-    function skuOptions(value) {
+    function skuOptions(value, basis = "") {
       return [
         "<option value=\"\"></option>",
         "<option value=\"" + noneSkuOptionValue + "\">None</option>",
         ...data.skus.map((sku) => {
           const escaped = escapeHtml(sku);
-          return "<option value=\"" + escaped + "\"" + (sku === value ? " selected" : "") + ">" + escapeHtml(skuDisplayName(sku)) + "</option>";
+          return "<option value=\"" + escaped + "\"" + (sku === value ? " selected" : "") + ">" + escapeHtml(skuDisplayName(sku, basis)) + "</option>";
         }),
       ].join("");
     }
@@ -1271,7 +1271,7 @@
         const entry = ensureSkuPriceOverrideEntry(sku);
         const encodedSku = encodeURIComponent(sku);
         return "<tr>" +
-          "<td>" + escapeHtml(skuDisplayName(sku)) + "</td>" +
+          "<td>" + escapeHtml(skuDisplayName(sku, data.onPremPrices[sku] ? "On-Prem" : "")) + "</td>" +
           "<td class=\"default-price\">" + escapeHtml(defaultPriceLabel(sku, "Cloud")) + "</td>" +
           "<td><input type=\"number\" min=\"0\" step=\"0.01\" data-sku=\"" + encodedSku + "\" data-sku-override=\"cloud\" placeholder=\"" + pricePlaceholder(sku, "Cloud") + "\" value=\"" + (entry.cloud ?? "") + "\" /></td>" +
           "<td class=\"default-price\">" + escapeHtml(defaultPriceLabel(sku, "On-Prem")) + "</td>" +
@@ -1312,11 +1312,11 @@
         return (
           "<tr>" +
           "<td><select data-path-index=\"" + index + "\" data-path-field=\"currentBasis\">" + basisOptions(definition.currentBasis) + "</select></td>" +
-          "<td><select data-path-index=\"" + index + "\" data-path-field=\"currentSku\">" + skuOptions(row.currentSku) + "</select></td>" +
+          "<td><select data-path-index=\"" + index + "\" data-path-field=\"currentSku\">" + skuOptions(row.currentSku, definition.currentBasis) + "</select></td>" +
           "<td><input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" data-path-index=\"" + index + "\" data-path-field=\"currentPct\" value=\"" + pctOf(row.gpuQty, currentTotal) + "\" /></td>" +
           "<td><input type=\"number\" min=\"0\" step=\"1\" data-path-index=\"" + index + "\" data-path-field=\"gpuQty\" value=\"" + (row.gpuQty || "") + "\" /></td>" +
           "<td><select data-path-index=\"" + index + "\" data-path-field=\"targetBasis\">" + basisOptions(definition.targetBasis) + "</select></td>" +
-          "<td><select data-path-index=\"" + index + "\" data-path-field=\"targetSku\">" + skuOptions(row.targetSku) + "</select></td>" +
+          "<td><select data-path-index=\"" + index + "\" data-path-field=\"targetSku\">" + skuOptions(row.targetSku, definition.targetBasis) + "</select></td>" +
           "<td><input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" data-path-index=\"" + index + "\" data-path-field=\"targetPct\" value=\"" + pctOf(targetQty, futureTotal) + "\" /></td>" +
           "<td><input type=\"number\" min=\"0\" step=\"1\" data-path-index=\"" + index + "\" data-path-field=\"targetGpuQty\" value=\"" + (targetQty || "") + "\" /></td>" +
           "<td data-path-perf=\"" + index + "\"></td>" +
