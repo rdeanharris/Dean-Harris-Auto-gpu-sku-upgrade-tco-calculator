@@ -380,13 +380,13 @@
     }
     .meta {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 7px;
       padding: 8px;
       border-bottom: 1px solid var(--line);
     }
     .summary-gpu-row {
-      grid-column: span 3;
+      grid-column: 1 / -1;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 7px;
@@ -653,7 +653,7 @@
             </div>
             <div class="metric"><b>Current Basis</b><span id="currentBasis"></span></div>
             <div class="metric"><b>Future Basis</b><span id="targetBasis"></span></div>
-            <div class="metric"><b>Sum Avg Sku Performance Factor</b><span id="perfFactor"></span></div>
+            <div class="metric"><b>Sum Avg SKU Performance Factor</b><span id="perfFactor"></span></div>
             <div class="metric"><b>Current TCO / Source GPU</b><span id="currentCostPerSourceGpu"></span></div>
             <div class="metric"><b>Future TCO / Source GPU Eq.</b><span id="targetCostPerSourceGpu"></span></div>
           </div>
