@@ -386,7 +386,7 @@
       border-bottom: 1px solid var(--line);
     }
     .summary-gpu-row {
-      grid-column: 1 / -1;
+      grid-column: span 3;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 7px;
@@ -480,6 +480,7 @@
     @media (max-width: 1060px) {
       .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .summary-gpu-row { grid-column: 1 / -1; }
     }
     @media (max-width: 680px) {
       .fields { grid-template-columns: 1fr; }
