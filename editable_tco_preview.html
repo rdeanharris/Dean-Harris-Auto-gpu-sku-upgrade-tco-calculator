@@ -414,6 +414,30 @@
       line-height: 1.12;
       overflow-wrap: anywhere;
     }
+    .summary-tco-section {
+      --summary-tco-font: 20px;
+    }
+    .summary-tco-section .section-toggle,
+    .summary-tco-section .override-toggle-icon,
+    .summary-tco-section .section-note,
+    .summary-tco-section .metric b,
+    .summary-tco-section .metric span,
+    .summary-tco-section .headline th,
+    .summary-tco-section .headline td,
+    .summary-tco-section .warning {
+      font-size: var(--summary-tco-font);
+    }
+    .summary-tco-section .override-toggle-icon {
+      width: 24px;
+      height: 24px;
+    }
+    .summary-tco-section .section-note,
+    .summary-tco-section .metric b,
+    .summary-tco-section .metric span,
+    .summary-tco-section .headline th,
+    .summary-tco-section .headline td {
+      line-height: 1.12;
+    }
     .source-tabs {
       display: grid;
       grid-template-columns: 190px 1fr;
@@ -641,7 +665,7 @@
           </table>
           </div>
         </div>
-        <div class="section">
+        <div class="section summary-tco-section">
           <button class="section-toggle" type="button" id="summaryTcoToggle" aria-expanded="false" aria-controls="summaryTcoBody">
             <span class="override-toggle-icon" id="summaryTcoToggleIconStart" aria-hidden="true">+</span>
             <span class="override-toggle-label">Summary TCO</span>
