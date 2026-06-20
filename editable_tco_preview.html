@@ -397,6 +397,10 @@
       padding: 7px;
       min-width: 0;
     }
+    .basis-metric {
+      display: flex;
+      align-items: center;
+    }
     .metric b {
       display: block;
       font-size: 13px;
@@ -651,8 +655,8 @@
               <div class="metric"><b>GPU Reduction</b><span id="summaryGpuReduction"></span></div>
               <div class="metric"><b>Future GPU's Required</b><span id="targetGpus"></span></div>
             </div>
-            <div class="metric"><b>Current Basis</b><span id="currentBasis"></span></div>
-            <div class="metric"><b>Future Basis</b><span id="targetBasis"></span></div>
+            <div class="metric basis-metric" aria-label="Current Basis"><span id="currentBasis"></span></div>
+            <div class="metric basis-metric" aria-label="Future Basis"><span id="targetBasis"></span></div>
             <div class="metric"><b>Sum Avg SKU Performance Factor</b><span id="perfFactor"></span></div>
             <div class="metric"><b>Current TCO / Source GPU</b><span id="currentCostPerSourceGpu"></span></div>
             <div class="metric"><b>Future TCO / Source GPU Eq.</b><span id="targetCostPerSourceGpu"></span></div>
