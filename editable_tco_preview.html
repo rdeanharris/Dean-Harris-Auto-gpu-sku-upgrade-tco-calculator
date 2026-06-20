@@ -935,6 +935,9 @@
       const pathLabels = activeDeploymentPathLabels(paths);
       return "Hybrid (" + (pathLabels.length ? pathLabels.join("; ") : "Cloud + On-Prem") + ")";
     }
+    function summaryBasisDisplay(label) {
+      return String(label || "").startsWith("Hybrid") ? "Hybrid" : label;
+    }
     function definitionForBases(currentBasis, targetBasis) {
       return pathDefinitions.find((definition) =>
         definition.currentBasis === currentBasis && definition.targetBasis === targetBasis
@@ -1265,8 +1268,10 @@
       el.gpuQuantity.value = fmtNumber(qty);
       el.annualGpuHours.value = fmtNumber(qty * assumedAnnualUtilizationHours);
       const result = calcForQty(qty);
-      el.currentBasis.textContent = result.currentBasis;
-      el.targetBasis.textContent = result.targetBasis;
+      el.currentBasis.textContent = summaryBasisDisplay(result.currentBasis);
+      el.currentBasis.title = result.currentBasis;
+      el.targetBasis.textContent = summaryBasisDisplay(result.targetBasis);
+      el.targetBasis.title = result.targetBasis;
       el.summaryCurrentGpus.textContent = fmtNumber(qty);
       el.summaryGpuReduction.textContent = fmtNumber(result.gpuReduction);
       el.perfFactor.textContent = fmtFactor(result.perfFactor);
