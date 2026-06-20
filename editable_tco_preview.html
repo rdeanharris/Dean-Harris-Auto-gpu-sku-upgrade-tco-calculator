@@ -350,8 +350,11 @@
       background: #fff;
       padding: 5px 4px;
     }
-    .headline, .scale-table {
+    .scale-table {
       min-width: 0;
+    }
+    .headline {
+      min-width: 620px;
     }
     .headline td, .scale-table td {
       white-space: nowrap;
@@ -365,6 +368,10 @@
       font-size: 10px;
       line-height: 1.15;
       padding: 5px 4px;
+    }
+    .headline th .headline-line {
+      display: block;
+      white-space: nowrap;
     }
     .headline .gain, .gain {
       background: var(--nvidia);
@@ -653,13 +660,13 @@
           <table class="headline">
             <thead>
               <tr>
-                <th title="Current Annualized TCO ($M)">Current Annual TCO ($M)</th>
-                <th title="Future Annualized TCO w/o Exemplar NVIDIA RA ($M)">Future TCO w/o RA ($M)</th>
-                <th title="Future Annualized GPU TCO ($M)">Future GPU TCO ($M)</th>
-                <th title="Annualized Exemplar NVIDIA RA TCO Savings ($M)">Exemplar RA Savings ($M)</th>
-                <th title="Annualized TCO Savings ($M)">TCO Savings ($M)</th>
-                <th>Savings %</th>
-                <th>GPU Reduction</th>
+                <th title="Current Annualized TCO ($M)"><span class="headline-line">Current TCO</span><span class="headline-line">($M)</span></th>
+                <th title="Future Annualized TCO w/o Exemplar NVIDIA RA ($M)"><span class="headline-line">Future w/o RA</span><span class="headline-line">($M)</span></th>
+                <th title="Future Annualized GPU TCO ($M)"><span class="headline-line">Future GPU TCO</span><span class="headline-line">($M)</span></th>
+                <th title="Annualized Exemplar NVIDIA RA TCO Savings ($M)"><span class="headline-line">Exemplar RA</span><span class="headline-line">Savings ($M)</span></th>
+                <th title="Annualized TCO Savings ($M)"><span class="headline-line">TCO Savings</span><span class="headline-line">($M)</span></th>
+                <th><span class="headline-line">Savings</span><span class="headline-line">%</span></th>
+                <th><span class="headline-line">GPU</span><span class="headline-line">Reduction</span></th>
               </tr>
             </thead>
             <tbody>
