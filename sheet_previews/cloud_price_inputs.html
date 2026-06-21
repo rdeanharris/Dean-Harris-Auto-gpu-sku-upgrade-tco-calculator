@@ -173,7 +173,7 @@
       </div>
     </div>
     <div class="preview">
-      <div class="source-note">Cloud calculator defaults use the product-level Cloud Avg ASP from the provider workbook. The Calculator column reflects any saved Manual SKU Price Override; otherwise it uses Cloud Avg.</div>
+      <div class="source-note">Cloud calculator defaults use CSP-only Cloud Avg ASP from AWS, Azure, GCP Cloud, and OCI in the provider workbook. The Calculator column reflects any saved Manual SKU Price Override; otherwise it uses Cloud Avg.</div>
       <table class="source-table cloud_price_inputs">
         <colgroup><col /><col /><col /><col /><col /><col /><col /></colgroup>
         <thead><tr><th>GPU SKU</th><th>ASP Product</th><th>Cloud Avg $/GPU-Hour</th><th>Calculator $/GPU-Hour</th><th>Cloud Providers</th><th>Source Rows</th><th>Latest Snapshot</th></tr></thead>
@@ -181,146 +181,146 @@
           <tr>
             <td>GB300 NVL72</td>
             <td>GB300</td>
-            <td class="money default-price">$23.38</td>
-            <td class="money"><span data-effective-price data-price-sku="GB300%20NVL72" data-price-basis="cloud" data-default-price="23.3843" data-decimals="2"></span></td>
-            <td>Azure, OCI, Hydrahost</td>
+            <td class="money default-price">$20.78</td>
+            <td class="money"><span data-effective-price data-price-sku="GB300%20NVL72" data-price-basis="cloud" data-default-price="20.781" data-decimals="2"></span></td>
+            <td>Azure, OCI</td>
             <td class="money">332</td>
             <td>2026-05</td>
           </tr>
           <tr>
             <td>GB200 NVL72</td>
             <td>GB200</td>
-            <td class="money default-price">$27.14</td>
-            <td class="money"><span data-effective-price data-price-sku="GB200%20NVL72" data-price-basis="cloud" data-default-price="27.1378" data-decimals="2"></span></td>
-            <td>AWS, Azure, OCI, CoreWeave, Hydrahost</td>
+            <td class="money default-price">$18.10</td>
+            <td class="money"><span data-effective-price data-price-sku="GB200%20NVL72" data-price-basis="cloud" data-default-price="18.1002" data-decimals="2"></span></td>
+            <td>AWS, Azure, OCI</td>
             <td class="money">1560</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>B300 270GB SXM</td>
             <td>B300</td>
-            <td class="money default-price">$12.79</td>
-            <td class="money"><span data-effective-price data-price-sku="B300%20270GB%20SXM" data-price-basis="cloud" data-default-price="12.7908" data-decimals="2"></span></td>
-            <td>AWS, OCI, CoreWeave, DataCrunch, Hydrahost</td>
+            <td class="money default-price">$16.66</td>
+            <td class="money"><span data-effective-price data-price-sku="B300%20270GB%20SXM" data-price-basis="cloud" data-default-price="16.6608" data-decimals="2"></span></td>
+            <td>AWS, OCI</td>
             <td class="money">108</td>
             <td>2026-05</td>
           </tr>
           <tr>
             <td>B200 180GB SXM</td>
             <td>B200</td>
-            <td class="money default-price">$7.96</td>
-            <td class="money"><span data-effective-price data-price-sku="B200%20180GB%20SXM" data-price-basis="cloud" data-default-price="7.9588" data-decimals="2"></span></td>
-            <td>AWS, GCP Cloud, OCI, CoreWeave, Lambda, CirraScale, DataCrunch, Hydrahost, Nebius, Runpod, Scaleway, Together, Vultr</td>
+            <td class="money default-price">$11.62</td>
+            <td class="money"><span data-effective-price data-price-sku="B200%20180GB%20SXM" data-price-basis="cloud" data-default-price="11.62" data-decimals="2"></span></td>
+            <td>AWS, GCP Cloud, OCI</td>
             <td class="money">1453</td>
             <td>2026-05</td>
           </tr>
           <tr>
             <td>OEM B200 180GB SXM</td>
             <td>B200</td>
-            <td class="money default-price">$7.96</td>
-            <td class="money"><span data-effective-price data-price-sku="OEM%20B200%20180GB%20SXM" data-price-basis="cloud" data-default-price="7.9588" data-decimals="2"></span></td>
-            <td>AWS, GCP Cloud, OCI, CoreWeave, Lambda, CirraScale, DataCrunch, Hydrahost, Nebius, Runpod, Scaleway, Together, Vultr</td>
+            <td class="money default-price">$11.62</td>
+            <td class="money"><span data-effective-price data-price-sku="OEM%20B200%20180GB%20SXM" data-price-basis="cloud" data-default-price="11.62" data-decimals="2"></span></td>
+            <td>AWS, GCP Cloud, OCI</td>
             <td class="money">1453</td>
             <td>2026-05</td>
           </tr>
           <tr>
             <td>GH200 96GB</td>
-            <td>GH200</td>
-            <td class="money default-price">$3.66</td>
-            <td class="money"><span data-effective-price data-price-sku="GH200%2096GB" data-price-basis="cloud" data-default-price="3.6602" data-decimals="2"></span></td>
-            <td>CoreWeave, Lambda, Denvr Data, Hydrahost, Vultr</td>
-            <td class="money">130</td>
-            <td>2026-05</td>
+            <td></td>
+            <td class="money default-price"></td>
+            <td class="money"><span data-effective-price data-price-sku="GH200%2096GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No Cloud ASP</td>
+            <td class="money"></td>
+            <td></td>
           </tr>
           <tr>
             <td>H200 141GB SXM</td>
             <td>H200</td>
-            <td class="money default-price">$8.85</td>
-            <td class="money"><span data-effective-price data-price-sku="H200%20141GB%20SXM" data-price-basis="cloud" data-default-price="8.8499" data-decimals="2"></span></td>
-            <td>AWS, Azure, GCP Cloud, OCI, CoreWeave, Lambda, CirraScale, Crusoe, DataCrunch, Hydrahost, Nebius, Runpod, Together</td>
+            <td class="money default-price">$8.79</td>
+            <td class="money"><span data-effective-price data-price-sku="H200%20141GB%20SXM" data-price-basis="cloud" data-default-price="8.7869" data-decimals="2"></span></td>
+            <td>AWS, Azure, GCP Cloud, OCI</td>
             <td class="money">6469</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>H100 80GB SXM</td>
             <td>H100</td>
-            <td class="money default-price">$7.58</td>
-            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20SXM" data-price-basis="cloud" data-default-price="7.5753" data-decimals="2"></span></td>
-            <td>AWS, Azure, GCP Cloud, OCI, CoreWeave, Lambda, CirraScale, Crusoe, DataCrunch, Denvr Data, Hydrahost, Nebius, OVHcloud, Runpod, Scaleway, Together, Vultr</td>
+            <td class="money default-price">$8.19</td>
+            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20SXM" data-price-basis="cloud" data-default-price="8.1944" data-decimals="2"></span></td>
+            <td>AWS, Azure, GCP Cloud, OCI</td>
             <td class="money">23477</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>H100 NVL 94GB</td>
-            <td>H100 NVL</td>
-            <td class="money default-price">$2.84</td>
-            <td class="money"><span data-effective-price data-price-sku="H100%20NVL%2094GB" data-price-basis="cloud" data-default-price="2.8367" data-decimals="2"></span></td>
-            <td>Runpod</td>
-            <td class="money">18</td>
-            <td>2026-05</td>
+            <td></td>
+            <td class="money default-price"></td>
+            <td class="money"><span data-effective-price data-price-sku="H100%20NVL%2094GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No Cloud ASP</td>
+            <td class="money"></td>
+            <td></td>
           </tr>
           <tr>
             <td>H100 80GB PCIe</td>
             <td>H100 PCIe</td>
-            <td class="money default-price">$6.46</td>
-            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20PCIe" data-price-basis="cloud" data-default-price="6.4637" data-decimals="2"></span></td>
-            <td>Azure, CoreWeave, Lambda, Runpod, Scaleway</td>
+            <td class="money default-price">$6.49</td>
+            <td class="money"><span data-effective-price data-price-sku="H100%2080GB%20PCIe" data-price-basis="cloud" data-default-price="6.4917" data-decimals="2"></span></td>
+            <td>Azure</td>
             <td class="money">8225</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>A100 80GB SXM</td>
             <td>A100</td>
-            <td class="money default-price">$2.83</td>
-            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20SXM" data-price-basis="cloud" data-default-price="2.825" data-decimals="2"></span></td>
-            <td>AWS, Azure, GCP Cloud, OCI, CoreWeave, Lambda, CirraScale, Crusoe, DataCrunch, Denvr Data, Hydrahost, OVHcloud, Runpod, Together, Vultr</td>
+            <td class="money default-price">$3.01</td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20SXM" data-price-basis="cloud" data-default-price="3.0066" data-decimals="2"></span></td>
+            <td>AWS, Azure, GCP Cloud, OCI</td>
             <td class="money">26617</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>A100 80GB PCIe</td>
             <td>A100 PCIe</td>
-            <td class="money default-price">$2.60</td>
-            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20PCIe" data-price-basis="cloud" data-default-price="2.6035" data-decimals="2"></span></td>
-            <td>Azure, CoreWeave, Lambda, Crusoe, Denvr Data, Runpod, Vultr</td>
+            <td class="money default-price">$2.62</td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2080GB%20PCIe" data-price-basis="cloud" data-default-price="2.6192" data-decimals="2"></span></td>
+            <td>Azure</td>
             <td class="money">14803</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>A100 40GB SXM</td>
             <td>A100</td>
-            <td class="money default-price">$2.83</td>
-            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20SXM" data-price-basis="cloud" data-default-price="2.825" data-decimals="2"></span></td>
-            <td>AWS, Azure, GCP Cloud, OCI, CoreWeave, Lambda, CirraScale, Crusoe, DataCrunch, Denvr Data, Hydrahost, OVHcloud, Runpod, Together, Vultr</td>
+            <td class="money default-price">$3.01</td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20SXM" data-price-basis="cloud" data-default-price="3.0066" data-decimals="2"></span></td>
+            <td>AWS, Azure, GCP Cloud, OCI</td>
             <td class="money">26617</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>A100 40GB PCIe</td>
             <td>A100 PCIe</td>
-            <td class="money default-price">$2.60</td>
-            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20PCIe" data-price-basis="cloud" data-default-price="2.6035" data-decimals="2"></span></td>
-            <td>Azure, CoreWeave, Lambda, Crusoe, Denvr Data, Runpod, Vultr</td>
+            <td class="money default-price">$2.62</td>
+            <td class="money"><span data-effective-price data-price-sku="A100%2040GB%20PCIe" data-price-basis="cloud" data-default-price="2.6192" data-decimals="2"></span></td>
+            <td>Azure</td>
             <td class="money">14803</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>A6000 48GB</td>
-            <td>RTX A6000</td>
-            <td class="money default-price">$0.80</td>
-            <td class="money"><span data-effective-price data-price-sku="A6000%2048GB" data-price-basis="cloud" data-default-price="0.7974" data-decimals="2"></span></td>
-            <td>CoreWeave, Lambda, CirraScale, DataCrunch, Hydrahost, Runpod</td>
-            <td class="money">262</td>
-            <td>2026-05</td>
+            <td></td>
+            <td class="money default-price"></td>
+            <td class="money"><span data-effective-price data-price-sku="A6000%2048GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No Cloud ASP</td>
+            <td class="money"></td>
+            <td></td>
           </tr>
           <tr>
             <td>A40 48GB</td>
-            <td>A40</td>
-            <td class="money default-price">$0.89</td>
-            <td class="money"><span data-effective-price data-price-sku="A40%2048GB" data-price-basis="cloud" data-default-price="0.8851" data-decimals="2"></span></td>
-            <td>CoreWeave, Crusoe, Runpod, Vultr</td>
-            <td class="money">81</td>
-            <td>2026-05</td>
+            <td></td>
+            <td class="money default-price"></td>
+            <td class="money"><span data-effective-price data-price-sku="A40%2048GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No Cloud ASP</td>
+            <td class="money"></td>
+            <td></td>
           </tr>
           <tr>
             <td>A30 24GB</td>
@@ -334,9 +334,9 @@
           <tr>
             <td>A10 24GB</td>
             <td>A10</td>
-            <td class="money default-price">$3.04</td>
-            <td class="money"><span data-effective-price data-price-sku="A10%2024GB" data-price-basis="cloud" data-default-price="3.0415" data-decimals="2"></span></td>
-            <td>Azure, OCI, Lambda</td>
+            <td class="money default-price">$2.52</td>
+            <td class="money"><span data-effective-price data-price-sku="A10%2024GB" data-price-basis="cloud" data-default-price="2.5229" data-decimals="2"></span></td>
+            <td>Azure, OCI</td>
             <td class="money">40465</td>
             <td>2026-06</td>
           </tr>
@@ -352,62 +352,62 @@
           <tr>
             <td>L40S 48GB</td>
             <td>L40S</td>
-            <td class="money default-price">$3.02</td>
-            <td class="money"><span data-effective-price data-price-sku="L40S%2048GB" data-price-basis="cloud" data-default-price="3.0179" data-decimals="2"></span></td>
-            <td>AWS, OCI, CoreWeave, Crusoe, DataCrunch, Hydrahost, Nebius, OVHcloud, Runpod, Scaleway, Vultr</td>
+            <td class="money default-price">$3.27</td>
+            <td class="money"><span data-effective-price data-price-sku="L40S%2048GB" data-price-basis="cloud" data-default-price="3.2665" data-decimals="2"></span></td>
+            <td>AWS, OCI</td>
             <td class="money">32156</td>
             <td>2026-05</td>
           </tr>
           <tr>
             <td>L40 48GB</td>
-            <td>L40</td>
-            <td class="money default-price">$1.23</td>
-            <td class="money"><span data-effective-price data-price-sku="L40%2048GB" data-price-basis="cloud" data-default-price="1.2332" data-decimals="2"></span></td>
-            <td>CoreWeave, Runpod</td>
-            <td class="money">54</td>
-            <td>2026-05</td>
+            <td></td>
+            <td class="money default-price"></td>
+            <td class="money"><span data-effective-price data-price-sku="L40%2048GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No Cloud ASP</td>
+            <td class="money"></td>
+            <td></td>
           </tr>
           <tr>
             <td>L4 24GB</td>
             <td>L4</td>
-            <td class="money default-price">$1.74</td>
-            <td class="money"><span data-effective-price data-price-sku="L4%2024GB" data-price-basis="cloud" data-default-price="1.7392" data-decimals="2"></span></td>
-            <td>AWS, GCP Cloud, OVHcloud, Runpod, Scaleway</td>
+            <td class="money default-price">$1.11</td>
+            <td class="money"><span data-effective-price data-price-sku="L4%2024GB" data-price-basis="cloud" data-default-price="1.1092" data-decimals="2"></span></td>
+            <td>AWS, GCP Cloud</td>
             <td class="money">99959</td>
             <td>2026-05</td>
           </tr>
           <tr>
             <td>RTX PRO 6000 Blackwell Server Edition</td>
             <td>RTX Pro 6000</td>
-            <td class="money default-price">$4.82</td>
-            <td class="money"><span data-effective-price data-price-sku="RTX%20PRO%206000%20Blackwell%20Server%20Edition" data-price-basis="cloud" data-default-price="4.8215" data-decimals="2"></span></td>
-            <td>AWS, Azure, GCP Cloud, OCI, CoreWeave, CirraScale, DataCrunch, Hydrahost, Runpod</td>
+            <td class="money default-price">$4.11</td>
+            <td class="money"><span data-effective-price data-price-sku="RTX%20PRO%206000%20Blackwell%20Server%20Edition" data-price-basis="cloud" data-default-price="4.1101" data-decimals="2"></span></td>
+            <td>AWS, Azure, GCP Cloud, OCI</td>
             <td class="money">3012</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>RTX 6000 Ada 48GB</td>
-            <td>RTX 6000 Ada</td>
-            <td class="money default-price">$0.85</td>
-            <td class="money"><span data-effective-price data-price-sku="RTX%206000%20Ada%2048GB" data-price-basis="cloud" data-default-price="0.8479" data-decimals="2"></span></td>
-            <td>DataCrunch</td>
-            <td class="money">69</td>
-            <td>2026-05</td>
+            <td></td>
+            <td class="money default-price"></td>
+            <td class="money"><span data-effective-price data-price-sku="RTX%206000%20Ada%2048GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No Cloud ASP</td>
+            <td class="money"></td>
+            <td></td>
           </tr>
           <tr>
             <td>Quadro RTX 6000 24GB</td>
-            <td>Quadro RTX 6000</td>
-            <td class="money default-price">$0.69</td>
-            <td class="money"><span data-effective-price data-price-sku="Quadro%20RTX%206000%2024GB" data-price-basis="cloud" data-default-price="0.69" data-decimals="2"></span></td>
-            <td>Lambda</td>
-            <td class="money">1</td>
-            <td>2026-05</td>
+            <td></td>
+            <td class="money default-price"></td>
+            <td class="money"><span data-effective-price data-price-sku="Quadro%20RTX%206000%2024GB" data-price-basis="cloud" data-default-price="" data-decimals="2"></span></td>
+            <td>No Cloud ASP</td>
+            <td class="money"></td>
+            <td></td>
           </tr>
           <tr>
             <td>T4 16GB</td>
             <td>T4</td>
-            <td class="money default-price">$1.40</td>
-            <td class="money"><span data-effective-price data-price-sku="T4%2016GB" data-price-basis="cloud" data-default-price="1.4015" data-decimals="2"></span></td>
+            <td class="money default-price">$0.84</td>
+            <td class="money"><span data-effective-price data-price-sku="T4%2016GB" data-price-basis="cloud" data-default-price="0.8399" data-decimals="2"></span></td>
             <td>AWS, Azure, GCP Cloud</td>
             <td class="money">140721</td>
             <td>2026-06</td>
@@ -416,8 +416,8 @@
             <td>Tesla V100 32GB</td>
             <td>V100</td>
             <td class="money default-price">$2.38</td>
-            <td class="money"><span data-effective-price data-price-sku="Tesla%20V100%2032GB" data-price-basis="cloud" data-default-price="2.3817" data-decimals="2"></span></td>
-            <td>AWS, Azure, GCP Cloud, OCI, CoreWeave, Lambda, DataCrunch, Hydrahost</td>
+            <td class="money"><span data-effective-price data-price-sku="Tesla%20V100%2032GB" data-price-basis="cloud" data-default-price="2.38" data-decimals="2"></span></td>
+            <td>AWS, Azure, GCP Cloud, OCI</td>
             <td class="money">36976</td>
             <td>2026-06</td>
           </tr>
@@ -425,16 +425,16 @@
             <td>Tesla V100 16GB</td>
             <td>V100</td>
             <td class="money default-price">$2.38</td>
-            <td class="money"><span data-effective-price data-price-sku="Tesla%20V100%2016GB" data-price-basis="cloud" data-default-price="2.3817" data-decimals="2"></span></td>
-            <td>AWS, Azure, GCP Cloud, OCI, CoreWeave, Lambda, DataCrunch, Hydrahost</td>
+            <td class="money"><span data-effective-price data-price-sku="Tesla%20V100%2016GB" data-price-basis="cloud" data-default-price="2.38" data-decimals="2"></span></td>
+            <td>AWS, Azure, GCP Cloud, OCI</td>
             <td class="money">36976</td>
             <td>2026-06</td>
           </tr>
           <tr>
             <td>P100 16GB</td>
             <td>P100</td>
-            <td class="money default-price">$1.16</td>
-            <td class="money"><span data-effective-price data-price-sku="P100%2016GB" data-price-basis="cloud" data-default-price="1.1581" data-decimals="2"></span></td>
+            <td class="money default-price">$1.22</td>
+            <td class="money"><span data-effective-price data-price-sku="P100%2016GB" data-price-basis="cloud" data-default-price="1.2154" data-decimals="2"></span></td>
             <td>Azure, GCP Cloud, OCI</td>
             <td class="money">4875</td>
             <td>2026-05</td>
