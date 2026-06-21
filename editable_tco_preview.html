@@ -381,6 +381,9 @@
       padding: 8px;
       border-bottom: 1px solid var(--line);
     }
+    .meta.summary-meta-no-basis {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
     .summary-gpu-row {
       grid-column: 1 / -1;
       display: grid;
@@ -396,6 +399,9 @@
     .basis-metric {
       display: flex;
       align-items: center;
+    }
+    .basis-metric[hidden] {
+      display: none;
     }
     .metric b {
       display: block;
@@ -478,11 +484,13 @@
     @media (max-width: 1060px) {
       .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .meta.summary-meta-no-basis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .summary-gpu-row { grid-column: 1 / -1; }
     }
     @media (max-width: 680px) {
       .fields { grid-template-columns: 1fr; }
       .override-grid { grid-template-columns: 1fr; }
+      .meta.summary-meta-no-basis { grid-template-columns: 1fr; }
       .source-tabs { grid-template-columns: 1fr; }
     }
   </style>
@@ -643,7 +651,7 @@
           </button>
           <div class="section-body" id="summaryTcoBody" hidden>
           <div class="section-note">Annualized view: cloud uses 1 year of GPU-hour usage; on-prem capex is annualized over the on-prem term.</div>
-          <div class="meta">
+          <div class="meta" id="summaryMeta">
             <div class="summary-gpu-row">
               <div class="metric"><b>Current GPU's</b><span id="summaryCurrentGpus"></span></div>
               <div class="metric"><b>GPU Reduction</b><span id="summaryGpuReduction"></span></div>
@@ -709,7 +717,7 @@
       "exemplar", "scaleQty0", "scaleQty1", "scaleQty2"
     ];
     const el = Object.fromEntries([...ids, "annualGpuHours", "gpuQuantity", "pathRows", "currentBasis",
-      "targetBasis", "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "targetGpus", "currentTco", "targetTco",
+      "targetBasis", "summaryMeta", "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "targetGpus", "currentTco", "targetTco",
       "currentCostPerSourceGpu", "targetCostPerSourceGpu", "tcoSavings", "savingsPct", "targetTcoNoExemplar", "exemplarImpact", "gpuReduction",
       "scalePerf0", "scaleExemplar0", "scaleTargetGpus0", "scaleCurrentTco0", "scaleTargetTco0", "scaleSavings0", "scaleSavingsPct0",
       "scalePerf1", "scaleExemplar1", "scaleTargetGpus1", "scaleCurrentTco1", "scaleTargetTco1", "scaleSavings1", "scaleSavingsPct1",
@@ -935,7 +943,8 @@
       return "Hybrid (" + (pathLabels.length ? pathLabels.join("; ") : "Cloud + On-Prem") + ")";
     }
     function summaryBasisDisplay(label) {
-      return String(label || "").startsWith("Hybrid") ? "Hybrid" : label;
+      const value = String(label || "");
+      return value.startsWith("Hybrid") ? "" : value;
     }
     function definitionForBases(currentBasis, targetBasis) {
       return pathDefinitions.find((definition) =>
@@ -1267,10 +1276,15 @@
       el.gpuQuantity.value = fmtNumber(qty);
       el.annualGpuHours.value = fmtNumber(qty * assumedAnnualUtilizationHours);
       const result = calcForQty(qty);
-      el.currentBasis.textContent = summaryBasisDisplay(result.currentBasis);
+      const currentBasisDisplay = summaryBasisDisplay(result.currentBasis);
+      const targetBasisDisplay = summaryBasisDisplay(result.targetBasis);
+      el.currentBasis.textContent = currentBasisDisplay;
       el.currentBasis.title = result.currentBasis;
-      el.targetBasis.textContent = summaryBasisDisplay(result.targetBasis);
+      el.currentBasis.closest(".basis-metric").hidden = !currentBasisDisplay;
+      el.targetBasis.textContent = targetBasisDisplay;
       el.targetBasis.title = result.targetBasis;
+      el.targetBasis.closest(".basis-metric").hidden = !targetBasisDisplay;
+      el.summaryMeta.classList.toggle("summary-meta-no-basis", !currentBasisDisplay && !targetBasisDisplay);
       el.summaryCurrentGpus.textContent = fmtNumber(qty);
       el.summaryGpuReduction.textContent = fmtNumber(result.gpuReduction);
       el.perfFactor.textContent = fmtFactor(result.perfFactor);
