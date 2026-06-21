@@ -36,32 +36,32 @@
     .nav {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 6px;
+      gap: 8px;
       align-items: center;
-      margin-top: 6px;
-      padding: 6px;
+      margin-top: 8px;
+      padding: 9px;
       border: 1px solid var(--line);
       background: #fff;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
     }
     .tab-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
+      gap: 6px;
       color: var(--ink);
     }
     .tab-pill {
       display: inline-flex;
       align-items: center;
-      min-height: 28px;
+      min-height: 34px;
       border: 1px solid var(--line);
       background: var(--soft);
       color: var(--ink);
       cursor: pointer;
       font: inherit;
-      padding: 3px 6px;
+      padding: 5px 9px;
       font-weight: 700;
       text-decoration: none;
     }
@@ -157,6 +157,12 @@
     .on_prem_price_inputs col:nth-child(6) { width: 12%; }
     .on_prem_price_inputs col:nth-child(7) { width: 16%; }
     .on_prem_price_inputs col:nth-child(8) { width: 6%; }
+    .sku_performance_guidelines col:nth-child(1) { width: 74%; }
+    .sku_performance_guidelines col:nth-child(2) { width: 26%; }
+    .sku_performance_guidelines .factor {
+      text-align: right;
+      white-space: nowrap;
+    }
     .price-save-status {
       min-width: 86px;
       color: var(--muted);
@@ -185,7 +191,58 @@
       <span class="price-save-status" id="priceSaveStatus"></span>
     </div>
     <div class="preview">
-      <img class="" src="sku_performance_guidelines.png?v=1781218273484" alt="SKU Performance Guidelines preview" />
+      <div class="source-note">Normalized GPU performance factors used by the Summary. Higher values indicate more performance versus the L40S 48GB 1.00x reference baseline.</div>
+      <table class="source-table sku_performance_guidelines">
+        <colgroup>
+          <col />
+          <col />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Performance Factor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>DGX GB300 NVL72</td><td class="factor">7.20x</td></tr>
+          <tr><td>GB300 NVL72</td><td class="factor">7.20x</td></tr>
+          <tr><td>DGX GB200 NVL72</td><td class="factor">6.00x</td></tr>
+          <tr><td>GB200 NVL72</td><td class="factor">6.00x</td></tr>
+          <tr><td>B300 270GB SXM</td><td class="factor">5.25x</td></tr>
+          <tr><td>DGX B200 180GB SXM</td><td class="factor">4.50x</td></tr>
+          <tr><td>B200 180GB SXM</td><td class="factor">4.50x</td></tr>
+          <tr><td>OEM B200 180GB SXM</td><td class="factor">4.50x</td></tr>
+          <tr><td>GH200 96GB</td><td class="factor">2.00x</td></tr>
+          <tr><td>DGX H200 141GB SXM</td><td class="factor">3.00x</td></tr>
+          <tr><td>H200 141GB SXM</td><td class="factor">3.00x</td></tr>
+          <tr><td>DGX H100 80GB SXM</td><td class="factor">2.10x</td></tr>
+          <tr><td>H100 80GB SXM</td><td class="factor">2.10x</td></tr>
+          <tr><td>DGX H100 NVL 94GB</td><td class="factor">2.30x</td></tr>
+          <tr><td>H100 NVL 94GB</td><td class="factor">2.30x</td></tr>
+          <tr><td>H100 80GB PCIe</td><td class="factor">1.90x</td></tr>
+          <tr><td>DGX A100 80GB SXM</td><td class="factor">1.25x</td></tr>
+          <tr><td>A100 80GB SXM</td><td class="factor">1.25x</td></tr>
+          <tr><td>A100 80GB PCIe</td><td class="factor">1.10x</td></tr>
+          <tr><td>DGX A100 40GB SXM</td><td class="factor">0.95x</td></tr>
+          <tr><td>A100 40GB SXM</td><td class="factor">0.95x</td></tr>
+          <tr><td>A100 40GB PCIe</td><td class="factor">0.85x</td></tr>
+          <tr><td>A6000 48GB</td><td class="factor">0.65x</td></tr>
+          <tr><td>A40 48GB</td><td class="factor">0.60x</td></tr>
+          <tr><td>A30 24GB</td><td class="factor">0.55x</td></tr>
+          <tr><td>A10 24GB</td><td class="factor">0.35x</td></tr>
+          <tr><td>A2 16GB</td><td class="factor">0.10x</td></tr>
+          <tr><td>L40S 48GB</td><td class="factor">1.00x</td></tr>
+          <tr><td>L40 48GB</td><td class="factor">0.80x</td></tr>
+          <tr><td>L4 24GB</td><td class="factor">0.45x</td></tr>
+          <tr><td>RTX PRO 6000 Blackwell Server Edition</td><td class="factor">1.25x</td></tr>
+          <tr><td>RTX 6000 Ada 48GB</td><td class="factor">0.75x</td></tr>
+          <tr><td>Quadro RTX 6000 24GB</td><td class="factor">0.22x</td></tr>
+          <tr><td>T4 16GB</td><td class="factor">0.15x</td></tr>
+          <tr><td>Tesla V100 32GB</td><td class="factor">0.25x</td></tr>
+          <tr><td>Tesla V100 16GB</td><td class="factor">0.20x</td></tr>
+          <tr><td>P100 16GB</td><td class="factor">0.12x</td></tr>
+        </tbody>
+      </table>
     </div>
   </main>
   
