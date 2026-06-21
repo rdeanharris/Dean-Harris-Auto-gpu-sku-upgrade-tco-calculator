@@ -157,6 +157,44 @@
     .on_prem_price_inputs col:nth-child(6) { width: 12%; }
     .on_prem_price_inputs col:nth-child(7) { width: 16%; }
     .on_prem_price_inputs col:nth-child(8) { width: 6%; }
+    .sku-list-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 9px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .sku-list-table {
+      table-layout: fixed;
+      font-size: 13px;
+      line-height: 1.2;
+    }
+    .sku-list-table col.index-col { width: 42px; }
+    .sku-list-table col.sku-col { width: calc((100% - 126px) / 3); }
+    .sku-list-table th {
+      text-align: left;
+    }
+    .sku-list-table th.index,
+    .sku-list-table td.index {
+      text-align: right;
+      color: var(--muted);
+    }
+    .sku-list-table td {
+      background: #fff;
+      font-weight: 600;
+    }
+    .sku-list-table tbody tr:nth-child(even) td {
+      background: #f6f8f2;
+    }
+    .sku-list-table td.empty {
+      background: #fff;
+      border-color: transparent;
+    }
     .price-save-status {
       min-width: 86px;
       color: var(--muted);
@@ -185,7 +223,45 @@
       <span class="price-save-status" id="priceSaveStatus"></span>
     </div>
     <div class="preview">
-      <img class="" src="sku_dropdown_lists.png?v=1781218274272" alt="SKU Dropdown Lists preview" />
+      <div class="sku-list-note">
+        <span>Source list for GPU SKU dropdowns used throughout the calculator.</span>
+        <span>37 SKUs</span>
+      </div>
+      <table class="source-table sku-list-table">
+        <colgroup>
+          <col class="index-col" />
+          <col class="sku-col" />
+          <col class="index-col" />
+          <col class="sku-col" />
+          <col class="index-col" />
+          <col class="sku-col" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="index">#</th>
+            <th>GPU SKU</th>
+            <th class="index">#</th>
+            <th>GPU SKU</th>
+            <th class="index">#</th>
+            <th>GPU SKU</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="index">1</td><td>DGX GB300 NVL72</td><td class="index">14</td><td>DGX H100 NVL 94GB</td><td class="index">27</td><td>A2 16GB</td></tr>
+          <tr><td class="index">2</td><td>GB300 NVL72</td><td class="index">15</td><td>H100 NVL 94GB</td><td class="index">28</td><td>L40S 48GB</td></tr>
+          <tr><td class="index">3</td><td>DGX GB200 NVL72</td><td class="index">16</td><td>H100 80GB PCIe</td><td class="index">29</td><td>L40 48GB</td></tr>
+          <tr><td class="index">4</td><td>GB200 NVL72</td><td class="index">17</td><td>DGX A100 80GB SXM</td><td class="index">30</td><td>L4 24GB</td></tr>
+          <tr><td class="index">5</td><td>B300 270GB SXM</td><td class="index">18</td><td>A100 80GB SXM</td><td class="index">31</td><td>RTX PRO 6000 Blackwell Server Edition</td></tr>
+          <tr><td class="index">6</td><td>DGX B200 180GB SXM</td><td class="index">19</td><td>A100 80GB PCIe</td><td class="index">32</td><td>RTX 6000 Ada 48GB</td></tr>
+          <tr><td class="index">7</td><td>B200 180GB SXM</td><td class="index">20</td><td>DGX A100 40GB SXM</td><td class="index">33</td><td>Quadro RTX 6000 24GB</td></tr>
+          <tr><td class="index">8</td><td>OEM B200 180GB SXM</td><td class="index">21</td><td>A100 40GB SXM</td><td class="index">34</td><td>T4 16GB</td></tr>
+          <tr><td class="index">9</td><td>GH200 96GB</td><td class="index">22</td><td>A100 40GB PCIe</td><td class="index">35</td><td>Tesla V100 32GB</td></tr>
+          <tr><td class="index">10</td><td>DGX H200 141GB SXM</td><td class="index">23</td><td>A6000 48GB</td><td class="index">36</td><td>Tesla V100 16GB</td></tr>
+          <tr><td class="index">11</td><td>H200 141GB SXM</td><td class="index">24</td><td>A40 48GB</td><td class="index">37</td><td>P100 16GB</td></tr>
+          <tr><td class="index">12</td><td>DGX H100 80GB SXM</td><td class="index">25</td><td>A30 24GB</td><td class="empty" colspan="2"></td></tr>
+          <tr><td class="index">13</td><td>H100 80GB SXM</td><td class="index">26</td><td>A10 24GB</td><td class="empty" colspan="2"></td></tr>
+        </tbody>
+      </table>
     </div>
   </main>
   
