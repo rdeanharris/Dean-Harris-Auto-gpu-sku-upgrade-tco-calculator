@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GPU SKU Upgrade TCO Calculator</title>
+  <title>GPU and NVAIE TCO June 22nd</title>
   <style>
     :root {
       --nvidia: #76b900;
@@ -232,51 +232,57 @@
       min-width: 1320px;
     }
     .path-col-deployment {
-      width: 12%;
+      width: 10%;
     }
     .path-col-sku {
-      width: 22%;
+      width: 20%;
     }
     .path-col-pct {
-      width: 6%;
+      width: 5.5%;
     }
     .path-col-qty {
-      width: 7%;
+      width: 6%;
+    }
+    .path-col-workload {
+      width: 10%;
     }
     .path-col-perf {
-      width: 4%;
+      width: 5%;
     }
     .path-col-action {
       width: 2%;
     }
     .path-table th:nth-child(1), .path-table td:nth-child(1) {
-      width: 12%;
+      width: 10%;
     }
     .path-table th:nth-child(2), .path-table td:nth-child(2) {
-      width: 22%;
+      width: 20%;
     }
     .path-table th:nth-child(3), .path-table td:nth-child(3) {
-      width: 6%;
+      width: 5.5%;
     }
     .path-table th:nth-child(4), .path-table td:nth-child(4) {
-      width: 7%;
-    }
-    .path-table th:nth-child(5), .path-table td:nth-child(5) {
-      width: 12%;
-    }
-    .path-table th:nth-child(6), .path-table td:nth-child(6) {
-      width: 22%;
-    }
-    .path-table th:nth-child(7), .path-table td:nth-child(7) {
       width: 6%;
     }
+    .path-table th:nth-child(5), .path-table td:nth-child(5) {
+      width: 10%;
+    }
+    .path-table th:nth-child(6), .path-table td:nth-child(6) {
+      width: 10%;
+    }
+    .path-table th:nth-child(7), .path-table td:nth-child(7) {
+      width: 20%;
+    }
     .path-table th:nth-child(8), .path-table td:nth-child(8) {
-      width: 7%;
+      width: 5.5%;
     }
     .path-table th:nth-child(9), .path-table td:nth-child(9) {
-      width: 4%;
+      width: 6%;
     }
     .path-table th:nth-child(10), .path-table td:nth-child(10) {
+      width: 5%;
+    }
+    .path-table th:nth-child(11), .path-table td:nth-child(11) {
       width: 2%;
     }
     .path-table input {
@@ -345,14 +351,12 @@
       font-weight: 700;
     }
     .headline td {
+      font-size: 15px;
       font-weight: 700;
       background: #fff;
     }
-    .scale-table {
+    .headline, .scale-table {
       min-width: 0;
-    }
-    .headline {
-      min-width: 900px;
     }
     .headline td, .scale-table td {
       white-space: nowrap;
@@ -362,27 +366,132 @@
     .headline th, .scale-table th {
       overflow-wrap: normal;
     }
-    .headline th {
-      line-height: 1.12;
-    }
-    .headline th .headline-line {
-      display: block;
-      white-space: nowrap;
-    }
     .headline .gain, .gain {
       background: var(--nvidia);
       color: #fff;
       font-weight: 700;
     }
+    .nvaie-roi-wrap {
+      display: grid;
+      gap: 18px;
+      padding: 10px;
+      background: #fff;
+    }
+    .nvaie-assumption-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .nvaie-assumption {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      padding: 8px;
+      min-width: 0;
+    }
+    .nvaie-assumption b {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .nvaie-assumption span {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .nvaie-roi-tables {
+      display: grid;
+      gap: 12px;
+    }
+    .nvaie-table {
+      border: 1px solid var(--line);
+      table-layout: fixed;
+      background: #fff;
+    }
+    .nvaie-table th,
+    .nvaie-table td {
+      border-color: var(--line);
+      padding: 7px 7px;
+      font-size: 15px;
+      line-height: 1.2;
+      overflow-wrap: normal;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .nvaie-table th {
+      text-align: center;
+    }
+    .nvaie-table td {
+      text-align: right;
+    }
+    .nvaie-table .scenario-title th {
+      background: var(--black);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .nvaie-table .workload-head th {
+      background: var(--black);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .nvaie-table .row-label {
+      font-weight: 700;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .nvaie-table .row-strong td,
+    .nvaie-table .row-strong .row-label {
+      font-weight: 700;
+    }
+    .nvaie-table-input {
+      width: 86px;
+      max-width: 100%;
+      min-height: 30px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      text-align: right;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 4px 6px;
+    }
+    .nvaie-cluster-input {
+      width: 118px;
+      text-align: center;
+    }
+    .nvaie-table .nvaie-cluster-cell {
+      text-align: center;
+    }
+    .nvaie-table .green-row td,
+    .nvaie-table .green-row .row-label {
+      background: var(--nvidia);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .nvaie-table .pale-row td,
+    .nvaie-table .pale-row .row-label {
+      background: var(--gain);
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .nvaie-footnote {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-top: -10px;
+    }
     .meta {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 7px;
       padding: 8px;
       border-bottom: 1px solid var(--line);
-    }
-    .meta.summary-meta-no-basis {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .summary-gpu-row {
       grid-column: 1 / -1;
@@ -393,27 +502,20 @@
     .metric {
       background: var(--soft);
       border: 1px solid var(--line);
-      padding: 9px;
+      padding: 7px;
       min-width: 0;
-    }
-    .basis-metric {
-      display: flex;
-      align-items: center;
-    }
-    .basis-metric[hidden] {
-      display: none;
     }
     .metric b {
       display: block;
-      font-size: 15px;
+      font-size: 13px;
       color: var(--muted);
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .metric span {
       display: block;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 700;
-      line-height: 1.12;
+      line-height: 1.2;
       overflow-wrap: anywhere;
     }
     .source-tabs {
@@ -432,10 +534,19 @@
       margin-top: 8px;
     }
     .bottom-source-tabs {
-      display: block;
       margin-top: 10px;
+    }
+    .bottom-source-tabs {
+      display: block;
       padding: 0;
       overflow: hidden;
+    }
+    .hidden-workbook-list {
+      padding: 9px;
+      border-top: 1px solid var(--line);
+    }
+    .hidden-workbook-list[hidden] {
+      display: none;
     }
     .tab-list {
       display: flex;
@@ -457,20 +568,13 @@
       text-decoration: none;
     }
     .tab-pill[aria-selected="true"] {
-      border-color: var(--line);
-      background: var(--soft);
-      color: var(--ink);
+      border-color: var(--black);
+      background: var(--black);
+      color: #fff;
     }
     .tab-pill:focus-visible {
       outline: 2px solid var(--nvidia);
       outline-offset: 2px;
-    }
-    .hidden-workbook-list {
-      padding: 9px;
-      border-top: 1px solid var(--line);
-    }
-    .hidden-workbook-list[hidden] {
-      display: none;
     }
     .warning {
       margin: 12px;
@@ -484,20 +588,30 @@
     @media (max-width: 1060px) {
       .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .meta.summary-meta-no-basis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .summary-gpu-row { grid-column: 1 / -1; }
+      .nvaie-assumption-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 680px) {
       .fields { grid-template-columns: 1fr; }
       .override-grid { grid-template-columns: 1fr; }
-      .meta.summary-meta-no-basis { grid-template-columns: 1fr; }
       .source-tabs { grid-template-columns: 1fr; }
+      .nvaie-assumption-grid { grid-template-columns: 1fr; }
+      .nvaie-table th,
+      .nvaie-table td {
+        font-size: 14px;
+        padding: 5px;
+      }
+      .nvaie-table .scenario-title th {
+        font-size: 13px;
+      }
+      .nvaie-table .workload-head th {
+        font-size: 13px;
+      }
     }
   </style>
 </head>
 <body>
   <main class="app">
-    <div class="title">GPU SKU Upgrade TCO Calculator</div>
+    <div class="title">GPU and NVAIE TCO June 22nd</div>
     <div class="source-tabs top-source-tabs">
       <span>Core Source Tabs</span>
       <div class="tab-list" role="tablist" aria-label="Source tabs">
@@ -523,6 +637,7 @@
                   <col class="path-col-sku" />
                   <col class="path-col-pct" />
                   <col class="path-col-qty" />
+                  <col class="path-col-workload" />
                   <col class="path-col-deployment" />
                   <col class="path-col-sku" />
                   <col class="path-col-pct" />
@@ -533,6 +648,7 @@
                 <thead>
                   <tr class="scenario-super">
                     <th colspan="4">Current Deployment Scenario</th>
+                    <th>Workload</th>
                     <th colspan="4">Future Deployment Scenario</th>
                     <th colspan="2"></th>
                   </tr>
@@ -541,6 +657,7 @@
                     <th>GPU Type</th>
                     <th>GPU %</th>
                     <th>GPU Qty</th>
+                    <th>Workload</th>
                     <th>Future Deployment</th>
                     <th>GPU Type</th>
                     <th>GPU %</th>
@@ -646,20 +763,18 @@
         <div class="section">
           <button class="section-toggle" type="button" id="summaryTcoToggle" aria-expanded="false" aria-controls="summaryTcoBody">
             <span class="override-toggle-icon" id="summaryTcoToggleIconStart" aria-hidden="true">+</span>
-            <span class="override-toggle-label">Summary TCO</span>
+            <span class="override-toggle-label">Summary GPU TCO</span>
             <span class="override-toggle-icon" id="summaryTcoToggleIcon" aria-hidden="true">+</span>
           </button>
           <div class="section-body" id="summaryTcoBody" hidden>
           <div class="section-note">Annualized view: cloud uses 1 year of GPU-hour usage; on-prem capex is annualized over the on-prem term.</div>
-          <div class="meta" id="summaryMeta">
+          <div class="meta">
             <div class="summary-gpu-row">
               <div class="metric"><b>Current GPU's</b><span id="summaryCurrentGpus"></span></div>
               <div class="metric"><b>GPU Reduction</b><span id="summaryGpuReduction"></span></div>
               <div class="metric"><b>Future GPU's Required</b><span id="targetGpus"></span></div>
             </div>
-            <div class="metric basis-metric" aria-label="Current Basis"><span id="currentBasis"></span></div>
-            <div class="metric basis-metric" aria-label="Future Basis"><span id="targetBasis"></span></div>
-            <div class="metric"><b>Sum Avg SKU Performance Factor</b><span id="perfFactor"></span></div>
+            <div class="metric"><b>Sum Avg Sku Performance Factor</b><span id="perfFactor"></span></div>
             <div class="metric"><b>Current TCO / Source GPU</b><span id="currentCostPerSourceGpu"></span></div>
             <div class="metric"><b>Future TCO / Source GPU Eq.</b><span id="targetCostPerSourceGpu"></span></div>
           </div>
@@ -667,13 +782,13 @@
           <table class="headline">
             <thead>
               <tr>
-                <th title="Current Annualized TCO ($M)"><span class="headline-line">Current TCO</span><span class="headline-line">($M)</span></th>
-                <th title="Future Annualized TCO w/o Exemplar NVIDIA RA ($M)"><span class="headline-line">Future w/o RA</span><span class="headline-line">($M)</span></th>
-                <th title="Future Annualized GPU TCO ($M)"><span class="headline-line">Future GPU TCO</span><span class="headline-line">($M)</span></th>
-                <th title="Annualized Exemplar NVIDIA RA TCO Savings ($M)"><span class="headline-line">Exemplar RA</span><span class="headline-line">Savings ($M)</span></th>
-                <th title="Annualized TCO Savings ($M)"><span class="headline-line">TCO Savings</span><span class="headline-line">($M)</span></th>
-                <th><span class="headline-line">Savings</span><span class="headline-line">%</span></th>
-                <th><span class="headline-line">GPU</span><span class="headline-line">Reduction</span></th>
+                <th>Current Annualized TCO ($M)</th>
+                <th>Future Annualized TCO w/o Exemplar NVIDIA RA ($M)</th>
+                <th>Future Annualized GPU TCO ($M)</th>
+                <th>Annualized Exemplar NVIDIA RA TCO Savings ($M)</th>
+                <th>Annualized TCO Savings ($M)</th>
+                <th>Savings %</th>
+                <th>GPU Reduction</th>
               </tr>
             </thead>
             <tbody>
@@ -688,6 +803,24 @@
               </tr>
             </tbody>
           </table>
+          </div>
+        </div>
+        <div class="section">
+          <button class="section-toggle" type="button" id="nvaieRoiToggle" aria-expanded="false" aria-controls="nvaieRoiBody">
+            <span class="override-toggle-icon" id="nvaieRoiToggleIconStart" aria-hidden="true">+</span>
+            <span class="override-toggle-label">NVIDIA AI Enterprise TCO ROI Analysis</span>
+            <span class="override-toggle-icon" id="nvaieRoiToggleIcon" aria-hidden="true">+</span>
+          </button>
+          <div class="section-body" id="nvaieRoiBody" hidden>
+            <div class="section-note">NVAIE ROI model based on the provided workload table: 10% data process, 80% training, 10% inference / AV sim; GPU cluster, % cluster, and speedup factors are editable in the tables.</div>
+            <div class="nvaie-roi-wrap">
+              <div class="nvaie-assumption-grid">
+                <div class="nvaie-assumption"><b>NVAIE Price / GPU / Year</b><span id="nvaiePricePerGpu"></span></div>
+                <div class="nvaie-assumption"><b>GPU TCO Pricing</b><span id="nvaieAnnualSpendPerGpu"></span></div>
+              </div>
+              <div class="nvaie-roi-tables" id="nvaieRoiTables"></div>
+              <div class="nvaie-footnote">Annual Spend $M* is calculated from the selected deployment scenarios and GPU pricing in the source tabs, then displayed as whole dollars for auditability.</div>
+            </div>
           </div>
         </div>
       </section>
@@ -709,15 +842,15 @@
     </div>
   </main>
   <script>
-    const data = {"skus":["DGX GB300 NVL72","GB300 NVL72","DGX GB200 NVL72","GB200 NVL72","B300 270GB SXM","DGX B200 180GB SXM","B200 180GB SXM","OEM B200 180GB SXM","GH200 96GB","DGX H200 141GB SXM","H200 141GB SXM","DGX H100 80GB SXM","H100 80GB SXM","DGX H100 NVL 94GB","H100 NVL 94GB","H100 80GB PCIe","DGX A100 80GB SXM","A100 80GB SXM","A100 80GB PCIe","DGX A100 40GB SXM","A100 40GB SXM","A100 40GB PCIe","A6000 48GB","A40 48GB","A30 24GB","A10 24GB","A2 16GB","L40S 48GB","L40 48GB","L4 24GB","RTX PRO 6000 Blackwell Server Edition","RTX 6000 Ada 48GB","Quadro RTX 6000 24GB","T4 16GB","Tesla V100 32GB","Tesla V100 16GB","P100 16GB"],"pathDefinitions":[{"id":"cloudToCloud","label":"Cloud to Cloud","currentBasis":"Cloud","targetBasis":"Cloud"},{"id":"onPremToCloud","label":"On-Prem to Cloud","currentBasis":"On-Prem","targetBasis":"Cloud"},{"id":"cloudToOnPrem","label":"Cloud to On-Prem","currentBasis":"Cloud","targetBasis":"On-Prem"},{"id":"onPremToOnPrem","label":"On-Prem to On-Prem","currentBasis":"On-Prem","targetBasis":"On-Prem"}],"workloadOptions":["Training","Inference","Validation/SIM"],"performance":{"DGX GB300 NVL72":7.2,"GB300 NVL72":7.2,"DGX GB200 NVL72":6,"GB200 NVL72":6,"B300 270GB SXM":5.25,"DGX B200 180GB SXM":4.5,"B200 180GB SXM":4.5,"OEM B200 180GB SXM":4.5,"GH200 96GB":2,"DGX H200 141GB SXM":3,"H200 141GB SXM":3,"DGX H100 80GB SXM":2.1,"H100 80GB SXM":2.1,"DGX H100 NVL 94GB":2.3,"H100 NVL 94GB":2.3,"H100 80GB PCIe":1.9,"DGX A100 80GB SXM":1.25,"A100 80GB SXM":1.25,"A100 80GB PCIe":1.1,"DGX A100 40GB SXM":0.95,"A100 40GB SXM":0.95,"A100 40GB PCIe":0.85,"A6000 48GB":0.65,"A40 48GB":0.6,"A30 24GB":0.55,"A10 24GB":0.35,"A2 16GB":0.1,"L40S 48GB":1,"L40 48GB":0.8,"L4 24GB":0.45,"RTX PRO 6000 Blackwell Server Edition":1.25,"RTX 6000 Ada 48GB":0.75,"Quadro RTX 6000 24GB":0.22,"T4 16GB":0.15,"Tesla V100 32GB":0.25,"Tesla V100 16GB":0.2,"P100 16GB":0.12},"cloudPrices":{"GB300 NVL72":{"sku":"GB300 NVL72","product":"GB300","config":"GB300 provider ASP average","cloudAvgGpuHour":20.781,"dollarsPerGpuHour":20.781,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":332,"cloudProviders":["Azure","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: Azure, OCI.","lastChecked":"2026-05"},"GB200 NVL72":{"sku":"GB200 NVL72","product":"GB200","config":"GB200 provider ASP average","cloudAvgGpuHour":18.1002,"dollarsPerGpuHour":18.1002,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":1560,"cloudProviders":["AWS","Azure","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, Azure, OCI.","lastChecked":"2026-06"},"B300 270GB SXM":{"sku":"B300 270GB SXM","product":"B300","config":"B300 provider ASP average","cloudAvgGpuHour":16.6608,"dollarsPerGpuHour":16.6608,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":108,"cloudProviders":["AWS","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, OCI.","lastChecked":"2026-05"},"B200 180GB SXM":{"sku":"B200 180GB SXM","product":"B200","config":"B200 provider ASP average","cloudAvgGpuHour":11.62,"dollarsPerGpuHour":11.62,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":1453,"cloudProviders":["AWS","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, GCP Cloud, OCI.","lastChecked":"2026-05"},"OEM B200 180GB SXM":{"sku":"OEM B200 180GB SXM","product":"B200","config":"B200 provider ASP average","cloudAvgGpuHour":11.62,"dollarsPerGpuHour":11.62,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":1453,"cloudProviders":["AWS","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, GCP Cloud, OCI.","lastChecked":"2026-05"},"H200 141GB SXM":{"sku":"H200 141GB SXM","product":"H200","config":"H200 provider ASP average","cloudAvgGpuHour":8.7869,"dollarsPerGpuHour":8.7869,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":6469,"cloudProviders":["AWS","Azure","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, Azure, GCP Cloud, OCI.","lastChecked":"2026-06"},"H100 80GB SXM":{"sku":"H100 80GB SXM","product":"H100","config":"H100 provider ASP average","cloudAvgGpuHour":8.1944,"dollarsPerGpuHour":8.1944,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":23477,"cloudProviders":["AWS","Azure","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, Azure, GCP Cloud, OCI.","lastChecked":"2026-06"},"H100 80GB PCIe":{"sku":"H100 80GB PCIe","product":"H100 PCIe","config":"H100 PCIe provider ASP average","cloudAvgGpuHour":6.4917,"dollarsPerGpuHour":6.4917,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":8225,"cloudProviders":["Azure"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: Azure.","lastChecked":"2026-06"},"A100 80GB SXM":{"sku":"A100 80GB SXM","product":"A100","config":"A100 provider ASP average","cloudAvgGpuHour":3.0066,"dollarsPerGpuHour":3.0066,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":26617,"cloudProviders":["AWS","Azure","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, Azure, GCP Cloud, OCI.","lastChecked":"2026-06"},"A100 80GB PCIe":{"sku":"A100 80GB PCIe","product":"A100 PCIe","config":"A100 PCIe provider ASP average","cloudAvgGpuHour":2.6192,"dollarsPerGpuHour":2.6192,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":14803,"cloudProviders":["Azure"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: Azure.","lastChecked":"2026-06"},"A100 40GB SXM":{"sku":"A100 40GB SXM","product":"A100","config":"A100 provider ASP average","cloudAvgGpuHour":3.0066,"dollarsPerGpuHour":3.0066,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":26617,"cloudProviders":["AWS","Azure","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, Azure, GCP Cloud, OCI.","lastChecked":"2026-06"},"A100 40GB PCIe":{"sku":"A100 40GB PCIe","product":"A100 PCIe","config":"A100 PCIe provider ASP average","cloudAvgGpuHour":2.6192,"dollarsPerGpuHour":2.6192,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":14803,"cloudProviders":["Azure"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: Azure.","lastChecked":"2026-06"},"A10 24GB":{"sku":"A10 24GB","product":"A10","config":"A10 provider ASP average","cloudAvgGpuHour":2.5229,"dollarsPerGpuHour":2.5229,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":40465,"cloudProviders":["Azure","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: Azure, OCI.","lastChecked":"2026-06"},"L40S 48GB":{"sku":"L40S 48GB","product":"L40S","config":"L40S provider ASP average","cloudAvgGpuHour":3.2665,"dollarsPerGpuHour":3.2665,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":32156,"cloudProviders":["AWS","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, OCI.","lastChecked":"2026-05"},"L4 24GB":{"sku":"L4 24GB","product":"L4","config":"L4 provider ASP average","cloudAvgGpuHour":1.1092,"dollarsPerGpuHour":1.1092,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":99959,"cloudProviders":["AWS","GCP Cloud"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, GCP Cloud.","lastChecked":"2026-05"},"RTX PRO 6000 Blackwell Server Edition":{"sku":"RTX PRO 6000 Blackwell Server Edition","product":"RTX Pro 6000","config":"RTX Pro 6000 provider ASP average","cloudAvgGpuHour":4.1101,"dollarsPerGpuHour":4.1101,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":3012,"cloudProviders":["AWS","Azure","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, Azure, GCP Cloud, OCI.","lastChecked":"2026-06"},"T4 16GB":{"sku":"T4 16GB","product":"T4","config":"T4 provider ASP average","cloudAvgGpuHour":0.8399,"dollarsPerGpuHour":0.8399,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":140721,"cloudProviders":["AWS","Azure","GCP Cloud"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, Azure, GCP Cloud.","lastChecked":"2026-06"},"Tesla V100 32GB":{"sku":"Tesla V100 32GB","product":"V100","config":"V100 provider ASP average","cloudAvgGpuHour":2.38,"dollarsPerGpuHour":2.38,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":36976,"cloudProviders":["AWS","Azure","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, Azure, GCP Cloud, OCI.","lastChecked":"2026-06"},"Tesla V100 16GB":{"sku":"Tesla V100 16GB","product":"V100","config":"V100 provider ASP average","cloudAvgGpuHour":2.38,"dollarsPerGpuHour":2.38,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":36976,"cloudProviders":["AWS","Azure","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: AWS, Azure, GCP Cloud, OCI.","lastChecked":"2026-06"},"P100 16GB":{"sku":"P100 16GB","product":"P100","config":"P100 provider ASP average","cloudAvgGpuHour":1.2154,"dollarsPerGpuHour":1.2154,"source":"ASP by CSP Product","sourceWorkbook":"Export - Price Scraping - Product ASP by Cloud Provider.xlsx","sourceRows":4875,"cloudProviders":["Azure","GCP Cloud","OCI"],"pricingMethod":"Cloud Avg","notes":"Cloud Avg from CSP provider ASP columns in the provider workbook. Cloud providers: Azure, GCP Cloud, OCI.","lastChecked":"2026-05"}},"onPremPrices":{"DGX GB300 NVL72":{"sku":"DGX GB300 NVL72","capexPerGpu":87500,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX rack pricing divided by 72 GPUs: $6.30M / 72 = $87.5K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"DGX GB200 NVL72":{"sku":"DGX GB200 NVL72","capexPerGpu":43000,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX rack pricing divided by 72 GPUs: $3.096M / 72 = $43.0K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"B300 270GB SXM":{"sku":"B300 270GB SXM","capexPerGpu":50000,"basis":"Quote required","source":"No direct public standalone price found","sourceUrl":"","notes":"No reliable public standalone B300 price found in search; keep editable planning assumption until vendor quote is available.","lastChecked":"2026-06-11"},"DGX B200 180GB SXM":{"sku":"DGX B200 180GB SXM","capexPerGpu":70000,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX B200 system pricing divided by 8 GPUs: $560K / 8 = $70.0K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"OEM B200 180GB SXM":{"sku":"OEM B200 180GB SXM","capexPerGpu":35000,"basis":"OEM public range midpoint","source":"Investors.com / CNBC-reported Blackwell range","sourceUrl":"https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/","notes":"OEM B200 planning default uses the public Blackwell GPU range midpoint of $30K-$40K per GPU. Override with customer OEM quote, actual purchase price, or cloud/OEM assumption.","lastChecked":"2026-06-11"},"GH200 96GB":{"sku":"GH200 96GB","capexPerGpu":50000,"basis":"Quote required","source":"No direct public standalone price found","sourceUrl":"","notes":"No reliable public standalone GH200 price found in search; keep editable planning assumption until vendor quote is available.","lastChecked":"2026-06-11"},"DGX H200 141GB SXM":{"sku":"DGX H200 141GB SXM","capexPerGpu":62500,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX H200 system pricing divided by 8 GPUs: $500K / 8 = $62.5K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"DGX H100 80GB SXM":{"sku":"DGX H100 80GB SXM","capexPerGpu":60250,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX H100 system pricing divided by 8 GPUs: $482K / 8 = $60.25K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"DGX H100 NVL 94GB":{"sku":"DGX H100 NVL 94GB","capexPerGpu":60250,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default aligns high-memory H100 planning to DGX H100 per-GPU pricing: $482K / 8 = $60.25K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"H100 80GB PCIe":{"sku":"H100 80GB PCIe","capexPerGpu":25000,"basis":"Public range midpoint","source":"Investors.com analyst estimate","sourceUrl":"https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/","notes":"Uses public H100 estimate range of $20K-$30K. Replace with quote for PCIe configuration.","lastChecked":"2026-06-11"},"DGX A100 80GB SXM":{"sku":"DGX A100 80GB SXM","capexPerGpu":24875,"basis":"DGX-derived public estimate","source":"NVIDIA DGX A100 launch price","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX A100 system pricing divided by 8 GPUs: $199K / 8 = $24.875K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"A100 80GB PCIe":{"sku":"A100 80GB PCIe","capexPerGpu":13500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"DGX A100 40GB SXM":{"sku":"DGX A100 40GB SXM","capexPerGpu":24875,"basis":"DGX-derived public estimate","source":"NVIDIA DGX A100 launch price","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX A100 system pricing divided by 8 GPUs: $199K / 8 = $24.875K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"A100 40GB PCIe":{"sku":"A100 40GB PCIe","capexPerGpu":6000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A6000 48GB":{"sku":"A6000 48GB","capexPerGpu":4500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A40 48GB":{"sku":"A40 48GB","capexPerGpu":2500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A30 24GB":{"sku":"A30 24GB","capexPerGpu":2250,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A10 24GB":{"sku":"A10 24GB","capexPerGpu":3000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A2 16GB":{"sku":"A2 16GB","capexPerGpu":900,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"L40S 48GB":{"sku":"L40S 48GB","capexPerGpu":9000,"basis":"Internal planning assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"L40 48GB":{"sku":"L40 48GB","capexPerGpu":6959,"basis":"Internal planning assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"L4 24GB":{"sku":"L4 24GB","capexPerGpu":2800,"basis":"Internal planning assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"RTX PRO 6000 Blackwell Server Edition":{"sku":"RTX PRO 6000 Blackwell Server Edition","capexPerGpu":8565,"basis":"Public retailer listing","source":"Tom's Hardware coverage of Connection listing","sourceUrl":"https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada","notes":"Uses published RTX Pro 6000 Blackwell listing price. Server Edition may be sold inside systems; replace with server quote when available.","lastChecked":"2026-06-11"},"RTX 6000 Ada 48GB":{"sku":"RTX 6000 Ada 48GB","capexPerGpu":6800,"basis":"Derived from public listing","source":"Tom's Hardware RTX Pro comparison","sourceUrl":"https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada","notes":"Derived from RTX Pro 6000 Blackwell listed at $8,565 and described as 26% above RTX 6000 Ada; rounded.","lastChecked":"2026-06-11"},"Quadro RTX 6000 24GB":{"sku":"Quadro RTX 6000 24GB","capexPerGpu":1000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"T4 16GB":{"sku":"T4 16GB","capexPerGpu":700,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"Tesla V100 32GB":{"sku":"Tesla V100 32GB","capexPerGpu":700,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"Tesla V100 16GB":{"sku":"Tesla V100 16GB","capexPerGpu":350,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"P100 16GB":{"sku":"P100 16GB","capexPerGpu":177,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"}},"defaults":{"currentCloudMix":75,"currentOnPremMix":25,"targetCloudMix":75,"targetOnPremMix":25,"currentCloudSku":"T4 16GB","currentOnPremSku":"H100 80GB SXM","targetCloudSku":"RTX PRO 6000 Blackwell Server Edition","targetOnPremSku":"B200 180GB SXM","gpuQuantity":20000,"annualUtilizationHours":6000,"cloudTermYears":1,"onPremAmortizationYears":3,"exemplar":15,"manualPerfOverride":null,"currentCloudPriceOverride":null,"currentOnPremPriceOverride":null,"targetCloudPriceOverride":null,"targetOnPremPriceOverride":null,"scaleQuantities":[5000,10000,50000],"skuPriceOverrides":{"T4 16GB":{"cloud":1.5,"onPrem":null},"RTX PRO 6000 Blackwell Server Edition":{"cloud":null,"onPrem":null},"H100 80GB SXM":{"cloud":null,"onPrem":null},"B200 180GB SXM":{"cloud":null,"onPrem":null}},"migrationPaths":[{"id":"cloudToCloud","label":"Cloud to Cloud","currentBasis":"Cloud","targetBasis":"Cloud","gpuQty":5000,"currentSku":"T4 16GB","targetSku":"RTX PRO 6000 Blackwell Server Edition","currentPriceOverride":1.5,"targetPriceOverride":null,"workload":"Training","targetGpuQty":5000},{"id":"onPremToCloud","label":"On-Prem to Cloud","currentBasis":"On-Prem","targetBasis":"Cloud","gpuQty":2500,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":2500},{"id":"onPremToCloud","label":"On-Prem to Cloud","currentBasis":"On-Prem","targetBasis":"Cloud","gpuQty":2500,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":2500},{"id":"cloudToOnPrem","label":"Cloud to On-Prem","currentBasis":"Cloud","targetBasis":"On-Prem","gpuQty":5000,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":5000},{"id":"cloudToCloud","label":"Cloud to Cloud","currentBasis":"Cloud","targetBasis":"Cloud","gpuQty":5000,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":5000}]}};
+    const data = {"skus":["DGX GB300 NVL72","GB300 NVL72","DGX GB200 NVL72","GB200 NVL72","B300 270GB SXM","DGX B200 180GB SXM","B200 180GB SXM","OEM B200 180GB SXM","GH200 96GB","DGX H200 141GB SXM","H200 141GB SXM","DGX H100 80GB SXM","H100 80GB SXM","DGX H100 NVL 94GB","H100 NVL 94GB","H100 80GB PCIe","DGX A100 80GB SXM","A100 80GB SXM","A100 80GB PCIe","DGX A100 40GB SXM","A100 40GB SXM","A100 40GB PCIe","A6000 48GB","A40 48GB","A30 24GB","A10 24GB","A2 16GB","L40S 48GB","L40 48GB","L4 24GB","RTX PRO 6000 Blackwell Server Edition","RTX 6000 Ada 48GB","Quadro RTX 6000 24GB","T4 16GB","Tesla V100 32GB","Tesla V100 16GB","P100 16GB"],"pathDefinitions":[{"id":"cloudToCloud","label":"Cloud to Cloud","currentBasis":"Cloud","targetBasis":"Cloud"},{"id":"onPremToCloud","label":"On-Prem to Cloud","currentBasis":"On-Prem","targetBasis":"Cloud"},{"id":"cloudToOnPrem","label":"Cloud to On-Prem","currentBasis":"Cloud","targetBasis":"On-Prem"},{"id":"onPremToOnPrem","label":"On-Prem to On-Prem","currentBasis":"On-Prem","targetBasis":"On-Prem"}],"workloadOptions":["Data Processing","Training","Inference"],"performance":{"DGX GB300 NVL72":7.2,"GB300 NVL72":7.2,"DGX GB200 NVL72":6,"GB200 NVL72":6,"B300 270GB SXM":5.25,"DGX B200 180GB SXM":4.5,"B200 180GB SXM":4.5,"OEM B200 180GB SXM":4.5,"GH200 96GB":2,"DGX H200 141GB SXM":3,"H200 141GB SXM":3,"DGX H100 80GB SXM":2.1,"H100 80GB SXM":2.1,"DGX H100 NVL 94GB":2.3,"H100 NVL 94GB":2.3,"H100 80GB PCIe":1.9,"DGX A100 80GB SXM":1.25,"A100 80GB SXM":1.25,"A100 80GB PCIe":1.1,"DGX A100 40GB SXM":0.95,"A100 40GB SXM":0.95,"A100 40GB PCIe":0.85,"A6000 48GB":0.65,"A40 48GB":0.6,"A30 24GB":0.55,"A10 24GB":0.35,"A2 16GB":0.1,"L40S 48GB":1,"L40 48GB":0.8,"L4 24GB":0.45,"RTX PRO 6000 Blackwell Server Edition":1.25,"RTX 6000 Ada 48GB":0.75,"Quadro RTX 6000 24GB":0.22,"T4 16GB":0.15,"Tesla V100 32GB":0.25,"Tesla V100 16GB":0.2,"P100 16GB":0.12},"cloudPrices":{"GB300 NVL72":{"sku":"GB300 NVL72","config":"NVIDIA GB300 NVL72","dollarsPerGpuHour":0,"source":"https://www.coreweave.com/pricing","notes":"Listed availability with no public on-demand price; enter a quoted price to use in TCO."},"GB200 NVL72":{"sku":"GB200 NVL72","config":"NVIDIA GB200 NVL72 4-GPU node","dollarsPerGpuHour":10.5,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists GB200 NVL72 at $42.00/hr with 4 GPUs; per-GPU price is calculated."},"B300 270GB SXM":{"sku":"B300 270GB SXM","config":"NVIDIA HGX B300","dollarsPerGpuHour":0,"source":"https://www.coreweave.com/pricing","notes":"Listed availability with no public on-demand price; enter a quoted price to use in TCO."},"B200 180GB SXM":{"sku":"B200 180GB SXM","config":"NVIDIA B200 SXM6 180 GB 8x instance","dollarsPerGpuHour":6.69,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists B200 SXM6 180 GB at $6.69/GPU/hr for 8x instances."},"GH200 96GB":{"sku":"GH200 96GB","config":"NVIDIA GH200 96 GB 1x instance","dollarsPerGpuHour":2.29,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists GH200 96 GB at $2.29/GPU/hr for 1x instances."},"H200 141GB SXM":{"sku":"H200 141GB SXM","config":"NVIDIA HGX H200 8-GPU node","dollarsPerGpuHour":6.305,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists H200 at $50.44/hr with 8 GPUs; per-GPU price is calculated."},"H100 80GB SXM":{"sku":"H100 80GB SXM","config":"NVIDIA H100 SXM 80 GB 8x instance","dollarsPerGpuHour":3.99,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists H100 SXM 80 GB at $3.99/GPU/hr for 8x instances."},"H100 80GB PCIe":{"sku":"H100 80GB PCIe","config":"NVIDIA H100 PCIe 80 GB 1x instance","dollarsPerGpuHour":3.29,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists H100 PCIe 80 GB at $3.29/GPU/hr for 1x instances."},"A100 80GB SXM":{"sku":"A100 80GB SXM","config":"NVIDIA A100 SXM 80 GB 8x instance","dollarsPerGpuHour":2.79,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A100 SXM 80 GB at $2.79/GPU/hr for 8x instances."},"A100 40GB SXM":{"sku":"A100 40GB SXM","config":"NVIDIA A100 SXM 40 GB 8x instance","dollarsPerGpuHour":1.99,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A100 SXM 40 GB at $1.99/GPU/hr for 8x and 1x instances."},"A100 40GB PCIe":{"sku":"A100 40GB PCIe","config":"NVIDIA A100 PCIe 40 GB 4x/2x/1x instance","dollarsPerGpuHour":1.99,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A100 PCIe 40 GB at $1.99/GPU/hr for 4x, 2x, and 1x instances."},"A6000 48GB":{"sku":"A6000 48GB","config":"NVIDIA A6000 48 GB 4x/2x/1x instance","dollarsPerGpuHour":1.09,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A6000 48 GB at $1.09/GPU/hr for 4x, 2x, and 1x instances."},"A10 24GB":{"sku":"A10 24GB","config":"NVIDIA A10 24 GB 1x instance","dollarsPerGpuHour":1.29,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists A10 24 GB at $1.29/GPU/hr for 1x instances."},"L40S 48GB":{"sku":"L40S 48GB","config":"NVIDIA L40S 8-GPU node","dollarsPerGpuHour":2.25,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists L40S at $18.00/hr with 8 GPUs; per-GPU price is calculated."},"L40 48GB":{"sku":"L40 48GB","config":"NVIDIA L40 8-GPU node","dollarsPerGpuHour":1.25,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists L40 at $10.00/hr with 8 GPUs; per-GPU price is calculated."},"RTX PRO 6000 Blackwell Server Edition":{"sku":"RTX PRO 6000 Blackwell Server Edition","config":"NVIDIA RTX PRO 6000 Blackwell Server Edition 8-GPU node","dollarsPerGpuHour":2.5,"source":"https://www.coreweave.com/pricing","notes":"Public on-demand example lists RTX PRO 6000 Blackwell Server Edition at $20.00/hr with 8 GPUs; per-GPU price is calculated."},"Quadro RTX 6000 24GB":{"sku":"Quadro RTX 6000 24GB","config":"NVIDIA Quadro RTX 6000 24 GB 1x instance","dollarsPerGpuHour":0.69,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists Quadro RTX 6000 24 GB at $0.69/GPU/hr for 1x instances."},"Tesla V100 16GB":{"sku":"Tesla V100 16GB","config":"NVIDIA Tesla V100 16 GB 8x instance","dollarsPerGpuHour":0.79,"source":"https://lambda.ai/pricing","notes":"Public on-demand example lists Tesla V100 16 GB at $0.79/GPU/hr for 8x instances."}},"onPremPrices":{"DGX GB300 NVL72":{"sku":"DGX GB300 NVL72","capexPerGpu":87500,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX rack pricing divided by 72 GPUs: $6.30M / 72 = $87.5K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"DGX GB200 NVL72":{"sku":"DGX GB200 NVL72","capexPerGpu":43000,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX rack pricing divided by 72 GPUs: $3.096M / 72 = $43.0K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"B300 270GB SXM":{"sku":"B300 270GB SXM","capexPerGpu":50000,"basis":"Quote required","source":"No direct public standalone price found","sourceUrl":"","notes":"No reliable public standalone B300 price found in search; keep editable planning assumption until vendor quote is available.","lastChecked":"2026-06-11"},"DGX B200 180GB SXM":{"sku":"DGX B200 180GB SXM","capexPerGpu":70000,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX B200 system pricing divided by 8 GPUs: $560K / 8 = $70.0K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"OEM B200 180GB SXM":{"sku":"OEM B200 180GB SXM","capexPerGpu":35000,"basis":"OEM public range midpoint","source":"Investors.com / CNBC-reported Blackwell range","sourceUrl":"https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/","notes":"OEM B200 planning default uses the public Blackwell GPU range midpoint of $30K-$40K per GPU. Override with customer OEM quote, actual purchase price, or cloud/OEM assumption.","lastChecked":"2026-06-11"},"GH200 96GB":{"sku":"GH200 96GB","capexPerGpu":50000,"basis":"Quote required","source":"No direct public standalone price found","sourceUrl":"","notes":"No reliable public standalone GH200 price found in search; keep editable planning assumption until vendor quote is available.","lastChecked":"2026-06-11"},"DGX H200 141GB SXM":{"sku":"DGX H200 141GB SXM","capexPerGpu":62500,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX H200 system pricing divided by 8 GPUs: $500K / 8 = $62.5K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"DGX H100 80GB SXM":{"sku":"DGX H100 80GB SXM","capexPerGpu":60250,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX H100 system pricing divided by 8 GPUs: $482K / 8 = $60.25K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"DGX H100 NVL 94GB":{"sku":"DGX H100 NVL 94GB","capexPerGpu":60250,"basis":"DGX-derived public estimate","source":"NVIDIA EAIF Business Value Calculator","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default aligns high-memory H100 planning to DGX H100 per-GPU pricing: $482K / 8 = $60.25K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"H100 80GB PCIe":{"sku":"H100 80GB PCIe","capexPerGpu":25000,"basis":"Public range midpoint","source":"Investors.com analyst estimate","sourceUrl":"https://www.investors.com/news/technology/nvidia-stock-nvda-blackwell-gpu-pricing-amd-ai/","notes":"Uses public H100 estimate range of $20K-$30K. Replace with quote for PCIe configuration.","lastChecked":"2026-06-11"},"DGX A100 80GB SXM":{"sku":"DGX A100 80GB SXM","capexPerGpu":24875,"basis":"DGX-derived public estimate","source":"NVIDIA DGX A100 launch price","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX A100 system pricing divided by 8 GPUs: $199K / 8 = $24.875K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"A100 80GB PCIe":{"sku":"A100 80GB PCIe","capexPerGpu":13500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"DGX A100 40GB SXM":{"sku":"DGX A100 40GB SXM","capexPerGpu":24875,"basis":"DGX-derived public estimate","source":"NVIDIA DGX A100 launch price","sourceUrl":"https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/","notes":"Leading default uses NVIDIA DGX A100 system pricing divided by 8 GPUs: $199K / 8 = $24.875K per GPU. Override with customer OEM quote when available.","lastChecked":"2026-06-11"},"A100 40GB PCIe":{"sku":"A100 40GB PCIe","capexPerGpu":6000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A6000 48GB":{"sku":"A6000 48GB","capexPerGpu":4500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A40 48GB":{"sku":"A40 48GB","capexPerGpu":2500,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A30 24GB":{"sku":"A30 24GB","capexPerGpu":2250,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A10 24GB":{"sku":"A10 24GB","capexPerGpu":3000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"A2 16GB":{"sku":"A2 16GB","capexPerGpu":900,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"L40S 48GB":{"sku":"L40S 48GB","capexPerGpu":9000,"basis":"Internal planning assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"L40 48GB":{"sku":"L40 48GB","capexPerGpu":6959,"basis":"Internal planning assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"L4 24GB":{"sku":"L4 24GB","capexPerGpu":2800,"basis":"Internal planning assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"RTX PRO 6000 Blackwell Server Edition":{"sku":"RTX PRO 6000 Blackwell Server Edition","capexPerGpu":8565,"basis":"Public retailer listing","source":"Tom's Hardware coverage of Connection listing","sourceUrl":"https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada","notes":"Uses published RTX Pro 6000 Blackwell listing price. Server Edition may be sold inside systems; replace with server quote when available.","lastChecked":"2026-06-11"},"RTX 6000 Ada 48GB":{"sku":"RTX 6000 Ada 48GB","capexPerGpu":6800,"basis":"Derived from public listing","source":"Tom's Hardware RTX Pro comparison","sourceUrl":"https://www.tomshardware.com/pc-components/gpus/nvidia-rtx-pro-6000-blackwell-gpu-is-listed-for-usd8-565-at-us-retailer-26-percent-more-expensive-than-the-last-gen-rtx-6000-ada","notes":"Derived from RTX Pro 6000 Blackwell listed at $8,565 and described as 26% above RTX 6000 Ada; rounded.","lastChecked":"2026-06-11"},"Quadro RTX 6000 24GB":{"sku":"Quadro RTX 6000 24GB","capexPerGpu":1000,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"T4 16GB":{"sku":"T4 16GB","capexPerGpu":700,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"Tesla V100 32GB":{"sku":"Tesla V100 32GB","capexPerGpu":700,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"Tesla V100 16GB":{"sku":"Tesla V100 16GB","capexPerGpu":350,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"},"P100 16GB":{"sku":"P100 16GB","capexPerGpu":177,"basis":"Used-market/internal assumption","source":"No current public source configured","sourceUrl":"","notes":"Existing workbook planning value; replace with reseller listing, vendor quote, or actual purchase price.","lastChecked":"2026-06-11"}},"nvaieRoi":{"pricePerGpuYear":4500,"workloads":[{"id":"dataProcess","label":"Data Process","mix":0.1,"speedup":2},{"id":"training","label":"Training","mix":0.8,"speedup":2},{"id":"inferenceAvSim","label":"Inference / AV Sim","mix":0.1,"speedup":1.5}],"scenarios":[{"id":"lower","label":"Lower Scale GPU Cluster","gpuCluster":1000},{"id":"higher","label":"Larger Scale GPU Cluster","gpuCluster":2000}]},"defaults":{"currentCloudMix":75,"currentOnPremMix":25,"targetCloudMix":75,"targetOnPremMix":25,"currentCloudSku":"T4 16GB","currentOnPremSku":"H100 80GB SXM","targetCloudSku":"RTX PRO 6000 Blackwell Server Edition","targetOnPremSku":"B200 180GB SXM","gpuQuantity":20000,"annualUtilizationHours":6000,"cloudTermYears":1,"onPremAmortizationYears":3,"exemplar":15,"manualPerfOverride":null,"currentCloudPriceOverride":null,"currentOnPremPriceOverride":null,"targetCloudPriceOverride":null,"targetOnPremPriceOverride":null,"scaleQuantities":[5000,10000,50000],"skuPriceOverrides":{"T4 16GB":{"cloud":1.5,"onPrem":null},"RTX PRO 6000 Blackwell Server Edition":{"cloud":null,"onPrem":null},"H100 80GB SXM":{"cloud":null,"onPrem":null},"B200 180GB SXM":{"cloud":null,"onPrem":null}},"migrationPaths":[{"id":"cloudToCloud","label":"Cloud to Cloud","currentBasis":"Cloud","targetBasis":"Cloud","gpuQty":5000,"currentSku":"T4 16GB","targetSku":"RTX PRO 6000 Blackwell Server Edition","currentPriceOverride":1.5,"targetPriceOverride":null,"workload":"Training","targetGpuQty":5000},{"id":"onPremToCloud","label":"On-Prem to Cloud","currentBasis":"On-Prem","targetBasis":"Cloud","gpuQty":2500,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":2500},{"id":"onPremToCloud","label":"On-Prem to Cloud","currentBasis":"On-Prem","targetBasis":"Cloud","gpuQty":2500,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":2500},{"id":"cloudToOnPrem","label":"Cloud to On-Prem","currentBasis":"Cloud","targetBasis":"On-Prem","gpuQty":5000,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":5000},{"id":"cloudToCloud","label":"Cloud to Cloud","currentBasis":"Cloud","targetBasis":"Cloud","gpuQty":5000,"currentSku":"H100 80GB SXM","targetSku":"B200 180GB SXM","currentPriceOverride":null,"targetPriceOverride":null,"workload":"Training","targetGpuQty":5000}]}};
     const pathDefinitions = data.pathDefinitions;
     const maxMigrationRows = 12;
     const assumedAnnualUtilizationHours = Number(data.defaults.annualUtilizationHours) || 6000;
     const ids = [
       "exemplar", "scaleQty0", "scaleQty1", "scaleQty2"
     ];
-    const el = Object.fromEntries([...ids, "annualGpuHours", "gpuQuantity", "pathRows", "currentBasis",
-      "targetBasis", "summaryMeta", "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "targetGpus", "currentTco", "targetTco",
+    const el = Object.fromEntries([...ids, "annualGpuHours", "gpuQuantity", "pathRows",
+      "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "targetGpus", "currentTco", "targetTco",
       "currentCostPerSourceGpu", "targetCostPerSourceGpu", "tcoSavings", "savingsPct", "targetTcoNoExemplar", "exemplarImpact", "gpuReduction",
       "scalePerf0", "scaleExemplar0", "scaleTargetGpus0", "scaleCurrentTco0", "scaleTargetTco0", "scaleSavings0", "scaleSavingsPct0",
       "scalePerf1", "scaleExemplar1", "scaleTargetGpus1", "scaleCurrentTco1", "scaleTargetTco1", "scaleSavings1", "scaleSavingsPct1",
@@ -725,6 +858,8 @@
       "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", "selectedDeploymentBody",
       "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", "scaleDeploymentBody",
       "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", "summaryTcoBody",
+      "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", "nvaieRoiBody",
+      "nvaiePricePerGpu", "nvaieAnnualSpendPerGpu", "nvaieRoiTables",
       "skuOverridePanel", "skuOverrideToggle", "skuOverrideToggleIconStart", "skuOverrideToggleIcon", "skuOverrideTable",
       "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
       "skuOverrideRows", "warning", "saveStatus"].map((id) => [id, document.getElementById(id)]));
@@ -738,6 +873,10 @@
     const selectedDeploymentExpandedStorageKey = "gpuTcoSelectedDeploymentExpanded";
     const scaleDeploymentExpandedStorageKey = "gpuTcoScaleDeploymentExpanded";
     const summaryTcoExpandedStorageKey = "gpuTcoSummaryTcoExpanded";
+    const nvaieRoiExpandedStorageKey = "gpuTcoNvaieRoiExpanded";
+    const nvaieScenarioClusterStorageKey = "gpuTcoNvaieScenarioClusters";
+    const nvaieMixStorageKey = "gpuTcoNvaieMixes10_80_10";
+    const nvaieSpeedupStorageKey = "gpuTcoNvaieSpeedups";
     const noneSkuOptionValue = "__NONE__";
     let activeScaleSourceTab = scaleSourceTabs[0];
 
@@ -760,6 +899,14 @@
         return window.localStorage.getItem(storageKey) === "true";
       } catch (error) {
         return false;
+      }
+    }
+    function storedExpandedDefault(storageKey, defaultValue) {
+      try {
+        const value = window.localStorage.getItem(storageKey);
+        return value === null ? defaultValue : value === "true";
+      } catch (error) {
+        return defaultValue;
       }
     }
     function setExpandableSection(bodyId, toggleId, startIconId, endIconId, storageKey, expanded, persist = false) {
@@ -790,6 +937,106 @@
       } catch (error) {
         return false;
       }
+    }
+    function defaultNvaieScenarioClusters() {
+      return Object.fromEntries((data.nvaieRoi.scenarios || []).map((scenario) => [
+        scenario.id,
+        normalizeGpuQty(scenario.gpuCluster),
+      ]));
+    }
+    function storedNvaieScenarioClusters() {
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem(nvaieScenarioClusterStorageKey) || "{}");
+        const defaults = defaultNvaieScenarioClusters();
+        return Object.fromEntries(Object.entries(defaults).map(([id, fallback]) => [
+          id,
+          normalizeGpuQty(parsed[id]) || fallback,
+        ]));
+      } catch (error) {
+        return defaultNvaieScenarioClusters();
+      }
+    }
+    function storeNvaieScenarioClusters(nextValues = {}) {
+      const current = storedNvaieScenarioClusters();
+      const defaults = defaultNvaieScenarioClusters();
+      const payload = Object.fromEntries(Object.entries(defaults).map(([id, fallback]) => [
+        id,
+        normalizeGpuQty(nextValues[id] ?? current[id]) || fallback,
+      ]));
+      try {
+        window.localStorage.setItem(nvaieScenarioClusterStorageKey, JSON.stringify(payload));
+      } catch (error) {}
+    }
+    function tableDefaultNvaieMixes() {
+      return Object.fromEntries((data.nvaieRoi.workloads || []).map((workload) => [
+        workload.id,
+        normalizeMix(workload.mix),
+      ]));
+    }
+    function workloadToNvaieBucket(workload) {
+      const normalized = String(workload || "").toLowerCase();
+      if (normalized.includes("training")) return "training";
+      if (normalized.includes("inference") || normalized.includes("sim") || normalized.includes("validation")) return "inferenceAvSim";
+      if (normalized.includes("data")) return "dataProcess";
+      return "";
+    }
+    function defaultNvaieMixes() {
+      return tableDefaultNvaieMixes();
+    }
+    function storedNvaieMixes() {
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem(nvaieMixStorageKey) || "{}");
+        const defaults = defaultNvaieMixes();
+        return Object.fromEntries(Object.entries(defaults).map(([id, fallback]) => {
+          const value = parsed[id];
+          return [id, value === "" || value === null || value === undefined ? fallback : normalizeMix(value)];
+        }));
+      } catch (error) {
+        return defaultNvaieMixes();
+      }
+    }
+    function storeNvaieMixes(nextValues = {}) {
+      const current = storedNvaieMixes();
+      const payload = Object.fromEntries((data.nvaieRoi.workloads || []).map((workload) => [
+        workload.id,
+        normalizeMix(nextValues[workload.id] ?? current[workload.id] ?? workload.mix),
+      ]));
+      try {
+        window.localStorage.setItem(nvaieMixStorageKey, JSON.stringify(payload));
+      } catch (error) {}
+    }
+    function normalizeNvaieSpeedup(value) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) return 0;
+      return Math.max(1, parsed);
+    }
+    function defaultNvaieSpeedups() {
+      return Object.fromEntries((data.nvaieRoi.workloads || []).map((workload) => [
+        workload.id,
+        normalizeNvaieSpeedup(workload.speedup),
+      ]));
+    }
+    function storedNvaieSpeedups() {
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem(nvaieSpeedupStorageKey) || "{}");
+        const defaults = defaultNvaieSpeedups();
+        return Object.fromEntries(Object.entries(defaults).map(([id, fallback]) => [
+          id,
+          normalizeNvaieSpeedup(parsed[id]) || fallback,
+        ]));
+      } catch (error) {
+        return defaultNvaieSpeedups();
+      }
+    }
+    function storeNvaieSpeedups(nextValues = {}) {
+      const current = storedNvaieSpeedups();
+      const payload = Object.fromEntries((data.nvaieRoi.workloads || []).map((workload) => [
+        workload.id,
+        normalizeNvaieSpeedup(nextValues[workload.id] ?? current[workload.id]) || normalizeNvaieSpeedup(workload.speedup),
+      ]));
+      try {
+        window.localStorage.setItem(nvaieSpeedupStorageKey, JSON.stringify(payload));
+      } catch (error) {}
     }
     function setHiddenWorkbooksExpanded(expanded, persist = false) {
       el.hiddenWorkbookTabs.hidden = !expanded;
@@ -837,6 +1084,16 @@
       const rounded = Math.round(value);
       const formatted = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.abs(rounded));
       return (rounded < 0 ? "-$" : "$") + formatted;
+    }
+    function fmtCurrencyOneDecimal(value) {
+      if (!Number.isFinite(value)) return "";
+      const abs = Math.abs(value);
+      const hasDecimal = Math.abs(abs - Math.round(abs)) > 0.001;
+      const formatted = new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: hasDecimal ? 1 : 0,
+        maximumFractionDigits: hasDecimal ? 1 : 0,
+      }).format(abs);
+      return (value < 0 ? "-$" : "$") + formatted;
     }
     function fmtNumber(value) {
       if (!Number.isFinite(value)) return "";
@@ -942,10 +1199,6 @@
       const pathLabels = activeDeploymentPathLabels(paths);
       return "Hybrid (" + (pathLabels.length ? pathLabels.join("; ") : "Cloud + On-Prem") + ")";
     }
-    function summaryBasisDisplay(label) {
-      const value = String(label || "");
-      return value.startsWith("Hybrid") ? "" : value;
-    }
     function definitionForBases(currentBasis, targetBasis) {
       return pathDefinitions.find((definition) =>
         definition.currentBasis === currentBasis && definition.targetBasis === targetBasis
@@ -967,11 +1220,21 @@
     function normalizePriceOverride(value) {
       if (value === "" || value === null || value === undefined) return null;
       const parsed = Number(value);
-      return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+      return Number.isFinite(parsed) && parsed >= 0 ? Math.round((parsed + Number.EPSILON) * 100) / 100 : null;
+    }
+    function priceOverrideInputValue(value) {
+      const normalized = normalizePriceOverride(value);
+      if (normalized === null) return "";
+      return String(normalized);
     }
     function normalizeWorkload(value) {
       const text = String(value || "").trim();
-      return data.workloadOptions.includes(text) ? text : data.workloadOptions[0];
+      if (data.workloadOptions.includes(text)) return text;
+      const normalized = text.toLowerCase();
+      if (normalized.includes("data")) return "Data Processing";
+      if (normalized.includes("inference") || normalized.includes("sim") || normalized.includes("validation")) return "Inference";
+      if (normalized.includes("training")) return "Training";
+      return "Training";
     }
     function escapeHtml(value) {
       return String(value ?? "")
@@ -1252,6 +1515,99 @@
         targetBasis: scenarioBasisLabel(targetCloudMix, targetOnPremMix, paths),
       };
     }
+    function nvaieScenarioModel(scenario) {
+      const cluster = normalizeGpuQty(scenario.gpuCluster);
+      const tco = calcForQty(cluster);
+      const annualSpend = tco.currentTco;
+      const workloads = nvaieWorkloadsFromInputs().map((workload) => {
+        const mix = normalizeMix(workload.mix);
+        const speedup = Number(workload.speedup) || 1;
+        const spend = annualSpend * mix;
+        const savings = speedup > 0 ? spend * (1 - (1 / speedup)) : 0;
+        return {
+          ...workload,
+          mix,
+          speedup,
+          gpus: Math.round(cluster * mix),
+          spend,
+          savings,
+        };
+      });
+      const totalSavings = workloads.reduce((sum, workload) => sum + workload.savings, 0);
+      const nvaieCost = cluster * (Number(data.nvaieRoi.pricePerGpuYear) || 0);
+      const netReturn = totalSavings - nvaieCost;
+      return {
+        ...scenario,
+        cluster,
+        annualSpend,
+        workloads,
+        totalSavings,
+        nvaieCost,
+        netReturn,
+        roi: nvaieCost > 0 ? netReturn / nvaieCost : 0,
+      };
+    }
+    function nvaieScenariosFromInputs() {
+      const clusters = storedNvaieScenarioClusters();
+      return (data.nvaieRoi.scenarios || []).map((scenario) => {
+        return {
+          ...scenario,
+          gpuCluster: clusters[scenario.id] || normalizeGpuQty(scenario.gpuCluster),
+        };
+      });
+    }
+    function nvaieWorkloadsFromInputs() {
+      const mixes = storedNvaieMixes();
+      const speedups = storedNvaieSpeedups();
+      return (data.nvaieRoi.workloads || []).map((workload) => {
+        return {
+          ...workload,
+          mix: mixes[workload.id] ?? normalizeMix(workload.mix),
+          speedup: speedups[workload.id] || normalizeNvaieSpeedup(workload.speedup),
+        };
+      });
+    }
+    function renderNvaieRoiTables() {
+      const scenarios = nvaieScenariosFromInputs();
+      const lower = scenarios.find((scenario) => scenario.id === "lower") || scenarios[0];
+      const higher = scenarios.find((scenario) => scenario.id === "higher") || scenarios[1] || scenarios[0];
+      el.nvaiePricePerGpu.textContent = fmtCurrency(Number(data.nvaieRoi.pricePerGpuYear) || 0);
+      el.nvaieAnnualSpendPerGpu.textContent = "Source tabs + selected scenarios";
+      el.nvaieRoiTables.innerHTML = scenarios.map((scenario) => {
+        const model = nvaieScenarioModel(scenario);
+        const workloadHeader = model.workloads.map((workload) => "<th>" + escapeHtml(workload.label) + "</th>").join("");
+        const mixCells = model.workloads.map((workload) =>
+          "<td><input class=\"nvaie-table-input\" type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" value=\"" + pctInput(workload.mix) + "\" data-nvaie-mix=\"" + escapeHtml(workload.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " " + workload.label + " % Cluster") + "\" /></td>"
+        ).join("");
+        const gpuCells = model.workloads.map((workload) => "<td>" + fmtNumber(workload.gpus) + "</td>").join("");
+        const spendCells = model.workloads.map((workload) => "<td>" + fmtCurrencyOneDecimal(workload.spend) + "</td>").join("");
+        const speedupCells = model.workloads.map((workload) =>
+          "<td><input class=\"nvaie-table-input\" type=\"number\" min=\"1\" step=\"0.1\" value=\"" + String(workload.speedup) + "\" data-nvaie-speedup=\"" + escapeHtml(workload.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " " + workload.label + " NVAIE Speed Up Factor") + "\" /></td>"
+        ).join("");
+        const savingsCells = model.workloads.map((workload) => "<td>" + fmtCurrency(workload.savings) + "</td>").join("");
+        return (
+          "<table class=\"nvaie-table\">" +
+          "<thead>" +
+          "<tr class=\"scenario-title\"><th colspan=\"4\">" + escapeHtml(model.label) + "</th></tr>" +
+          "<tr class=\"workload-head\"><th>Workload</th>" + workloadHeader + "</tr>" +
+          "</thead>" +
+          "<tbody>" +
+          "<tr class=\"row-strong\"><td class=\"row-label\">GPU Cluster</td><td class=\"nvaie-cluster-cell\" colspan=\"3\"><input class=\"nvaie-table-input nvaie-cluster-input\" type=\"number\" min=\"1\" step=\"1\" value=\"" + model.cluster + "\" data-nvaie-cluster=\"" + escapeHtml(model.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " GPU Cluster") + "\" /></td></tr>" +
+          "<tr><td class=\"row-label\">% Cluster</td>" + mixCells + "</tr>" +
+          "<tr><td class=\"row-label\"># GPUs</td>" + gpuCells + "</tr>" +
+          "<tr><td class=\"row-label\">Annual Spend $M*</td><td colspan=\"3\">" + fmtCurrency(model.annualSpend) + "</td></tr>" +
+          "<tr><td class=\"row-label\">Spend by Workload</td>" + spendCells + "</tr>" +
+          "<tr class=\"row-strong\"><td class=\"row-label\">NVAIE Speed Up Factor</td>" + speedupCells + "</tr>" +
+          "<tr class=\"row-strong\"><td class=\"row-label\">TCO Savings</td>" + savingsCells + "</tr>" +
+          "<tr class=\"row-strong\"><td class=\"row-label\">Total TCO</td><td colspan=\"3\">" + fmtCurrency(model.totalSavings) + "</td></tr>" +
+          "<tr class=\"green-row\"><td class=\"row-label\">NVAIE $M / Year</td><td colspan=\"3\">" + fmtCurrency(model.nvaieCost) + "</td></tr>" +
+          "<tr class=\"pale-row\"><td class=\"row-label\">Return</td><td colspan=\"3\">" + fmtCurrencyOneDecimal(model.netReturn) + "</td></tr>" +
+          "<tr class=\"pale-row\"><td class=\"row-label\">ROI</td><td colspan=\"3\">" + fmtPct(model.roi) + "</td></tr>" +
+          "</tbody>" +
+          "</table>"
+        );
+      }).join("");
+    }
     function skuDisplayName(sku, basis = "") {
       const value = String(sku || "");
       const key = canonicalSku(value);
@@ -1276,15 +1632,6 @@
       el.gpuQuantity.value = fmtNumber(qty);
       el.annualGpuHours.value = fmtNumber(qty * assumedAnnualUtilizationHours);
       const result = calcForQty(qty);
-      const currentBasisDisplay = summaryBasisDisplay(result.currentBasis);
-      const targetBasisDisplay = summaryBasisDisplay(result.targetBasis);
-      el.currentBasis.textContent = currentBasisDisplay;
-      el.currentBasis.title = result.currentBasis;
-      el.currentBasis.closest(".basis-metric").hidden = !currentBasisDisplay;
-      el.targetBasis.textContent = targetBasisDisplay;
-      el.targetBasis.title = result.targetBasis;
-      el.targetBasis.closest(".basis-metric").hidden = !targetBasisDisplay;
-      el.summaryMeta.classList.toggle("summary-meta-no-basis", !currentBasisDisplay && !targetBasisDisplay);
       el.summaryCurrentGpus.textContent = fmtNumber(qty);
       el.summaryGpuReduction.textContent = fmtNumber(result.gpuReduction);
       el.perfFactor.textContent = fmtFactor(result.perfFactor);
@@ -1316,6 +1663,7 @@
         el["scaleSavings" + i].textContent = fmtMoney(row.savings);
         el["scaleSavingsPct" + i].textContent = fmtPct(row.savingsPct);
       }
+      renderNvaieRoiTables();
     }
     function fillSelect(select, value, basis = "") {
       const selectedValue = skuForBasis(value, basis);
@@ -1391,9 +1739,9 @@
         return "<tr>" +
           "<td>" + escapeHtml(skuDisplayName(sku, data.onPremPrices[sku] ? "On-Prem" : "")) + "</td>" +
           "<td class=\"default-price\">" + escapeHtml(defaultPriceLabel(sku, "Cloud")) + "</td>" +
-          "<td><input type=\"number\" min=\"0\" step=\"0.01\" data-sku=\"" + encodedSku + "\" data-sku-override=\"cloud\" placeholder=\"" + pricePlaceholder(sku, "Cloud") + "\" value=\"" + (entry.cloud ?? "") + "\" /></td>" +
+          "<td><input type=\"number\" min=\"0\" step=\"0.01\" data-sku=\"" + encodedSku + "\" data-sku-override=\"cloud\" placeholder=\"" + pricePlaceholder(sku, "Cloud") + "\" value=\"" + priceOverrideInputValue(entry.cloud) + "\" /></td>" +
           "<td class=\"default-price\">" + escapeHtml(defaultPriceLabel(sku, "On-Prem")) + "</td>" +
-          "<td><input type=\"number\" min=\"0\" step=\"1\" data-sku=\"" + encodedSku + "\" data-sku-override=\"onPrem\" placeholder=\"" + pricePlaceholder(sku, "On-Prem") + "\" value=\"" + (entry.onPrem ?? "") + "\" /></td>" +
+          "<td><input type=\"number\" min=\"0\" step=\"0.01\" data-sku=\"" + encodedSku + "\" data-sku-override=\"onPrem\" placeholder=\"" + pricePlaceholder(sku, "On-Prem") + "\" value=\"" + priceOverrideInputValue(entry.onPrem) + "\" /></td>" +
           "</tr>";
       }).join("");
     }
@@ -1435,6 +1783,7 @@
           "<td><select data-path-index=\"" + index + "\" data-path-field=\"currentSku\">" + skuOptions(row.currentSku, definition.currentBasis) + "</select></td>" +
           "<td><input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" data-path-index=\"" + index + "\" data-path-field=\"currentPct\" value=\"" + pctOf(row.gpuQty, currentTotal) + "\" /></td>" +
           "<td><input type=\"number\" min=\"0\" step=\"1\" data-path-index=\"" + index + "\" data-path-field=\"gpuQty\" value=\"" + (row.gpuQty || "") + "\" /></td>" +
+          "<td><select data-path-index=\"" + index + "\" data-path-field=\"workload\">" + workloadSelectOptions(row.workload) + "</select></td>" +
           "<td><select data-path-index=\"" + index + "\" data-path-field=\"targetBasis\">" + basisOptions(definition.targetBasis) + "</select></td>" +
           "<td><select data-path-index=\"" + index + "\" data-path-field=\"targetSku\">" + skuOptions(row.targetSku, definition.targetBasis) + "</select></td>" +
           "<td><input type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" data-path-index=\"" + index + "\" data-path-field=\"targetPct\" value=\"" + pctOf(targetQty, futureTotal) + "\" /></td>" +
@@ -1574,7 +1923,9 @@
       const sku = event.target.dataset.sku ? decodeURIComponent(event.target.dataset.sku) : "";
       const field = event.target.dataset.skuOverride;
       if (!sku || (field !== "cloud" && field !== "onPrem")) return;
-      ensureSkuPriceOverrideEntry(sku)[field] = normalizePriceOverride(event.target.value);
+      const normalized = normalizePriceOverride(event.target.value);
+      ensureSkuPriceOverrideEntry(sku)[field] = normalized;
+      if (event.type === "change") event.target.value = priceOverrideInputValue(normalized);
       storeSkuPriceOverrides();
       update();
       scheduleSave();
@@ -1595,6 +1946,9 @@
     });
     el.summaryTcoToggle.addEventListener("click", () => {
       setExpandableSection("summaryTcoBody", "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", summaryTcoExpandedStorageKey, el.summaryTcoBody.hidden, true);
+    });
+    el.nvaieRoiToggle.addEventListener("click", () => {
+      setExpandableSection("nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey, el.nvaieRoiBody.hidden, true);
     });
     window.addEventListener("storage", (event) => {
       if (event.key !== skuPriceOverrideStorageKey) return;
@@ -1617,10 +1971,45 @@
         scheduleSave();
       });
     }
+    function handleNvaieTableInput(event) {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement) || target.value === "") return;
+      const scenarioId = target.dataset.nvaieScenario || "";
+      let focusSelector = "";
+      if (target.dataset.nvaieCluster) {
+        const id = target.dataset.nvaieCluster;
+        storeNvaieScenarioClusters({ [id]: target.value });
+        focusSelector = "[data-nvaie-cluster=\"" + id + "\"]";
+      } else if (target.dataset.nvaieMix) {
+        const id = target.dataset.nvaieMix;
+        storeNvaieMixes({ [id]: target.value });
+        focusSelector = "[data-nvaie-mix=\"" + id + "\"]";
+      } else if (target.dataset.nvaieSpeedup) {
+        const id = target.dataset.nvaieSpeedup;
+        storeNvaieSpeedups({ [id]: target.value });
+        focusSelector = "[data-nvaie-speedup=\"" + id + "\"]";
+      } else {
+        return;
+      }
+      const selectionStart = target.selectionStart;
+      const selectionEnd = target.selectionEnd;
+      update();
+      const scenarioSelector = scenarioId ? "[data-nvaie-scenario=\"" + scenarioId + "\"]" : "";
+      const nextTarget = el.nvaieRoiTables.querySelector(focusSelector + scenarioSelector);
+      if (nextTarget instanceof HTMLInputElement) {
+        nextTarget.focus();
+        try {
+          nextTarget.setSelectionRange(selectionStart, selectionEnd);
+        } catch (error) {}
+      }
+    }
+    el.nvaieRoiTables.addEventListener("input", handleNvaieTableInput);
+    el.nvaieRoiTables.addEventListener("change", handleNvaieTableInput);
     setActiveScaleSourceTab(storedScaleSourceTab() || data.defaults.scaleFactorSourceTab);
     setExpandableSection("selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey, storedExpanded(selectedDeploymentExpandedStorageKey));
     setExpandableSection("scaleDeploymentBody", "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", scaleDeploymentExpandedStorageKey, storedExpanded(scaleDeploymentExpandedStorageKey));
     setExpandableSection("summaryTcoBody", "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", summaryTcoExpandedStorageKey, storedExpanded(summaryTcoExpandedStorageKey));
+    setExpandableSection("nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey, storedExpandedDefault(nvaieRoiExpandedStorageKey, true));
     setSkuOverrideExpanded(storedSkuOverrideExpanded());
     setHiddenWorkbooksExpanded(storedHiddenWorkbooksExpanded());
     update();
