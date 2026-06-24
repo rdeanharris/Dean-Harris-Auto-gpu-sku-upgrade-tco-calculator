@@ -481,23 +481,128 @@
       display: none;
     }
     .warning.show { display: block; }
+    .auth-panel {
+      border: 2px solid var(--black);
+      background: var(--panel);
+      margin-top: 8px;
+      padding: 9px;
+      display: grid;
+      gap: 8px;
+    }
+    .auth-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 8px;
+      align-items: end;
+    }
+    .auth-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .auth-panel button {
+      min-height: 34px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      padding: 5px 9px;
+      font-weight: 700;
+    }
+    .auth-panel button.primary-action {
+      background: var(--nvidia);
+      border-color: var(--nvidia);
+      color: #fff;
+    }
+    .auth-panel button:disabled,
+    .auth-panel input:disabled,
+    .auth-panel select:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+    .auth-admin {
+      border-top: 1px solid var(--line);
+      padding-top: 8px;
+    }
+    .auth-status {
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .auth-status.error { color: #b42318; }
     @media (max-width: 1060px) {
       .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .meta.summary-meta-no-basis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .summary-gpu-row { grid-column: 1 / -1; }
+      .auth-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 680px) {
       .fields { grid-template-columns: 1fr; }
       .override-grid { grid-template-columns: 1fr; }
       .meta.summary-meta-no-basis { grid-template-columns: 1fr; }
       .source-tabs { grid-template-columns: 1fr; }
+      .auth-row { grid-template-columns: 1fr; }
     }
   </style>
+  <script src="gpu_tco_auth_config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <main class="app">
     <div class="title">GPU SKU Upgrade TCO Calculator</div>
+    <section class="auth-panel" id="authPanel" aria-label="User access and saved configurations">
+      <div class="auth-row">
+        <label>NVIDIA Email
+          <input id="authEmail" type="email" autocomplete="username" placeholder="alias@nvidia.com" />
+        </label>
+        <label>Password
+          <input id="authPassword" type="password" autocomplete="current-password" placeholder="12+ chars, mixed case" />
+        </label>
+        <label>Configuration Name
+          <input id="configName" type="text" autocomplete="off" placeholder="June 22 base case" />
+        </label>
+      </div>
+      <div class="auth-actions">
+        <button class="primary-action" type="button" id="signInButton">Sign In</button>
+        <button type="button" id="signUpButton">Create User</button>
+        <button type="button" id="resetPasswordButton">Send Reset</button>
+        <button type="button" id="signOutButton" hidden>Sign Out</button>
+        <button class="primary-action" type="button" id="saveConfigButton" disabled>Save Named Config</button>
+      </div>
+      <div class="auth-row">
+        <label>Saved Configurations
+          <select id="savedConfigSelect" disabled></select>
+        </label>
+        <label>New NVIDIA Email
+          <input id="newEmail" type="email" autocomplete="username" placeholder="new.alias@nvidia.com" />
+        </label>
+        <label>New Password
+          <input id="newPassword" type="password" autocomplete="new-password" placeholder="Use reset link first" />
+        </label>
+      </div>
+      <div class="auth-actions">
+        <button type="button" id="loadConfigButton" disabled>Load</button>
+        <button type="button" id="deleteConfigButton" disabled>Delete</button>
+        <button type="button" id="updateEmailButton" disabled>Update Email</button>
+        <button type="button" id="updatePasswordButton" disabled>Update Password</button>
+      </div>
+      <div class="auth-admin" id="adminPanel" hidden>
+        <div class="auth-row">
+          <label>Admin Reset Email
+            <input id="adminResetEmail" type="email" placeholder="alias@nvidia.com" />
+          </label>
+          <div class="auth-actions">
+            <button type="button" id="adminRefreshButton">Refresh All Configs</button>
+            <button type="button" id="adminResetButton">Send Reset Link</button>
+          </div>
+        </div>
+      </div>
+      <div class="auth-status" id="authStatus"></div>
+    </section>
     <div class="source-tabs top-source-tabs">
       <span>Core Source Tabs</span>
       <div class="tab-list" role="tablist" aria-label="Source tabs">
@@ -1491,6 +1596,264 @@
         el.saveStatus.textContent = "Static preview";
       }
     }
+    const authConfig = window.GPU_TCO_AUTH_CONFIG || {};
+    const authDomain = String(authConfig.requiredEmailDomain || "nvidia.com").toLowerCase().replace(/^@/, "");
+    const authAppId = String(authConfig.appId || "gpu-tco-june-22");
+    const authAdminEmails = new Set((authConfig.adminEmails || []).map((email) => String(email).trim().toLowerCase()).filter(Boolean));
+    const authEls = {
+      panel: document.getElementById("authPanel"),
+      email: document.getElementById("authEmail"),
+      password: document.getElementById("authPassword"),
+      configName: document.getElementById("configName"),
+      newEmail: document.getElementById("newEmail"),
+      newPassword: document.getElementById("newPassword"),
+      savedConfigSelect: document.getElementById("savedConfigSelect"),
+      signInButton: document.getElementById("signInButton"),
+      signUpButton: document.getElementById("signUpButton"),
+      resetPasswordButton: document.getElementById("resetPasswordButton"),
+      signOutButton: document.getElementById("signOutButton"),
+      saveConfigButton: document.getElementById("saveConfigButton"),
+      loadConfigButton: document.getElementById("loadConfigButton"),
+      deleteConfigButton: document.getElementById("deleteConfigButton"),
+      updateEmailButton: document.getElementById("updateEmailButton"),
+      updatePasswordButton: document.getElementById("updatePasswordButton"),
+      adminPanel: document.getElementById("adminPanel"),
+      adminResetEmail: document.getElementById("adminResetEmail"),
+      adminRefreshButton: document.getElementById("adminRefreshButton"),
+      adminResetButton: document.getElementById("adminResetButton"),
+      status: document.getElementById("authStatus"),
+    };
+    let authClient = null;
+    let authUser = null;
+    let authProfile = null;
+    let savedConfigurations = [];
+    function authIsConfigured() {
+      const url = String(authConfig.supabaseUrl || "");
+      const key = String(authConfig.supabaseAnonKey || "");
+      return url.startsWith("https://") && key && !url.includes("YOUR_") && !key.includes("YOUR_");
+    }
+    function authSetStatus(message, isError = false) {
+      if (!authEls.status) return;
+      authEls.status.textContent = message || "";
+      authEls.status.classList.toggle("error", Boolean(isError));
+    }
+    function normalizedAuthEmail(input = authEls.email?.value) {
+      return String(input || "").trim().toLowerCase();
+    }
+    function authEmailIsAllowed(email) {
+      return normalizedAuthEmail(email).endsWith("@" + authDomain);
+    }
+    function authPasswordIsStrong(password) {
+      return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/.test(String(password || ""));
+    }
+    function currentUserIsAdmin() {
+      const email = normalizedAuthEmail(authUser?.email);
+      return authProfile?.role === "admin" || authAdminEmails.has(email);
+    }
+    function renderSavedConfigOptions() {
+      if (!authEls.savedConfigSelect) return;
+      authEls.savedConfigSelect.innerHTML = "";
+      if (!savedConfigurations.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No saved configs";
+        authEls.savedConfigSelect.append(option);
+        return;
+      }
+      savedConfigurations.forEach((config) => {
+        const option = document.createElement("option");
+        option.value = config.id;
+        const updated = config.updated_at ? new Date(config.updated_at).toLocaleString() : "";
+        const owner = currentUserIsAdmin() && config.owner_id !== authUser?.id ? " - admin view" : "";
+        option.textContent = config.name + owner + (updated ? " (" + updated + ")" : "");
+        authEls.savedConfigSelect.append(option);
+      });
+    }
+    function updateAuthUi() {
+      if (!authEls.panel) return;
+      const configured = authIsConfigured() && Boolean(window.supabase);
+      const signedIn = Boolean(authUser);
+      authEls.signInButton.disabled = !configured || signedIn;
+      authEls.signUpButton.disabled = !configured || signedIn;
+      authEls.resetPasswordButton.disabled = !configured;
+      authEls.signOutButton.hidden = !signedIn;
+      authEls.saveConfigButton.disabled = !configured || !signedIn;
+      authEls.loadConfigButton.disabled = !configured || !signedIn || !savedConfigurations.length;
+      authEls.deleteConfigButton.disabled = !configured || !signedIn || !savedConfigurations.length;
+      authEls.updateEmailButton.disabled = !configured || !signedIn;
+      authEls.updatePasswordButton.disabled = !configured || !signedIn;
+      authEls.configName.disabled = !signedIn;
+      authEls.savedConfigSelect.disabled = !signedIn || !savedConfigurations.length;
+      authEls.newEmail.disabled = !configured || !signedIn;
+      authEls.newPassword.disabled = !configured || !signedIn;
+      authEls.adminPanel.hidden = !signedIn || !currentUserIsAdmin();
+      if (!authIsConfigured()) {
+        authSetStatus("Auth setup required: configure gpu_tco_auth_config.js and run supabase_gpu_tco_setup.sql.");
+      } else if (!window.supabase) {
+        authSetStatus("Supabase client did not load. Check network access to the CDN or host the client script locally.", true);
+      } else if (signedIn) {
+        authSetStatus("Signed in as " + normalizedAuthEmail(authUser.email) + (currentUserIsAdmin() ? " (admin)" : ""));
+      }
+      renderSavedConfigOptions();
+    }
+    async function loadAuthProfile() {
+      authProfile = null;
+      if (!authClient || !authUser) return;
+      const { data: profile, error } = await authClient
+        .from("profiles")
+        .select("id,email,role")
+        .eq("id", authUser.id)
+        .maybeSingle();
+      if (!error && profile) {
+        authProfile = profile;
+      } else {
+        authProfile = {
+          id: authUser.id,
+          email: normalizedAuthEmail(authUser.email),
+          role: authAdminEmails.has(normalizedAuthEmail(authUser.email)) ? "admin" : "user",
+        };
+      }
+    }
+    async function refreshSavedConfigurations() {
+      savedConfigurations = [];
+      if (!authClient || !authUser) {
+        updateAuthUi();
+        return;
+      }
+      const { data: configs, error } = await authClient
+        .from("tco_configurations")
+        .select("id,owner_id,app_id,name,state,updated_at")
+        .eq("app_id", authAppId)
+        .order("updated_at", { ascending: false });
+      if (error) {
+        authSetStatus(error.message, true);
+      } else {
+        savedConfigurations = configs || [];
+      }
+      updateAuthUi();
+    }
+    async function handleSignUp() {
+      const email = normalizedAuthEmail();
+      const password = authEls.password.value;
+      if (!authEmailIsAllowed(email)) return authSetStatus("Use an @" + authDomain + " email alias.", true);
+      if (!authPasswordIsStrong(password)) return authSetStatus("Password must be 12+ characters with uppercase, lowercase, number, and symbol.", true);
+      const { error } = await authClient.auth.signUp({ email, password });
+      if (error) return authSetStatus(error.message, true);
+      authSetStatus("User created. Check email if confirmation is required.");
+    }
+    async function handleSignIn() {
+      const email = normalizedAuthEmail();
+      if (!authEmailIsAllowed(email)) return authSetStatus("Use an @" + authDomain + " email alias.", true);
+      const { data: sessionData, error } = await authClient.auth.signInWithPassword({
+        email,
+        password: authEls.password.value,
+      });
+      if (error) return authSetStatus(error.message, true);
+      authUser = sessionData.user;
+      await loadAuthProfile();
+      await refreshSavedConfigurations();
+    }
+    async function handlePasswordReset(emailValue = authEls.email.value) {
+      const email = normalizedAuthEmail(emailValue);
+      if (!authEmailIsAllowed(email)) return authSetStatus("Use an @" + authDomain + " email alias.", true);
+      const { error } = await authClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split("#")[0] });
+      if (error) return authSetStatus(error.message, true);
+      authSetStatus("Password reset link sent to " + email + ".");
+    }
+    async function handleEmailUpdate() {
+      const email = normalizedAuthEmail(authEls.newEmail.value);
+      if (!authEmailIsAllowed(email)) return authSetStatus("Use an @" + authDomain + " email alias.", true);
+      const { error } = await authClient.auth.updateUser({ email });
+      if (error) return authSetStatus(error.message, true);
+      authEls.newEmail.value = "";
+      authSetStatus("Email update started. Check the new alias to confirm the change.");
+    }
+    async function handlePasswordUpdate() {
+      const password = authEls.newPassword.value;
+      if (!authPasswordIsStrong(password)) return authSetStatus("New password must be 12+ characters with uppercase, lowercase, number, and symbol.", true);
+      const { error } = await authClient.auth.updateUser({ password });
+      if (error) return authSetStatus(error.message, true);
+      authEls.newPassword.value = "";
+      authSetStatus("Password updated.");
+    }
+    async function handleSignOut() {
+      await authClient.auth.signOut();
+      authUser = null;
+      authProfile = null;
+      savedConfigurations = [];
+      updateAuthUi();
+    }
+    async function saveNamedConfiguration() {
+      const name = authEls.configName.value.trim();
+      if (!name) return authSetStatus("Enter a configuration name.", true);
+      const existing = savedConfigurations.find((config) =>
+        config.owner_id === authUser.id && config.name.toLowerCase() === name.toLowerCase()
+      );
+      const payload = {
+        owner_id: authUser.id,
+        app_id: authAppId,
+        name,
+        state: collectState(),
+      };
+      const request = existing
+        ? authClient.from("tco_configurations").update(payload).eq("id", existing.id)
+        : authClient.from("tco_configurations").insert(payload);
+      const { error } = await request;
+      if (error) return authSetStatus(error.message, true);
+      authSetStatus("Saved configuration: " + name + ".");
+      await refreshSavedConfigurations();
+    }
+    function selectedConfiguration() {
+      return savedConfigurations.find((config) => config.id === authEls.savedConfigSelect.value);
+    }
+    async function loadNamedConfiguration() {
+      const config = selectedConfiguration();
+      if (!config) return;
+      applyState(config.state);
+      update();
+      scheduleSave();
+      authSetStatus("Loaded configuration: " + config.name + ".");
+    }
+    async function deleteNamedConfiguration() {
+      const config = selectedConfiguration();
+      if (!config) return;
+      const { error } = await authClient.from("tco_configurations").delete().eq("id", config.id);
+      if (error) return authSetStatus(error.message, true);
+      authSetStatus("Deleted configuration: " + config.name + ".");
+      await refreshSavedConfigurations();
+    }
+    function bindAuthEvents() {
+      if (!authEls.panel) return;
+      authEls.signUpButton.addEventListener("click", handleSignUp);
+      authEls.signInButton.addEventListener("click", handleSignIn);
+      authEls.resetPasswordButton.addEventListener("click", () => handlePasswordReset());
+      authEls.signOutButton.addEventListener("click", handleSignOut);
+      authEls.saveConfigButton.addEventListener("click", saveNamedConfiguration);
+      authEls.loadConfigButton.addEventListener("click", loadNamedConfiguration);
+      authEls.deleteConfigButton.addEventListener("click", deleteNamedConfiguration);
+      authEls.updateEmailButton.addEventListener("click", handleEmailUpdate);
+      authEls.updatePasswordButton.addEventListener("click", handlePasswordUpdate);
+      authEls.adminRefreshButton.addEventListener("click", refreshSavedConfigurations);
+      authEls.adminResetButton.addEventListener("click", () => handlePasswordReset(authEls.adminResetEmail.value));
+    }
+    async function initAuth() {
+      bindAuthEvents();
+      if (!authEls.panel) return;
+      if (!authIsConfigured() || !window.supabase) {
+        updateAuthUi();
+        return;
+      }
+      authClient = window.supabase.createClient(authConfig.supabaseUrl, authConfig.supabaseAnonKey);
+      authClient.auth.onAuthStateChange(async (_event, session) => {
+        authUser = session?.user || null;
+        await loadAuthProfile();
+        await refreshSavedConfigurations();
+      });
+      const { data: sessionData } = await authClient.auth.getSession();
+      authUser = sessionData.session?.user || null;
+      await loadAuthProfile();
+      await refreshSavedConfigurations();
+    }
     const defaultGpuQuantity = Number(data.defaults.gpuQuantity) || 0;
     const defaultMigrationPaths = (data.defaults.migrationPaths || []).slice(0, maxMigrationRows);
     migrationRows = (data.defaults.migrationPaths || []).slice(0, maxMigrationRows).map((path) => {
@@ -1623,6 +1986,7 @@
     setExpandableSection("summaryTcoBody", "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", summaryTcoExpandedStorageKey, storedExpanded(summaryTcoExpandedStorageKey));
     setSkuOverrideExpanded(storedSkuOverrideExpanded());
     setHiddenWorkbooksExpanded(storedHiddenWorkbooksExpanded());
+    initAuth();
     update();
     loadSavedState();
   </script>
