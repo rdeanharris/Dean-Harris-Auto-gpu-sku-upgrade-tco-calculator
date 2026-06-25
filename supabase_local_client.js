@@ -34,6 +34,7 @@
         onAuthStateChange: this.onAuthStateChange.bind(this),
         resetPasswordForEmail: this.resetPasswordForEmail.bind(this),
         resend: this.resend.bind(this),
+        signInWithOAuth: this.signInWithOAuth.bind(this),
         signInWithPassword: this.signInWithPassword.bind(this),
         signOut: this.signOut.bind(this),
         signUp: this.signUp.bind(this),
@@ -161,6 +162,19 @@
         }),
       });
       return { data, error };
+    }
+
+    async signInWithOAuth(params) {
+      const provider = encodeURIComponent(params.provider || "");
+      if (!provider) return { data: null, error: { message: "Missing OAuth provider." } };
+      const query = new URLSearchParams({ provider });
+      const redirectTo = params.options?.redirectTo || "";
+      const scopes = params.options?.scopes || "";
+      if (redirectTo) query.set("redirect_to", redirectTo);
+      if (scopes) query.set("scopes", scopes);
+      const url = this.projectUrl + "/auth/v1/authorize?" + query.toString();
+      window.location.assign(url);
+      return { data: { url }, error: null };
     }
 
     async signInWithPassword(credentials) {

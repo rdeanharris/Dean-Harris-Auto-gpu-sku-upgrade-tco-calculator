@@ -4,6 +4,9 @@ window.GPU_TCO_AUTH_CONFIG = {
   requiredEmailDomain: "nvidia.com",
   allowExternalInvites: true,
   inviteOnlyExternal: true,
+  nvidiaSsoEnabled: true,
+  nvidiaSsoProvider: "azure",
+  nvidiaSsoScopes: "email",
   appId: "gpu-tco-june-22",
   adminEmails: ["deanh@nvidia.com"],
 };
