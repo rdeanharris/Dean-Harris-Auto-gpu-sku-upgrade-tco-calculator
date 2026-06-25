@@ -33,6 +33,7 @@
         getSession: this.getSession.bind(this),
         onAuthStateChange: this.onAuthStateChange.bind(this),
         resetPasswordForEmail: this.resetPasswordForEmail.bind(this),
+        resend: this.resend.bind(this),
         signInWithPassword: this.signInWithPassword.bind(this),
         signOut: this.signOut.bind(this),
         signUp: this.signUp.bind(this),
@@ -129,7 +130,9 @@
     }
 
     async signUp(credentials) {
-      const { data, error } = await this.request("/auth/v1/signup", {
+      const redirectTo = credentials.options?.emailRedirectTo || credentials.options?.redirectTo || "";
+      const path = "/auth/v1/signup" + (redirectTo ? "?redirect_to=" + encodeURIComponent(redirectTo) : "");
+      const { data, error } = await this.request(path, {
         method: "POST",
         headers: this.authHeaders(false),
         body: JSON.stringify({
@@ -144,6 +147,20 @@
         this.notifyAuthListeners("SIGNED_IN", session);
       }
       return { data: { user: data?.user || session?.user || null, session }, error: null };
+    }
+
+    async resend(params) {
+      const redirectTo = params.options?.emailRedirectTo || params.options?.redirectTo || "";
+      const path = "/auth/v1/resend" + (redirectTo ? "?redirect_to=" + encodeURIComponent(redirectTo) : "");
+      const { data, error } = await this.request(path, {
+        method: "POST",
+        headers: this.authHeaders(false),
+        body: JSON.stringify({
+          type: params.type || "signup",
+          email: params.email,
+        }),
+      });
+      return { data, error };
     }
 
     async signInWithPassword(credentials) {
