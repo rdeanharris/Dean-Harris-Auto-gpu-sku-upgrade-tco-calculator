@@ -1,9 +1,11 @@
 window.GPU_TCO_STARFLEET_CONFIG = Object.freeze({
   enabled: false,
   providerName: "Starfleet",
+  serviceId: "SweHG9LrCP4FbckLjhJFxRNrsSKCQKch3z0fDUINxnA",
+  nspectId: "NSPECT-5LTJ-V6DK",
   authBaseUrl: "",
   apiBaseUrl: "",
-  clientId: "",
+  clientId: "StkDvtzs9LkXP6-N6yhVmfi_vEd_m3zErlk5g-OOdqY",
   redirectUri: "",
   requiredEmailDomain: "nvidia.com",
   inviteOnlyExternalUsers: true,
