@@ -1241,7 +1241,8 @@
               <tr class="nvaie-headline-row">
                 <td><b>NVAIE Investment (nearest $M)</b><span id="summaryNvaieTco"></span></td>
                 <td><b>NVAIE Speed Up</b><span id="summaryNvaieSpeedup"></span></td>
-                <td colspan="2"><b>NVAIE Investment Savings</b><span id="summaryNvaieImpact"></span></td>
+                <td><b>NVAIE Investment Savings</b><span id="summaryNvaieImpact"></span></td>
+                <td><b>NVAIE ROI</b><span id="summaryNvaieRoi"></span></td>
                 <td colspan="3" class="nvaie-total-impact"><b id="summaryTotalTcoImpactLabel">Total Investment Impact (GPU and Exemplar RA)</b><span id="summaryTotalTcoImpact"></span></td>
               </tr>
             </tbody>
@@ -1276,7 +1277,7 @@
     ];
     const el = Object.fromEntries([...ids, "annualGpuHours", "futureGpuSummary", "gpuQuantity", "pathRows",
       "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "targetGpus", "currentTco", "targetTco",
-      "summaryNvaieTco", "summaryNvaieSpeedup", "summaryNvaieImpact", "summaryTotalTcoImpact", "summaryTotalTcoImpactLabel",
+      "summaryNvaieTco", "summaryNvaieSpeedup", "summaryNvaieImpact", "summaryNvaieRoi", "summaryTotalTcoImpact", "summaryTotalTcoImpactLabel",
       "currentCostPerSourceGpu", "targetCostPerSourceGpu", "tcoSavings", "savingsPct", "targetTcoNoExemplar", "exemplarImpact", "gpuReduction",
       "scalePerf0", "scaleExemplar0", "scaleTargetGpus0", "scaleCurrentTco0", "scaleTargetTco0", "scaleSavings0", "scaleSavingsPct0",
       "scalePerf1", "scaleExemplar1", "scaleTargetGpus1", "scaleCurrentTco1", "scaleTargetTco1", "scaleSavings1", "scaleSavingsPct1",
@@ -1562,12 +1563,22 @@
         maximumFractionDigits: 2,
       });
     }
+    function defaultNvaiePricePerGpuYear() {
+      return normalizeNvaiePrice(data.nvaieRoi.pricePerGpuYear) ?? 4500;
+    }
     function nvaiePricePerGpuYear() {
       try {
         const stored = normalizeNvaiePrice(window.localStorage.getItem(nvaiePriceStorageKey));
         if (stored !== null) return stored;
       } catch (error) {}
-      return normalizeNvaiePrice(data.nvaieRoi.pricePerGpuYear) ?? 0;
+      return defaultNvaiePricePerGpuYear();
+    }
+    function resetNvaiePricePerGpuYear() {
+      const fallback = defaultNvaiePricePerGpuYear();
+      try {
+        window.localStorage.setItem(nvaiePriceStorageKey, String(fallback));
+      } catch (error) {}
+      return fallback;
     }
     function storeNvaiePricePerGpuYear(value) {
       const normalized = normalizeNvaiePrice(value);
@@ -2401,6 +2412,7 @@
         nvaieTco,
         nvaieSpeedup: baseTco - grossNvaieImpact > 0 ? baseTco / (baseTco - grossNvaieImpact) : 0,
         nvaieImpact,
+        nvaieRoi: model ? model.roi : 0,
         totalTcoImpact: result.savings + nvaieImpact,
       };
     }
@@ -2551,12 +2563,14 @@
         el.summaryNvaieTco.textContent = fmtMoneyNearestMillion(nvaieSummary.nvaieCost);
         el.summaryNvaieSpeedup.textContent = fmtFactor(nvaieSummary.nvaieSpeedup);
         el.summaryNvaieImpact.textContent = fmtMoney(nvaieSummary.nvaieImpact);
+        el.summaryNvaieRoi.textContent = fmtPct(nvaieSummary.nvaieRoi);
         el.summaryTotalTcoImpact.textContent = fmtMoney(nvaieSummary.totalTcoImpact);
       } else {
         el.summaryTotalTcoImpactLabel.textContent = "Total Investment Impact (GPU and Exemplar RA)";
         el.summaryNvaieTco.textContent = "N/A";
         el.summaryNvaieSpeedup.textContent = "N/A";
         el.summaryNvaieImpact.textContent = "N/A";
+        el.summaryNvaieRoi.textContent = "N/A";
         el.summaryTotalTcoImpact.textContent = fmtMoney(result.savings);
       }
       el.warning.textContent = result.warnings.join(" ");
@@ -3090,14 +3104,16 @@
     el.nvaieRoiTables.addEventListener("input", handleNvaieTableInput);
     el.nvaieRoiTables.addEventListener("change", handleNvaieTableInput);
     function handleNvaiePriceInput(event) {
-      if (event.target.value === "") return;
-      const normalized = storeNvaiePricePerGpuYear(event.target.value);
-      if (event.type === "change") event.target.value = nvaiePriceInputValue(normalized);
+      const isBlank = String(event.target.value || "").trim() === "";
+      if (isBlank && event.type === "input") return;
+      const normalized = isBlank ? resetNvaiePricePerGpuYear() : storeNvaiePricePerGpuYear(event.target.value);
+      if (event.type === "change" || event.type === "blur") event.target.value = nvaiePriceInputValue(normalized);
       update();
       scheduleSave();
     }
     el.nvaiePricePerGpu.addEventListener("input", handleNvaiePriceInput);
     el.nvaiePricePerGpu.addEventListener("change", handleNvaiePriceInput);
+    el.nvaiePricePerGpu.addEventListener("blur", handleNvaiePriceInput);
     if (el.nvaieRoiEnabled) el.nvaieRoiEnabled.addEventListener("change", (event) => {
       storeNvaieRoiEnabled(event.target.checked);
       update();

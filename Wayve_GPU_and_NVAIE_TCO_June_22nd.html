@@ -1367,12 +1367,22 @@
       if (!Number.isFinite(parsed)) return null;
       return Math.max(0, parsed);
     }
+    function defaultNvaiePricePerGpuYear() {
+      return normalizeNvaiePrice(data.nvaieRoi.pricePerGpuYear) ?? 4500;
+    }
     function nvaiePricePerGpuYear() {
       try {
         const stored = normalizeNvaiePrice(window.localStorage.getItem(nvaiePriceStorageKey));
         if (stored !== null) return stored;
       } catch (error) {}
-      return normalizeNvaiePrice(data.nvaieRoi.pricePerGpuYear) ?? 0;
+      return defaultNvaiePricePerGpuYear();
+    }
+    function resetNvaiePricePerGpuYear() {
+      const fallback = defaultNvaiePricePerGpuYear();
+      try {
+        window.localStorage.setItem(nvaiePriceStorageKey, String(fallback));
+      } catch (error) {}
+      return fallback;
     }
     function storeNvaiePricePerGpuYear(value) {
       const normalized = normalizeNvaiePrice(value);
@@ -2344,8 +2354,10 @@
       }).join("");
     }
     function handleNvaiePriceInput(event) {
-      const value = storeNvaiePricePerGpuYear(event.target.value);
-      if (event.type === "change") event.target.value = priceOverrideInputValue(value);
+      const isBlank = String(event.target.value || "").trim() === "";
+      if (isBlank && event.type === "input") return;
+      const value = isBlank ? resetNvaiePricePerGpuYear() : storeNvaiePricePerGpuYear(event.target.value);
+      if (event.type === "change" || event.type === "blur") event.target.value = priceOverrideInputValue(value);
       update();
       scheduleSave();
     }
@@ -2779,6 +2791,7 @@
     }
     el.nvaiePricePerGpu.addEventListener("input", handleNvaiePriceInput);
     el.nvaiePricePerGpu.addEventListener("change", handleNvaiePriceInput);
+    el.nvaiePricePerGpu.addEventListener("blur", handleNvaiePriceInput);
     if (el.nvaieRoiEnabled) el.nvaieRoiEnabled.addEventListener("change", (event) => {
       storeNvaieRoiEnabled(event.target.checked);
       update();
