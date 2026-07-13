@@ -2438,7 +2438,7 @@
           "<td><input class=\"nvaie-table-input\" type=\"text\" inputmode=\"decimal\" min=\"0\" max=\"100\" step=\"0.1\" value=\"" + pctInput(workload.mix) + "\" data-nvaie-mix=\"" + escapeHtml(workload.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " " + workload.label + " % Cluster") + "\"" + workloadReadonly + " /></td>"
         ).join("");
         const gpuCells = model.workloads.map((workload) =>
-          "<td><input class=\"nvaie-table-input\" type=\"text\" inputmode=\"numeric\" pattern=\"[0-9]*\" min=\"0\" step=\"1\" value=\"" + String(workload.gpus) + "\" data-nvaie-gpus=\"" + escapeHtml(workload.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " " + workload.label + " # GPUs") + "\"" + workloadReadonly + " /></td>"
+          "<td><input class=\"nvaie-table-input\" type=\"text\" inputmode=\"numeric\" pattern=\"[0-9]*\" min=\"0\" step=\"1\" value=\"" + String(workload.gpus) + "\" data-nvaie-gpus=\"" + escapeHtml(workload.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " " + workload.label + " Modeled NVAIE GPUs") + "\"" + workloadReadonly + " /></td>"
         ).join("");
         const spendCells = model.workloads.map((workload) => "<td>" + fmtCurrencyOneDecimal(workload.spend) + "</td>").join("");
         const speedupCells = model.workloads.map((workload) =>
@@ -2466,7 +2466,7 @@
           "<tbody>" +
           "<tr class=\"row-strong\"><td class=\"row-label\">GPU Cluster</td><td class=\"nvaie-cluster-cell\" colspan=\"3\"><input class=\"nvaie-table-input nvaie-cluster-input\" type=\"text\" inputmode=\"numeric\" pattern=\"[0-9]*\" min=\"0\" step=\"any\" value=\"" + model.cluster + "\" data-nvaie-cluster=\"" + escapeHtml(model.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " GPU Cluster") + "\"" + clusterReadonly + " /></td></tr>" +
           "<tr><td class=\"row-label\">% Cluster</td>" + mixCells + "</tr>" +
-          "<tr><td class=\"row-label\"># GPUs</td>" + gpuCells + "</tr>" +
+          "<tr><td class=\"row-label\">Modeled NVAIE GPUs</td>" + gpuCells + "</tr>" +
           "<tr class=\"pale-row\"><td class=\"row-label\">Annual GPU Spend $M<br />before NVAIE Speed up</td><td colspan=\"3\"><strong>" + fmtCurrency(model.annualSpend) + "</strong></td></tr>" +
           "<tr><td class=\"row-label\">Spend by Workload</td>" + spendCells + "</tr>" +
           "<tr class=\"row-strong\"><td class=\"row-label\">NVAIE Speed Up Factor</td>" + speedupCells + "</tr>" +
