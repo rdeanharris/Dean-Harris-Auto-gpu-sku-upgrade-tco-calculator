@@ -1072,8 +1072,8 @@
           <table class="headline">
             <thead>
               <tr>
-                <th title="Current Total GPU Investment ($M)"><span class="headline-line">Current Total GPU Investment</span><span class="headline-line">($M)</span></th>
-                <th title="Future Total GPU Investment w/o Exemplar NVIDIA RA ($M)"><span class="headline-line">Future Total GPU Investment</span><span class="headline-line">w/o Exemplar RA ($M)</span></th>
+                <th title="Current Total GPU Scenario Investment ($M)"><span class="headline-line">Current Total GPU Scenario Investment</span><span class="headline-line">($M)</span></th>
+                <th title="Future Total GPU Scenario Investment ($M)"><span class="headline-line">Future Total GPU Scenario Investment</span><span class="headline-line">($M)</span></th>
                 <th title="Future Annualized GPU TCO ($M)"><span class="headline-line">Future GPU TCO</span><span class="headline-line">($M)</span></th>
                 <th title="Annualized Exemplar NVIDIA RA TCO Savings ($M)"><span class="headline-line">Exemplar RA</span><span class="headline-line">Savings ($M)</span></th>
                 <th title="Annualized TCO Savings ($M)"><span class="headline-line">TCO Savings</span><span class="headline-line">($M)</span></th>
@@ -1741,7 +1741,7 @@
     }
     function fmtMoney(value) {
       if (!Number.isFinite(value)) return "";
-      const roundedMillions = Math.round(value / 1000000 / 5) * 5;
+      const roundedMillions = Math.round(value / 1000000);
       const formatted = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.abs(roundedMillions));
       return (roundedMillions < 0 ? "-$" : "$") + formatted + "M";
     }

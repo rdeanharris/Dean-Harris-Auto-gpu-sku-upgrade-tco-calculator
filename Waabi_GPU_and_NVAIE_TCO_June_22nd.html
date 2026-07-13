@@ -1199,8 +1199,8 @@
           <table class="headline">
             <thead>
               <tr>
-                <th title="Current Total GPU Investment ($M)"><span class="headline-line">Current Total GPU Investment</span><span class="headline-line">($M)</span></th>
-                <th title="Future Total GPU Investment w/o Exemplar NVIDIA RA ($M)"><span class="headline-line">Future Total GPU Investment</span><span class="headline-line">w/o Exemplar RA ($M)</span></th>
+                <th title="Current Total GPU Scenario Investment ($M)"><span class="headline-line">Current Total GPU Scenario Investment</span><span class="headline-line">($M)</span></th>
+                <th title="Future Total GPU Scenario Investment ($M)"><span class="headline-line">Future Total GPU Scenario Investment</span><span class="headline-line">($M)</span></th>
                 <th title="Future Annualized GPU Investment ($M)"><span class="headline-line">Future GPU Investment</span><span class="headline-line">($M)</span></th>
                 <th title="Annualized Exemplar NVIDIA RA Investment Savings ($M)"><span class="headline-line">Exemplar RA</span><span class="headline-line">Savings ($M)</span></th>
                 <th title="Annualized Investment Savings ($M)"><span class="headline-line">Investment Savings</span><span class="headline-line">($M)</span></th>
@@ -1673,7 +1673,7 @@
         const precise = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(Math.abs(millions));
         return (millions < 0 ? "-$" : "$") + precise + "M";
       }
-      const roundedMillions = Math.round(value / 1000000 / 5) * 5;
+      const roundedMillions = Math.round(value / 1000000);
       const formatted = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Math.abs(roundedMillions));
       return (roundedMillions < 0 ? "-$" : "$") + formatted + "M";
     }
