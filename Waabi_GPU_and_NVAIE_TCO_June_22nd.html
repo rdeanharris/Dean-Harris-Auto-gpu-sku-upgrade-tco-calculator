@@ -148,6 +148,26 @@
       background: var(--soft);
       font-weight: 700;
     }
+    .tco-cell-highlight,
+    .tco-cell-highlight input,
+    .tco-cell-highlight select,
+    input.tco-cell-highlight,
+    select.tco-cell-highlight {
+      background: #fff200 !important;
+      color: var(--ink) !important;
+    }
+    .tco-cell-highlight {
+      box-shadow: inset 0 0 0 3px #ffd400 !important;
+      position: relative;
+      z-index: 1;
+    }
+    .tco-cell-highlight input,
+    .tco-cell-highlight select,
+    input.tco-cell-highlight,
+    select.tco-cell-highlight {
+      border-color: #111827 !important;
+      box-shadow: inset 0 0 0 2px #111827 !important;
+    }
     .inline-check {
       display: inline-flex;
       align-items: center;
@@ -1117,7 +1137,7 @@
                 <th>Future GPU's Required</th>
                 <th>Current Annualized Investment ($M)</th>
                 <th>Future Annualized Investment ($M)</th>
-                <th>Annualized Investment Savings ($M)</th>
+                <th>Annualized GPU + Exemplar RA Investment Savings ($M)</th>
                 <th>Savings %</th>
               </tr>
             </thead>
@@ -1203,7 +1223,7 @@
                 <th title="Future Total GPU Scenario Investment w/o Exemplar RA Performance ($M)"><span class="headline-line">Future Total GPU Scenario Investment</span><span class="headline-line">w/o Exemplar RA Performance</span><span class="headline-line">($M)</span></th>
                 <th title="Future GPU Investment w/ Exemplar RA Performance ($M)"><span class="headline-line">Future GPU Investment</span><span class="headline-line">w/ Exemplar RA Performance</span><span class="headline-line">($M)</span></th>
                 <th title="Annualized Exemplar NVIDIA RA Investment Savings ($M)"><span class="headline-line">Exemplar RA</span><span class="headline-line">Savings ($M)</span></th>
-                <th title="Annualized Investment Savings ($M)"><span class="headline-line">Investment Savings</span><span class="headline-line">($M)</span></th>
+                <th title="Annualized GPU + Exemplar RA Investment Savings ($M)"><span class="headline-line">GPU + Exemplar RA</span><span class="headline-line">Investment Savings</span><span class="headline-line">($M)</span></th>
                 <th><span class="headline-line">Savings</span><span class="headline-line">%</span></th>
                 <th><span class="headline-line">GPU</span><span class="headline-line">Reduction</span></th>
               </tr>
@@ -3102,6 +3122,26 @@
         return;
       }
       setNvaieRoiScenarioMode(true);
+    });
+    function clearCellHighlight() {
+      document.querySelectorAll(".tco-cell-highlight").forEach((node) => node.classList.remove("tco-cell-highlight"));
+    }
+    function setCellHighlight(target) {
+      if (!target || target.closest(".section-toggle, .tab-pill, .pdf-button, .override-toggle, .remove-row, button")) {
+        return;
+      }
+      const cell = target.closest("td, th, .metric, .sku-override-row, .input-card, .control-card, .scale-qty");
+      clearCellHighlight();
+      if (cell) {
+        cell.classList.add("tco-cell-highlight");
+      } else if (target.matches("input, select, textarea")) {
+        target.classList.add("tco-cell-highlight");
+      }
+    }
+    document.addEventListener("click", (event) => setCellHighlight(event.target));
+    document.addEventListener("focusin", (event) => setCellHighlight(event.target));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") clearCellHighlight();
     });
     setActiveScaleSourceTab(storedScaleSourceTab() || data.defaults.scaleFactorSourceTab);
     setExpandableSection("selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey, storedExpanded(selectedDeploymentExpandedStorageKey));
