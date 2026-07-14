@@ -2445,7 +2445,7 @@
           "<td><input class=\"nvaie-table-input\" type=\"text\" inputmode=\"decimal\" min=\"1\" step=\"0.1\" value=\"" + String(workload.speedup) + "\" data-nvaie-speedup=\"" + escapeHtml(workload.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " " + workload.label + " NVAIE Speed Up Factor") + "\" /></td>"
         ).join("");
         const savingsCells = model.workloads.map((workload) => "<td>" + fmtCurrency(workload.savings) + "</td>").join("");
-        const scaleScenarioTitle = model.id === "higher" ? "Large Scale GPU Cluster" : "Small Scale GPU Cluster";
+        const scaleScenarioTitle = model.id === "higher" ? "Large Scale GPU Cluster" : "Lower Scale GPU Cluster";
         const scenarioTitle = nvaieUsesScaleScenario()
           ? scaleScenarioTitle + (model.scaleSourceQty ? " (" + fmtNumber(model.scaleSourceQty) + " GPU Cluster)" : "")
           : scaleScenarioTitle;
