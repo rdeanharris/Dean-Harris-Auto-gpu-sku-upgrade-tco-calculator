@@ -2460,7 +2460,7 @@
       el.summaryCurrentGpus.textContent = fmtNumber(qty);
       el.summaryGpuReduction.textContent = fmtNumber(result.gpuReduction);
       el.perfFactor.textContent = fmtFactor(result.perfFactor);
-      if (el.combinedPerfFactor) el.combinedPerfFactor.textContent = fmtFactor(result.perfFactor * result.exemplarFactor);
+      if (el.combinedPerfFactor) el.combinedPerfFactor.textContent = useExemplarPerformanceFactor() ? fmtFactor(result.perfFactor * result.exemplarFactor) : "N/A";
       el.targetGpus.textContent = fmtNumber(result.targetGpus);
       el.currentCostPerSourceGpu.textContent = fmtCurrency(result.currentCostPerSourceGpu);
       el.targetCostPerSourceGpu.textContent = fmtCurrency(result.targetCostPerSourceGpu);
@@ -2482,7 +2482,7 @@
         const scaleQty = numberValue("scaleQty" + i) || 0;
         const row = calcForQty(scaleQty);
         el["scalePerf" + i].textContent = fmtFactor(row.perfFactor);
-        el["scaleExemplar" + i].textContent = fmtFactor(row.perfFactor * row.exemplarFactor);
+        el["scaleExemplar" + i].textContent = useExemplarPerformanceFactor() ? fmtFactor(row.perfFactor * row.exemplarFactor) : "N/A";
         el["scaleTargetGpus" + i].textContent = fmtNumber(row.targetGpus);
         el["scaleCurrentTco" + i].textContent = fmtMoney(row.currentTco);
         el["scaleTargetTco" + i].textContent = fmtMoney(row.targetTco);
