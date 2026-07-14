@@ -719,6 +719,31 @@
       line-height: 1.2;
       overflow-wrap: anywhere;
     }
+    .metric .metric-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .metric .metric-check input {
+      width: 16px;
+      height: 16px;
+      margin-top: 0;
+      flex: 0 0 auto;
+      accent-color: var(--green);
+    }
+    .metric .metric-check span {
+      display: inline;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.2;
+      overflow-wrap: normal;
+    }
     .source-tabs {
       display: grid;
       grid-template-columns: 190px 1fr;
@@ -1084,8 +1109,8 @@
               <div class="metric"><b>GPU Reduction<br />(GPU SKU performance uplift and Exemplar RA performance uplift)</b><span id="summaryGpuReduction"></span></div>
               <div class="metric"><b>Future GPU's Required</b><span id="targetGpus"></span></div>
             </div>
-            <div class="metric"><b>Sum Avg GPU Sku Performance Factor</b><span id="perfFactor"></span></div>
-            <div class="metric"><b>Sum Avg GPU Sku + Exemplar Performance Factor</b><span id="combinedPerfFactor"></span></div>
+            <div class="metric perf-selector-metric"><label class="metric-check"><input id="useSkuPerfFactor" type="checkbox" /> <span>Sum Avg GPU Sku Performance Factor</span></label><span id="perfFactor"></span></div>
+            <div class="metric perf-selector-metric"><label class="metric-check"><input id="useSkuExemplarPerfFactor" type="checkbox" /> <span>Sum Avg GPU Sku + Exemplar Performance Factor</span></label><span id="combinedPerfFactor"></span></div>
             <div class="metric"><b>Current TCO / Source GPU</b><span id="currentCostPerSourceGpu"></span></div>
             <div class="metric"><b>Future TCO / Source GPU Eq.</b><span id="targetCostPerSourceGpu"></span></div>
           </div>
@@ -1162,7 +1187,7 @@
       "exemplar", "scaleQty0", "scaleQty1", "scaleQty2"
     ];
     const el = Object.fromEntries([...ids, "annualGpuHours", "gpuQuantity", "pathRows",
-      "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "combinedPerfFactor", "targetGpus", "currentTco", "targetTco",
+      "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "combinedPerfFactor", "useSkuPerfFactor", "useSkuExemplarPerfFactor", "targetGpus", "currentTco", "targetTco",
       "currentCostPerSourceGpu", "targetCostPerSourceGpu", "tcoSavings", "savingsPct", "targetTcoNoExemplar", "exemplarImpact", "gpuReduction",
       "scalePerf0", "scaleExemplar0", "scaleTargetGpus0", "scaleCurrentTco0", "scaleTargetTco0", "scaleSavings0", "scaleSavingsPct0",
       "scalePerf1", "scaleExemplar1", "scaleTargetGpus1", "scaleCurrentTco1", "scaleTargetTco1", "scaleSavings1", "scaleSavingsPct1",
@@ -2149,6 +2174,7 @@
         gpuQuantity: migrationPathsFromInputs().reduce((sum, path) => sum + path.gpuQty, 0),
         annualUtilizationHours: assumedAnnualUtilizationHours,
         exemplar: numberValue("exemplar"),
+        useSkuExemplarPerfFactor: useExemplarPerformanceFactor(),
         manualPerfOverride: null,
         skuPriceOverrides,
         scaleFactorSourceTab: activeScaleSourceTab,
@@ -2185,11 +2211,25 @@
       window.clearTimeout(saveTimer);
       saveTimer = window.setTimeout(saveToExcel, 600);
     }
+    function syncPerfFactorSelection(useCombined) {
+      const combined = useCombined !== false;
+      if (el.useSkuPerfFactor) el.useSkuPerfFactor.checked = !combined;
+      if (el.useSkuExemplarPerfFactor) el.useSkuExemplarPerfFactor.checked = combined;
+      if (el.exemplarEnabled) el.exemplarEnabled.checked = combined;
+    }
+    function useExemplarPerformanceFactor() {
+      return el.useSkuExemplarPerfFactor ? el.useSkuExemplarPerfFactor.checked : true;
+    }
+    function setPerfFactorMode(useCombined) {
+      syncPerfFactorSelection(useCombined);
+      update();
+      scheduleSave();
+    }
     function calcForQty(qty) {
       const utilization = assumedAnnualUtilizationHours;
       const cloudTermYears = Number(data.defaults.cloudTermYears) || 1;
       const onPremYears = Number(data.defaults.onPremAmortizationYears) || 3;
-      const exemplar = normalizeMix(el.exemplar.value);
+      const exemplar = useExemplarPerformanceFactor() ? normalizeMix(el.exemplar.value) : 0;
       const exemplarFactor = 1 + exemplar;
       const manualPerf = null;
 
@@ -2619,6 +2659,7 @@
         renderSkuOverrideRows();
       }
       setInput("exemplar", state.exemplar);
+      if (state.useSkuExemplarPerfFactor !== undefined) syncPerfFactorSelection(state.useSkuExemplarPerfFactor === true);
       if (state.scaleFactorSourceTab !== undefined) setActiveScaleSourceTab(state.scaleFactorSourceTab);
       if (Array.isArray(state.scaleQuantities)) {
         state.scaleQuantities.slice(0, 3).forEach((qty, index) => setInput("scaleQty" + index, qty));
@@ -2827,6 +2868,9 @@
       }
       highlightTarget.classList.add("tco-cell-highlight");
     }
+    if (el.useSkuPerfFactor) el.useSkuPerfFactor.addEventListener("change", () => setPerfFactorMode(false));
+    if (el.useSkuExemplarPerfFactor) el.useSkuExemplarPerfFactor.addEventListener("change", () => setPerfFactorMode(true));
+    if (el.exemplarEnabled) el.exemplarEnabled.addEventListener("change", () => setPerfFactorMode(el.exemplarEnabled.checked));
     document.addEventListener("click", (event) => {
       setCellHighlight(event.target, { toggle: event.metaKey || event.ctrlKey || event.shiftKey });
     });
@@ -2842,6 +2886,7 @@
     setSkuOverrideExpanded(storedSkuOverrideExpanded());
     setHiddenWorkbooksExpanded(storedHiddenWorkbooksExpanded());
     refreshAuthControls();
+    syncPerfFactorSelection(el.exemplarEnabled ? el.exemplarEnabled.checked : true);
     update();
     loadSavedState();
   </script>
