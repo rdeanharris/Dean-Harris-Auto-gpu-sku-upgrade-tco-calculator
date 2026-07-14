@@ -682,8 +682,8 @@
             <thead>
               <tr>
                 <th>Scenario GPU Qty</th>
-                <th>Sum Avg Sku Performance Factor</th>
-                <th>Combined Sku and Exemplar NVIDIA RA Performance Factor</th>
+                <th>Sum Avg GPU Sku Performance Factor</th>
+                <th>Sum Avg GPU Sku + Exemplar Performance Factor</th>
                 <th>Future GPU's Required</th>
                 <th>Current Annualized TCO ($M)</th>
                 <th>Future Annualized TCO ($M)</th>
@@ -742,7 +742,8 @@
             </div>
             <div class="metric"><b>Current Basis</b><span id="currentBasis"></span></div>
             <div class="metric"><b>Future Basis</b><span id="targetBasis"></span></div>
-            <div class="metric"><b>Sum Avg Sku Performance Factor</b><span id="perfFactor"></span></div>
+            <div class="metric"><b>Sum Avg GPU Sku Performance Factor</b><span id="perfFactor"></span></div>
+            <div class="metric"><b>Sum Avg GPU Sku + Exemplar Performance Factor</b><span id="combinedPerfFactor"></span></div>
             <div class="metric"><b>Current TCO / Source GPU</b><span id="currentCostPerSourceGpu"></span></div>
             <div class="metric"><b>Future TCO / Source GPU Eq.</b><span id="targetCostPerSourceGpu"></span></div>
           </div>
@@ -800,7 +801,7 @@
       "exemplar", "scaleQty0", "scaleQty1", "scaleQty2"
     ];
     const el = Object.fromEntries([...ids, "annualGpuHours", "gpuQuantity", "pathRows", "currentBasis",
-      "targetBasis", "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "targetGpus", "currentTco", "targetTco",
+      "targetBasis", "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "combinedPerfFactor", "targetGpus", "currentTco", "targetTco",
       "currentCostPerSourceGpu", "targetCostPerSourceGpu", "tcoSavings", "savingsPct", "targetTcoNoExemplar", "exemplarImpact", "gpuReduction",
       "scalePerf0", "scaleExemplar0", "scaleTargetGpus0", "scaleCurrentTco0", "scaleTargetTco0", "scaleSavings0", "scaleSavingsPct0",
       "scalePerf1", "scaleExemplar1", "scaleTargetGpus1", "scaleCurrentTco1", "scaleTargetTco1", "scaleSavings1", "scaleSavingsPct1",
@@ -1384,6 +1385,7 @@
       el.summaryCurrentGpus.textContent = fmtNumber(qty);
       el.summaryGpuReduction.textContent = fmtNumber(result.gpuReduction);
       el.perfFactor.textContent = fmtFactor(result.perfFactor);
+      if (el.combinedPerfFactor) el.combinedPerfFactor.textContent = fmtFactor(result.perfFactor * result.exemplarFactor);
       el.targetGpus.textContent = fmtNumber(result.targetGpus);
       el.currentCostPerSourceGpu.textContent = fmtCurrency(result.currentCostPerSourceGpu);
       el.targetCostPerSourceGpu.textContent = fmtCurrency(result.targetCostPerSourceGpu);
