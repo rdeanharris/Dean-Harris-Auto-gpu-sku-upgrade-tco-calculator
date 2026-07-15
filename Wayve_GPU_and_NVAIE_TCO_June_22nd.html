@@ -264,25 +264,25 @@
 
     .calc-cell {
       position: relative !important;
-      padding-right: 24px !important;
+      padding-right: 14px !important;
     }
     label.calc-cell {
-      padding-right: 0 !important;
+      padding-right: 14px !important;
     }
     .calc-star {
       position: absolute;
-      top: 3px;
-      right: 4px;
+      top: 2px;
+      right: 3px;
       z-index: 4;
-      width: 16px;
-      height: 16px;
+      width: 8px;
+      height: 8px;
       border: 1px solid var(--nvidia);
       background: #fff;
       color: var(--nvidia);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: 6px;
       line-height: 1;
       font-weight: 900;
       cursor: pointer;
@@ -294,7 +294,7 @@
     }
     .calc-popover {
       position: fixed;
-      right: 18px;
+      left: 18px;
       top: 18px;
       width: min(620px, calc(100vw - 36px));
       max-height: calc(100vh - 36px);
@@ -1937,17 +1937,59 @@
     function calcDisplayName(sku, basis = "") {
       return typeof skuDisplayName === "function" ? skuDisplayName(sku, basis) : String(sku || "");
     }
+    let calcStarRunId = 0;
+    function beginCalcStarRun() {
+      calcStarRunId += 1;
+    }
     function directChildrenByClass(host, className) {
       return Array.from(host.children || []).filter((child) => child.classList && child.classList.contains(className));
     }
+    function firstMetricLabel(metric) {
+      if (!metric) return null;
+      return Array.from(metric.children || []).find((child) => child.matches && child.matches("b, label, .metric-check")) || null;
+    }
+    function headerCellForBodyCell(cell) {
+      const table = cell?.closest ? cell.closest("table") : null;
+      if (!table || typeof cell.cellIndex !== "number") return null;
+      const headerRows = Array.from(table.tHead?.rows || table.querySelectorAll("thead tr"));
+      for (let rowIndex = headerRows.length - 1; rowIndex >= 0; rowIndex -= 1) {
+        let slot = 0;
+        const cells = Array.from(headerRows[rowIndex].cells || []);
+        for (const headerCell of cells) {
+          const span = headerCell.colSpan || 1;
+          if (cell.cellIndex >= slot && cell.cellIndex < slot + span) return headerCell;
+          slot += span;
+        }
+      }
+      return null;
+    }
+    function calcStarTargetForHost(host) {
+      if (!host || !host.closest) return host;
+      if (host.matches("th")) return host;
+      if (host.matches("td")) {
+        const firstCell = host.parentElement?.cells?.[0];
+        const firstCellIsRowLabel = firstCell && firstCell !== host && firstCell.textContent.trim() && !firstCell.querySelector("input, select, textarea, button");
+        return firstCellIsRowLabel ? firstCell : (headerCellForBodyCell(host) || host);
+      }
+      const metric = host.closest(".metric");
+      if (metric) return firstMetricLabel(metric) || metric;
+      const label = host.closest("label");
+      if (label) return label;
+      return host;
+    }
     function addCalcStar(host, title, lines) {
       if (!host || typeof host.appendChild !== "function") return;
+      const target = calcStarTargetForHost(host) || host;
+      if (!target || typeof target.appendChild !== "function") return;
       const formula = Array.isArray(lines) ? lines.filter(Boolean).join("\n") : String(lines || "");
       if (!formula.trim()) return;
-      host.classList.add("calc-cell");
-      host.setAttribute("data-calc-title", title);
-      host.setAttribute("data-calc-formula", formula);
-      directChildrenByClass(host, "calc-star").forEach((button) => button.remove());
+      const runKey = String(calcStarRunId);
+      if (target.getAttribute("data-calc-star-run") === runKey) return;
+      target.setAttribute("data-calc-star-run", runKey);
+      target.classList.add("calc-cell");
+      target.setAttribute("data-calc-title", title);
+      target.setAttribute("data-calc-formula", formula);
+      directChildrenByClass(target, "calc-star").forEach((button) => button.remove());
       const button = document.createElement("button");
       button.type = "button";
       button.className = "calc-star";
@@ -1956,9 +1998,9 @@
       button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        showCalcPopover(title, formula);
+        showCalcPopover(title, formula, event);
       });
-      host.appendChild(button);
+      target.appendChild(button);
     }
     function addCalcStarById(id, title, lines) {
       const host = document.getElementById(id);
@@ -1969,15 +2011,34 @@
       const host = input.closest("td") || input.closest("label") || input.parentElement;
       if (host) addCalcStar(host, title, lines);
     }
-    function showCalcPopover(title, formula) {
+    function positionCalcPopover(popover, anchorEvent) {
+      const gap = 10;
+      const margin = 12;
+      const buttonRect = anchorEvent?.currentTarget?.getBoundingClientRect ? anchorEvent.currentTarget.getBoundingClientRect() : null;
+      const hasPointer = Boolean(anchorEvent && (anchorEvent.clientX || anchorEvent.clientY));
+      const anchorX = hasPointer ? anchorEvent.clientX : (buttonRect ? buttonRect.left + buttonRect.width / 2 : margin);
+      const anchorY = hasPointer ? anchorEvent.clientY : (buttonRect ? buttonRect.bottom : margin);
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1024;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
+      popover.style.left = `${Math.max(margin, anchorX + gap)}px`;
+      popover.style.top = `${Math.max(margin, anchorY + gap)}px`;
+      const rect = popover.getBoundingClientRect();
+      let left = anchorX + gap;
+      let top = anchorY + gap;
+      if (left + rect.width > viewportWidth - margin) left = viewportWidth - rect.width - margin;
+      if (top + rect.height > viewportHeight - margin) top = viewportHeight - rect.height - margin;
+      popover.style.left = `${Math.max(margin, left)}px`;
+      popover.style.top = `${Math.max(margin, top)}px`;
+    }
+    function showCalcPopover(title, formula, anchorEvent) {
       let popover = document.getElementById("calcPopover");
       if (!popover) {
         popover = document.createElement("div");
         popover.id = "calcPopover";
         popover.className = "calc-popover";
         popover.innerHTML =
-          "<div class=\"calc-popover-header\"><span id=\"calcPopoverTitle\"></span><button class=\"calc-popover-close\" type=\"button\" aria-label=\"Close calculation details\">×</button></div>" +
-          "<pre id=\"calcPopoverBody\"></pre>";
+          '<div class="calc-popover-header"><span id="calcPopoverTitle"></span><button class="calc-popover-close" type="button" aria-label="Close calculation details">×</button></div>' +
+          '<pre id="calcPopoverBody"></pre>';
         document.body.appendChild(popover);
         popover.querySelector(".calc-popover-close").addEventListener("click", () => popover.classList.remove("show"));
         if (!window.__calcPopoverEventsBound) {
@@ -1998,6 +2059,7 @@
       popover.querySelector("#calcPopoverTitle").textContent = title;
       popover.querySelector("#calcPopoverBody").textContent = formula;
       popover.classList.add("show");
+      positionCalcPopover(popover, anchorEvent);
     }
     function pathWeightParts(result) {
       const paths = result?.pathResults || [];
@@ -2208,6 +2270,7 @@
     }
     function decorateCalculationStars(result) {
       if (!result) return;
+      beginCalcStarRun();
       const paths = result.pathResults || [];
       const currentQty = paths.reduce((sum, path) => sum + asNumber(path.sourceQty), 0);
       const currentInputQty = paths.reduce((sum, path) => sum + asNumber(path.gpuQty), 0);
