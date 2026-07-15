@@ -1196,7 +1196,7 @@
               <input id="futureGpuSummary" type="text" readonly />
             </label>
             <label>Exemplar NVIDIA RA Perf Improvement
-              <span class="inline-check"><input id="exemplarEnabled" type="checkbox" /> Apply NVIDIA Exemplar RA Improvement (%)</span>
+              <span class="inline-check"><input id="exemplarEnabled" type="checkbox" checked /> Apply NVIDIA Exemplar RA Improvement (%)</span>
               <input id="exemplar" type="text" inputmode="decimal" step="0.1" min="0" />
             </label>
             <div class="override-box full" id="skuOverridePanel">
@@ -1314,7 +1314,7 @@
               <div class="metric"><b>Future GPU Scenario Total</b><span id="targetGpus"></span></div>
             </div>
             <div class="metric perf-selector-metric"><label class="metric-check"><input id="useSkuPerfFactor" type="checkbox" /> <span>Sum Avg GPU Sku Performance Factor</span></label><span id="perfFactor"></span></div>
-            <div class="metric perf-selector-metric"><label class="metric-check"><input id="useSkuExemplarPerfFactor" type="checkbox" /> <span>Sum Avg GPU Sku + Exemplar RA Performance Factor</span></label><span id="combinedPerfFactor"></span></div>
+            <div class="metric perf-selector-metric"><label class="metric-check"><input id="useSkuExemplarPerfFactor" type="checkbox" checked /> <span>Sum Avg GPU Sku + Exemplar RA Performance Factor</span></label><span id="combinedPerfFactor"></span></div>
             <div class="metric"><b>Current per GPU Investment Avg</b><span id="currentCostPerSourceGpu"></span></div>
             <div class="metric"><b>Future per GPU Investment Avg</b><span id="targetCostPerSourceGpu"></span></div>
           </div>
@@ -1397,7 +1397,7 @@
     let skuPriceOverrides = {};
     let pdfPrintState = [];
     const scaleSourceTabs = ["cloudPriceInputs", "onPremPriceInputs", "skuPerformanceGuidelines", "a10BaselineSkuPerf", "a10ToH100", "a10ToH200", "a10ToB200", "h100ToB200", "a100ToB200", "skuDropdownLists"];
-    const waabiStateStorageKey = "waabiGpuNvaieTcoState_20260713WaabiScenarioSummarySync";
+    const waabiStateStorageKey = "waabiGpuNvaieTcoState_20260715CombinedPerfDefault";
     const scaleSourceTabStorageKey = "waabiGpuTcoScaleFactorSourceTab";
     const skuPriceOverrideStorageKey = "waabiGpuTcoSkuPriceOverrides";
     const skuOverrideExpandedStorageKey = "waabiGpuTcoSkuOverrideExpanded";
@@ -3360,7 +3360,7 @@
       if (state.useSkuExemplarPerfFactor !== undefined) {
         syncPerfFactorSelection(state.useSkuExemplarPerfFactor === true);
       } else {
-        syncPerfFactorSelection(el.exemplarEnabled ? el.exemplarEnabled.checked : true);
+        syncPerfFactorSelection(true);
       }
       if (state.scaleFactorSourceTab !== undefined) setActiveScaleSourceTab(state.scaleFactorSourceTab);
       if (Array.isArray(state.scaleQuantities)) {
@@ -3750,7 +3750,7 @@
     setExpandableSection("nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey, storedExpandedDefault(nvaieRoiExpandedStorageKey, true));
     setSkuOverrideExpanded(storedSkuOverrideExpanded());
     setHiddenWorkbooksExpanded(storedHiddenWorkbooksExpanded());
-    syncPerfFactorSelection(el.exemplarEnabled ? el.exemplarEnabled.checked : true);
+    syncPerfFactorSelection(true);
     update();
     loadSavedState();
   </script>
