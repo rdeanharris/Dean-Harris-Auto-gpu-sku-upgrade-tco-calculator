@@ -148,6 +148,83 @@
       background: var(--soft);
       font-weight: 700;
     }
+
+    .calc-cell {
+      position: relative !important;
+      padding-right: 24px !important;
+    }
+    label.calc-cell {
+      padding-right: 0 !important;
+    }
+    .calc-star {
+      position: absolute;
+      top: 3px;
+      right: 4px;
+      z-index: 4;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--nvidia);
+      background: #fff;
+      color: var(--nvidia);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 900;
+      cursor: pointer;
+      padding: 0;
+    }
+    .calc-star:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 1px;
+    }
+    .calc-popover {
+      position: fixed;
+      right: 18px;
+      top: 18px;
+      width: min(620px, calc(100vw - 36px));
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      background: #fff;
+      border: 2px solid var(--black);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+      z-index: 10000;
+      display: none;
+    }
+    .calc-popover.show {
+      display: block;
+    }
+    .calc-popover-header {
+      background: var(--black);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 11px;
+      font-weight: 800;
+    }
+    .calc-popover-close {
+      border: 1px solid #fff;
+      background: var(--black);
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      width: 26px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .calc-popover pre {
+      margin: 0;
+      padding: 12px;
+      white-space: pre-wrap;
+      font-family: "NVIDIA Sans", Aptos, Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.38;
+      color: var(--ink);
+    }
+
     .tco-cell-highlight,
     .tco-cell-highlight input,
     .tco-cell-highlight select,
@@ -982,6 +1059,458 @@
       if (!Number.isFinite(value)) return "";
       return String(Math.round(value * 1000) / 10) + "%";
     }
+
+    function asNumber(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    function fmtCalcNumber(value, decimals = 0) {
+      if (!Number.isFinite(value)) return "";
+      return value.toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+    }
+    function fmtCalcMoney(value) {
+      if (!Number.isFinite(value)) return "";
+      return "$" + Math.round(value).toLocaleString("en-US");
+    }
+    function fmtCalcMoneyShort(value) {
+      if (!Number.isFinite(value)) return "";
+      return typeof fmtMoney === "function" ? fmtMoney(value) : fmtCalcMoney(value);
+    }
+    function calcDisplayName(sku, basis = "") {
+      return typeof skuDisplayName === "function" ? skuDisplayName(sku, basis) : String(sku || "");
+    }
+    function directChildrenByClass(host, className) {
+      return Array.from(host.children || []).filter((child) => child.classList && child.classList.contains(className));
+    }
+    function addCalcStar(host, title, lines) {
+      if (!host || typeof host.appendChild !== "function") return;
+      const formula = Array.isArray(lines) ? lines.filter(Boolean).join("\n") : String(lines || "");
+      if (!formula.trim()) return;
+      host.classList.add("calc-cell");
+      host.setAttribute("data-calc-title", title);
+      host.setAttribute("data-calc-formula", formula);
+      directChildrenByClass(host, "calc-star").forEach((button) => button.remove());
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "calc-star";
+      button.textContent = "★";
+      button.setAttribute("aria-label", "Show math for " + title);
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        showCalcPopover(title, formula);
+      });
+      host.appendChild(button);
+    }
+    function addCalcStarById(id, title, lines) {
+      const host = document.getElementById(id);
+      if (host) addCalcStar(host, title, lines);
+    }
+    function addCalcStarForInput(input, title, lines) {
+      if (!input) return;
+      const host = input.closest("td") || input.closest("label") || input.parentElement;
+      if (host) addCalcStar(host, title, lines);
+    }
+    function showCalcPopover(title, formula) {
+      let popover = document.getElementById("calcPopover");
+      if (!popover) {
+        popover = document.createElement("div");
+        popover.id = "calcPopover";
+        popover.className = "calc-popover";
+        popover.innerHTML =
+          "<div class=\"calc-popover-header\"><span id=\"calcPopoverTitle\"></span><button class=\"calc-popover-close\" type=\"button\" aria-label=\"Close calculation details\">×</button></div>" +
+          "<pre id=\"calcPopoverBody\"></pre>";
+        document.body.appendChild(popover);
+        popover.querySelector(".calc-popover-close").addEventListener("click", () => popover.classList.remove("show"));
+        if (!window.__calcPopoverEventsBound) {
+          window.__calcPopoverEventsBound = true;
+          document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+              const openPopover = document.getElementById("calcPopover");
+              if (openPopover) openPopover.classList.remove("show");
+            }
+          });
+          document.addEventListener("click", (event) => {
+            if (event.target.closest(".calc-popover") || event.target.closest(".calc-star")) return;
+            const openPopover = document.getElementById("calcPopover");
+            if (openPopover) openPopover.classList.remove("show");
+          });
+        }
+      }
+      popover.querySelector("#calcPopoverTitle").textContent = title;
+      popover.querySelector("#calcPopoverBody").textContent = formula;
+      popover.classList.add("show");
+    }
+    function pathWeightParts(result) {
+      const paths = result?.pathResults || [];
+      const currentDenom = paths.reduce((sum, path) => sum + asNumber(path.gpuQty), 0);
+      const targetDenom = paths.reduce((sum, path) => sum + asNumber(path.targetGpuQty ?? path.gpuQty), 0);
+      const currentWeighted = paths.reduce((sum, path) => sum + asNumber(path.gpuQty) * asNumber(path.perfFactor), 0);
+      const targetWeighted = paths.reduce((sum, path) => sum + asNumber(path.targetGpuQty ?? path.gpuQty) * asNumber(path.perfFactor), 0);
+      const currentFactor = currentDenom > 0 ? currentWeighted / currentDenom : 0;
+      const targetFactor = targetDenom > 0 ? targetWeighted / targetDenom : 0;
+      const useCurrent = Math.abs(currentFactor - asNumber(result?.perfFactor)) <= Math.abs(targetFactor - asNumber(result?.perfFactor));
+      const denom = useCurrent ? currentDenom : targetDenom;
+      const weighted = useCurrent ? currentWeighted : targetWeighted;
+      const weightLabel = useCurrent ? "current GPU qty" : "future GPU qty";
+      const rows = paths.map((path) => {
+        const weight = useCurrent ? asNumber(path.gpuQty) : asNumber(path.targetGpuQty ?? path.gpuQty);
+        return {
+          path,
+          weight,
+          contribution: weight * asNumber(path.perfFactor),
+        };
+      });
+      return { denom, weighted, weightLabel, rows };
+    }
+    function noExemplarRows(result) {
+      const paths = result?.pathResults || [];
+      const rowA = paths.map((path) => ({ path, qty: asNumber(path.targetSourceQty) }));
+      const rowB = paths.map((path) => ({
+        path,
+        qty: asNumber(path.targetSourceQty) <= 0 ? 0 : Math.ceil(asNumber(path.targetSourceQty) / Math.max(0.01, asNumber(path.perfFactor) || 1)),
+      }));
+      const sumA = rowA.reduce((sum, item) => sum + item.qty * asNumber(item.path.targetAnnual), 0);
+      const sumB = rowB.reduce((sum, item) => sum + item.qty * asNumber(item.path.targetAnnual), 0);
+      return Math.abs(sumA - asNumber(result?.targetTcoNoExemplar)) <= Math.abs(sumB - asNumber(result?.targetTcoNoExemplar)) ? rowA : rowB;
+    }
+    function pathLabel(path, index) {
+      const current = calcDisplayName(path.currentSku, path.currentBasis) || "Current SKU";
+      const target = calcDisplayName(path.targetSku, path.targetBasis) || "Future SKU";
+      return "Row " + (index + 1) + " " + current + " → " + target;
+    }
+    function skuPerfMath(result, includeExemplar = false) {
+      const parts = pathWeightParts(result);
+      const lines = [
+        "Formula:",
+        "Sum Avg GPU Sku Performance Factor = weighted SKU uplift total ÷ weighted GPU total",
+        "",
+        "Weight basis: " + parts.weightLabel,
+      ];
+      parts.rows.forEach(({ path, weight, contribution }, index) => {
+        const currentPerf = perf(path.currentSku);
+        const targetPerf = perf(path.targetSku);
+        lines.push(pathLabel(path, index) + ": " + fmtCalcNumber(weight) + " × (" + fmtCalcNumber(targetPerf, 2) + " ÷ " + fmtCalcNumber(currentPerf, 2) + ") = " + fmtCalcNumber(contribution, 2));
+      });
+      lines.push("");
+      lines.push("Weighted total = " + fmtCalcNumber(parts.weighted, 2));
+      lines.push("Weighted GPU total = " + fmtCalcNumber(parts.denom));
+      lines.push("SKU performance factor = " + fmtCalcNumber(parts.weighted, 2) + " ÷ " + fmtCalcNumber(parts.denom) + " = " + fmtFactor(result.perfFactor));
+      if (includeExemplar) {
+        lines.push("Exemplar RA factor = " + fmtFactor(result.exemplarFactor));
+        lines.push("SKU + Exemplar RA factor = " + fmtFactor(result.perfFactor) + " × " + fmtFactor(result.exemplarFactor) + " = " + fmtFactor(result.perfFactor * result.exemplarFactor));
+      }
+      return lines;
+    }
+    function currentInvestmentMath(result) {
+      const lines = ["Formula:", "Current Total GPU Scenario Investment = sum(Current GPU Qty × current annual unit cost)", ""];
+      (result?.pathResults || []).forEach((path, index) => {
+        const unitDetail = path.currentBasis === "Cloud"
+          ? "$/GPU-hour × annual GPU hours"
+          : "$/GPU capex ÷ on-prem amortization years";
+        lines.push(pathLabel(path, index) + ": " + fmtCalcNumber(path.sourceQty) + " × " + fmtCalcMoney(path.currentAnnual) + " (" + unitDetail + ") = " + fmtCalcMoneyShort(path.sourceQty * path.currentAnnual));
+      });
+      lines.push("");
+      lines.push("Current investment = " + fmtCalcMoneyShort(result.currentTco));
+      return lines;
+    }
+    function futureInvestmentMath(result, withExemplar) {
+      const label = withExemplar ? "Future GPU Investment with Exemplar RA performance" : "Future Total GPU Scenario Investment w/o Exemplar RA Performance";
+      const rows = withExemplar
+        ? (result?.pathResults || []).map((path) => ({ path, qty: asNumber(path.targetQty) }))
+        : noExemplarRows(result);
+      const lines = ["Formula:", label + " = sum(Future GPU Qty × future annual unit cost)", ""];
+      rows.forEach(({ path, qty }, index) => {
+        const unitDetail = path.targetBasis === "Cloud"
+          ? "$/GPU-hour × annual GPU hours"
+          : "$/GPU capex ÷ on-prem amortization years";
+        lines.push(pathLabel(path, index) + ": " + fmtCalcNumber(qty) + " × " + fmtCalcMoney(path.targetAnnual) + " (" + unitDetail + ") = " + fmtCalcMoneyShort(qty * path.targetAnnual));
+      });
+      lines.push("");
+      lines.push(label + " = " + fmtCalcMoneyShort(withExemplar ? result.targetTco : result.targetTcoNoExemplar));
+      return lines;
+    }
+    function targetGpuMath(result, withExemplar = true) {
+      const lines = ["Formula:", withExemplar ? "Future GPU Scenario Total = sum future GPU qty after SKU uplift and Exemplar RA" : "Future GPU qty before Exemplar RA = sum future GPU qty after SKU uplift", ""];
+      const rows = withExemplar
+        ? (result?.pathResults || []).map((path) => ({ path, qty: asNumber(path.targetQty) }))
+        : noExemplarRows(result);
+      rows.forEach(({ path, qty }, index) => {
+        if (withExemplar) {
+          lines.push(pathLabel(path, index) + ": ceil(" + fmtCalcNumber(path.targetSourceQty) + " ÷ " + fmtFactor(result.exemplarFactor) + ") = " + fmtCalcNumber(qty));
+        } else {
+          lines.push(pathLabel(path, index) + ": " + fmtCalcNumber(qty));
+        }
+      });
+      lines.push("");
+      lines.push("Total = " + fmtNumber(rows.reduce((sum, item) => sum + item.qty, 0)));
+      return lines;
+    }
+    function nvaiePrimaryModelForStars(result) {
+      if (typeof nvaiePrimaryScenarioModel === "function") return nvaiePrimaryScenarioModel(result);
+      if (typeof nvaieScenariosFromInputs === "function" && typeof nvaieScenarioModel === "function") {
+        const scenarios = nvaieScenariosFromInputs();
+        if (scenarios.length) return nvaieScenarioModel(scenarios[0]);
+      }
+      return null;
+    }
+    function nvaieScenarioModelsForStars(result) {
+      if (typeof nvaieScenariosFromInputs !== "function" || typeof nvaieScenarioModel !== "function") return [];
+      const scenarios = nvaieScenariosFromInputs();
+      return scenarios.map((scenario) => {
+        try {
+          if (typeof nvaieScenarioSourceResult === "function") {
+            const usesScale = typeof nvaieUsesScaleScenario === "function" ? nvaieUsesScaleScenario() : false;
+            const sourceResult = nvaieScenarioSourceResult(scenario, result);
+            return nvaieScenarioModel(scenario, sourceResult, { useCalculatedCluster: usesScale, useScaleScenario: usesScale });
+          }
+          return nvaieScenarioModel(scenario);
+        } catch (error) {
+          return null;
+        }
+      });
+    }
+    function nvaieCostMath(model) {
+      if (!model) return ["NVAIE model is not available."];
+      return [
+        "Formula:",
+        "NVAIE Cost Per Year = Modeled NVAIE GPUs × NVAIE Price $ / GPU / Year",
+        fmtCalcNumber(model.cluster) + " × " + fmtCalcMoney(nvaiePricePerGpuYear()) + " = " + fmtCalcMoneyShort(model.nvaieCost),
+      ];
+    }
+    function decorateNvaieTable(table, model) {
+      if (!table || !model) return;
+      const rows = Array.from(table.querySelectorAll("tbody tr"));
+      const workloadCells = (rowIndex) => rows[rowIndex] ? Array.from(rows[rowIndex].children).slice(1) : [];
+      const workloads = model.workloads || [];
+      const clusterInput = rows[0]?.querySelector("input");
+      addCalcStarForInput(clusterInput, model.label + " GPU Cluster", [
+        "Formula:",
+        "Modeled NVAIE GPUs = selected scenario GPU cluster.",
+        "Current value = " + fmtCalcNumber(model.cluster),
+      ]);
+      workloadCells(1).forEach((cell, index) => {
+        const workload = workloads[index];
+        if (!workload) return;
+        addCalcStar(cell.querySelector("input") ? cell : cell, model.label + " " + workload.label + " % Cluster", [
+          "Formula:",
+          "% Cluster = Modeled workload GPUs ÷ total modeled NVAIE GPUs",
+          fmtCalcNumber(workload.gpus) + " ÷ " + fmtCalcNumber(model.cluster) + " = " + fmtPct(workload.mix),
+        ]);
+      });
+      workloadCells(2).forEach((cell, index) => {
+        const workload = workloads[index];
+        if (!workload) return;
+        addCalcStar(cell.querySelector("input") ? cell : cell, model.label + " " + workload.label + " Modeled NVAIE GPUs", [
+          "Formula:",
+          "Modeled NVAIE GPUs = GPU Cluster × workload %",
+          fmtCalcNumber(model.cluster) + " × " + fmtPct(workload.mix) + " = " + fmtCalcNumber(workload.gpus),
+        ]);
+      });
+      if (rows[3]) addCalcStar(rows[3].children[1], model.label + " Annual GPU Spend before NVAIE Speed up", [
+        "Formula:",
+        "Annual GPU Spend before NVAIE Speed up = sum Spend by Workload",
+        ...workloads.map((workload) => workload.label + ": " + fmtCalcMoneyShort(workload.spend)),
+        "Total = " + fmtCalcMoneyShort(model.annualSpend),
+      ]);
+      workloadCells(4).forEach((cell, index) => {
+        const workload = workloads[index];
+        if (!workload) return;
+        addCalcStar(cell, model.label + " " + workload.label + " Spend by Workload", [
+          "Formula:",
+          "Spend by Workload = workload GPU investment before NVAIE speed up",
+          "Current value = " + fmtCalcMoneyShort(workload.spend),
+        ]);
+      });
+      workloadCells(6).forEach((cell, index) => {
+        const workload = workloads[index];
+        if (!workload) return;
+        addCalcStar(cell, model.label + " " + workload.label + " GPU Investment Savings after NVAIE Speed Up", [
+          "Formula:",
+          "Savings = Spend by Workload × (1 - 1 ÷ NVAIE Speed Up Factor)",
+          fmtCalcMoneyShort(workload.spend) + " × (1 - 1 ÷ " + fmtFactor(workload.speedup) + ") = " + fmtCalcMoneyShort(workload.savings),
+        ]);
+      });
+      if (rows[7]) addCalcStar(rows[7].children[1], model.label + " Total GPU Investment after NVAIE Speed up", [
+        "Formula:",
+        "Total GPU Investment after NVAIE Speed up = Annual GPU Spend before NVAIE - total NVAIE speed-up savings",
+        fmtCalcMoneyShort(model.annualSpend) + " - " + fmtCalcMoneyShort(model.totalSavings) + " = " + fmtCalcMoneyShort(model.adjustedGpuInvestment ?? (model.annualSpend - model.totalSavings)),
+      ]);
+      if (rows[8]) addCalcStar(rows[8].children[1], model.label + " NVAIE Cost Per Year", nvaieCostMath(model));
+      if (rows[9]) addCalcStar(rows[9].children[1], model.label + " Return", [
+        "Formula:",
+        "Return = total NVAIE speed-up savings - NVAIE Cost Per Year",
+        fmtCalcMoneyShort(model.totalSavings) + " - " + fmtCalcMoneyShort(model.nvaieCost) + " = " + fmtCalcMoneyShort(model.netReturn),
+      ]);
+      if (rows[10]) addCalcStar(rows[10].children[1], model.label + " ROI", [
+        "Formula:",
+        "ROI = Return ÷ NVAIE Cost Per Year",
+        fmtCalcMoneyShort(model.netReturn) + " ÷ " + fmtCalcMoneyShort(model.nvaieCost) + " = " + fmtPct(model.roi),
+      ]);
+    }
+    function decorateCalculationStars(result) {
+      if (!result) return;
+      const paths = result.pathResults || [];
+      const currentQty = paths.reduce((sum, path) => sum + asNumber(path.sourceQty), 0);
+      const currentInputQty = paths.reduce((sum, path) => sum + asNumber(path.gpuQty), 0);
+      const futureInputQty = paths.reduce((sum, path) => sum + asNumber(path.targetGpuQty ?? path.gpuQty), 0);
+
+      paths.forEach((path, index) => {
+        const currentPctInput = document.querySelector("[data-path-index='" + index + "'][data-path-field='currentPct']");
+        addCalcStarForInput(currentPctInput, "Row " + (index + 1) + " Current GPU %", [
+          "Formula:",
+          "Current GPU % = row Current GPU Qty ÷ Current GPU Total × 100",
+          fmtCalcNumber(path.gpuQty) + " ÷ " + fmtCalcNumber(currentInputQty) + " × 100 = " + (currentPctInput?.value || "") + "%",
+        ]);
+        const targetQtyInput = document.querySelector("[data-path-index='" + index + "'][data-path-field='targetGpuQty']");
+        if (targetQtyInput && path.targetGpuQtyManual !== true) {
+          addCalcStarForInput(targetQtyInput, "Row " + (index + 1) + " Future GPU Qty", [
+            "Formula:",
+            "Future GPU Qty = ceil(Current GPU Qty ÷ SKU performance uplift)",
+            fmtCalcNumber(path.gpuQty) + " ÷ " + fmtFactor(path.perfFactor) + " = " + fmtCalcNumber(path.targetGpuQty ?? path.targetSourceQty),
+          ]);
+        }
+        const targetPctInput = document.querySelector("[data-path-index='" + index + "'][data-path-field='targetPct']");
+        addCalcStarForInput(targetPctInput, "Row " + (index + 1) + " Future GPU %", [
+          "Formula:",
+          "Future GPU % = row Future GPU Qty ÷ Future GPU Scenario Total × 100",
+          fmtCalcNumber(path.targetGpuQty ?? path.targetSourceQty) + " ÷ " + fmtCalcNumber(futureInputQty) + " × 100 = " + (targetPctInput?.value || "") + "%",
+        ]);
+        const raQtyCell = document.querySelector("[data-path-ra-qty='" + index + "']");
+        if (raQtyCell) addCalcStar(raQtyCell, "Row " + (index + 1) + " GPU Qty w/Exemplar RA Perf", [
+          "Formula:",
+          "GPU Qty w/Exemplar RA Perf = ceil(Future GPU Qty ÷ Exemplar RA factor)",
+          fmtCalcNumber(path.targetSourceQty) + " ÷ " + fmtFactor(result.exemplarFactor) + " = " + (raQtyCell.textContent || "N/A"),
+        ]);
+        const perfCell = document.querySelector("[data-path-perf='" + index + "']");
+        if (perfCell) addCalcStar(perfCell, "Row " + (index + 1) + " SKU Performance Uplift", [
+          "Formula:",
+          "SKU performance uplift = Future SKU perf factor ÷ Current SKU perf factor",
+          calcDisplayName(path.targetSku, path.targetBasis) + " " + fmtCalcNumber(perf(path.targetSku), 2) + " ÷ " +
+            calcDisplayName(path.currentSku, path.currentBasis) + " " + fmtCalcNumber(perf(path.currentSku), 2) + " = " + fmtFactor(path.perfFactor),
+        ]);
+      });
+
+      addCalcStarForInput(document.getElementById("gpuQuantity"), "Current GPU Total", [
+        "Formula:",
+        "Current GPU Total = sum Current GPU Qty rows",
+        ...paths.map((path, index) => "Row " + (index + 1) + ": " + fmtCalcNumber(path.gpuQty)),
+        "Total = " + fmtCalcNumber(currentInputQty),
+      ]);
+      addCalcStarForInput(document.getElementById("annualGpuHours"), "Annual GPU Hours", [
+        "Formula:",
+        "Annual GPU Hours = Current GPU Total × assumed annual utilization hours",
+        fmtCalcNumber(currentInputQty) + " × " + fmtCalcNumber(assumedAnnualUtilizationHours) + " = " + fmtCalcNumber(currentInputQty * assumedAnnualUtilizationHours),
+      ]);
+      addCalcStarForInput(document.getElementById("futureGpuSummary"), "Future GPU Scenario Total", targetGpuMath(result, true));
+
+      addCalcStarById("summaryCurrentGpus", "Current GPU Total", [
+        "Formula:",
+        "Current GPU Total = sum Current GPU Qty rows = " + fmtCalcNumber(currentInputQty),
+      ]);
+      addCalcStarById("summaryGpuReduction", "GPU Reduction", [
+        "Formula:",
+        "GPU Reduction = Future GPU Scenario Total - Current GPU Total",
+        fmtCalcNumber(result.targetGpus) + " - " + fmtCalcNumber(currentQty) + " = " + fmtCalcNumber(result.gpuReduction),
+      ]);
+      addCalcStarById("targetGpus", "Future GPU Scenario Total", targetGpuMath(result, true));
+      addCalcStarById("perfFactor", "Sum Avg GPU Sku Performance Factor", skuPerfMath(result, false));
+      addCalcStarById("combinedPerfFactor", "Sum Avg GPU Sku + Exemplar RA Performance Factor", skuPerfMath(result, true));
+      addCalcStarById("currentCostPerSourceGpu", "Current per GPU Investment Avg", [
+        "Formula:",
+        "Current per GPU Investment Avg = Current Total GPU Scenario Investment ÷ Current GPU Total",
+        fmtCalcMoneyShort(result.currentTco) + " ÷ " + fmtCalcNumber(currentQty) + " = " + fmtCurrency(result.currentCostPerSourceGpu),
+      ]);
+      addCalcStarById("targetCostPerSourceGpu", "Future per GPU Investment Avg", [
+        "Formula:",
+        "Future per GPU Investment Avg = New Investment Total ÷ Current GPU Total",
+        fmtCalcMoneyShort(result.targetTco) + " ÷ " + fmtCalcNumber(currentQty) + " = " + fmtCurrency(result.targetCostPerSourceGpu),
+      ]);
+      addCalcStarById("currentTco", "Current Total GPU Scenario Investment", currentInvestmentMath(result));
+      addCalcStarById("targetTcoNoExemplar", "Future Total GPU Scenario Investment w/o Exemplar RA Performance", futureInvestmentMath(result, false));
+      addCalcStarById("targetTco", "New Investment Total (GPU + Exemplar RA)", futureInvestmentMath(result, true));
+      addCalcStarById("exemplarImpact", "Exemplar RA Savings", [
+        "Formula:",
+        "Exemplar RA Savings = Future investment w/o Exemplar RA - Future investment with Exemplar RA",
+        fmtCalcMoneyShort(result.targetTcoNoExemplar) + " - " + fmtCalcMoneyShort(result.targetTco) + " = " + fmtCalcMoneyShort(result.exemplarImpact),
+      ]);
+      addCalcStarById("tcoSavings", "New GPU + Exemplar RA Investment Total", [
+        "Formula:",
+        "Investment Savings = Current investment - New Investment Total",
+        fmtCalcMoneyShort(result.currentTco) + " - " + fmtCalcMoneyShort(result.targetTco) + " = " + fmtCalcMoneyShort(result.savings),
+      ]);
+      addCalcStarById("savingsPct", "Savings %", [
+        "Formula:",
+        "Savings % = Investment Savings ÷ Current investment",
+        fmtCalcMoneyShort(result.savings) + " ÷ " + fmtCalcMoneyShort(result.currentTco) + " = " + fmtPct(result.savingsPct),
+      ]);
+      addCalcStarById("gpuReduction", "GPU Reduction", [
+        "Formula:",
+        "GPU Reduction = Future GPU Scenario Total - Current GPU Total",
+        fmtCalcNumber(result.targetGpus) + " - " + fmtCalcNumber(currentQty) + " = " + fmtCalcNumber(result.gpuReduction),
+      ]);
+
+      const nvaieModel = nvaiePrimaryModelForStars(result);
+      const nvaieSummary = typeof nvaieSummaryForResult === "function" ? nvaieSummaryForResult(result) : null;
+      if (nvaieSummary && nvaieModel) {
+        addCalcStarById("summaryNvaieTco", "NVAIE Investment", nvaieCostMath(nvaieModel));
+        addCalcStarById("summaryNvaieSpeedup", "NVAIE Speed Up", [
+          "Formula:",
+          "NVAIE Speed Up = Annual GPU spend before NVAIE ÷ adjusted GPU investment after NVAIE speed up",
+          fmtCalcMoneyShort(nvaieModel.annualSpend) + " ÷ " + fmtCalcMoneyShort(nvaieModel.annualSpend - nvaieModel.totalSavings) + " = " + fmtFactor(nvaieSummary.nvaieSpeedup),
+        ]);
+        addCalcStarById("summaryNvaieImpact", "NVAIE Investment Savings", [
+          "Formula:",
+          "NVAIE Investment Savings = gross NVAIE speed-up savings - NVAIE Cost Per Year",
+          fmtCalcMoneyShort(nvaieModel.totalSavings) + " - " + fmtCalcMoneyShort(nvaieModel.nvaieCost) + " = " + fmtCalcMoneyShort(nvaieSummary.nvaieImpact),
+        ]);
+        addCalcStarById("summaryNvaieRoi", "NVAIE ROI", [
+          "Formula:",
+          "NVAIE ROI = NVAIE Investment Savings ÷ NVAIE Cost Per Year",
+          fmtCalcMoneyShort(nvaieSummary.nvaieImpact) + " ÷ " + fmtCalcMoneyShort(nvaieModel.nvaieCost) + " = " + fmtPct(nvaieSummary.nvaieRoi),
+        ]);
+        addCalcStarById("summaryTotalTcoImpact", "Total Investment Impact", [
+          "Formula:",
+          "Total Investment Impact = GPU + Exemplar RA investment savings + NVAIE investment savings",
+          fmtCalcMoneyShort(result.savings) + " + " + fmtCalcMoneyShort(nvaieSummary.nvaieImpact) + " = " + fmtCalcMoneyShort(nvaieSummary.totalTcoImpact),
+        ]);
+      } else {
+        addCalcStarById("summaryTotalTcoImpact", "Total Investment Impact", [
+          "Formula:",
+          "Total Investment Impact = GPU + Exemplar RA investment savings",
+          "Total = " + fmtCalcMoneyShort(result.savings),
+        ]);
+      }
+
+      for (let i = 0; i < 3; i += 1) {
+        const qtyInput = document.getElementById("scaleQty" + i);
+        const scaleQty = qtyInput ? numberValue("scaleQty" + i) || 0 : 0;
+        const row = scaleQty > 0 && typeof calcForQty === "function" ? calcForQty(scaleQty) : null;
+        if (!row) continue;
+        addCalcStarById("scalePerf" + i, "Scale Row " + (i + 1) + " Sum Avg GPU Sku Performance Factor", skuPerfMath(row, false));
+        addCalcStarById("scaleExemplar" + i, "Scale Row " + (i + 1) + " Sum Avg GPU Sku + Exemplar RA Performance Factor", skuPerfMath(row, true));
+        addCalcStarById("scaleTargetGpus" + i, "Scale Row " + (i + 1) + " Future GPU's Required", targetGpuMath(row, true));
+        addCalcStarById("scaleCurrentTco" + i, "Scale Row " + (i + 1) + " Current Annualized Investment", currentInvestmentMath(row));
+        addCalcStarById("scaleTargetTco" + i, "Scale Row " + (i + 1) + " Future Annualized Investment", futureInvestmentMath(row, true));
+        addCalcStarById("scaleSavings" + i, "Scale Row " + (i + 1) + " Annualized Investment Savings", [
+          "Formula:",
+          "Savings = Current annualized investment - Future annualized investment",
+          fmtCalcMoneyShort(row.currentTco) + " - " + fmtCalcMoneyShort(row.targetTco) + " = " + fmtCalcMoneyShort(row.savings),
+        ]);
+        addCalcStarById("scaleSavingsPct" + i, "Scale Row " + (i + 1) + " Savings %", [
+          "Formula:",
+          "Savings % = Savings ÷ Current annualized investment",
+          fmtCalcMoneyShort(row.savings) + " ÷ " + fmtCalcMoneyShort(row.currentTco) + " = " + fmtPct(row.savingsPct),
+        ]);
+      }
+
+      const models = nvaieScenarioModelsForStars(result);
+      Array.from(document.querySelectorAll(".nvaie-table")).forEach((table, index) => decorateNvaieTable(table, models[index]));
+    }
+
     function numberValue(id) {
       const raw = el[id].value;
       if (raw === "") return null;
@@ -1455,6 +1984,7 @@
         el["scaleSavings" + i].textContent = fmtMoney(row.savings);
         el["scaleSavingsPct" + i].textContent = fmtPct(row.savingsPct);
       }
+      decorateCalculationStars(result);
     }
     function fillSelect(select, value, basis = "") {
       const selectedValue = skuForBasis(value, basis);
