@@ -3483,10 +3483,9 @@
     if (el.useSkuPerfFactor) el.useSkuPerfFactor.addEventListener("change", () => setPerfFactorMode(false));
     if (el.useSkuExemplarPerfFactor) el.useSkuExemplarPerfFactor.addEventListener("change", () => setPerfFactorMode(true));
     if (el.exemplarEnabled) el.exemplarEnabled.addEventListener("change", () => setPerfFactorMode(el.exemplarEnabled.checked));
-    document.addEventListener("click", (event) => {
-      setCellHighlight(event.target, { toggle: event.metaKey || event.ctrlKey || event.shiftKey });
+    document.addEventListener("dblclick", (event) => {
+      setCellHighlight(event.target, { toggle: true });
     });
-    document.addEventListener("focusin", (event) => setCellHighlight(event.target));
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") clearCellHighlight();
     });
