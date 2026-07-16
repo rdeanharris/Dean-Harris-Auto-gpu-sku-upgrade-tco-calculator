@@ -3506,7 +3506,7 @@
     renderSkuOverrideRows();
     setInput("exemplar", data.defaults.exemplar, pctInput);
     if (el.exemplarEnabled) el.exemplarEnabled.checked = data.defaults.exemplarEnabled === true;
-    (data.defaults.scaleQuantities || [3000, 10000, 50000]).slice(0, 3).forEach((qty, index) => setInput("scaleQty" + index, qty));
+    (data.defaults.scaleQuantities || [10000, 20000, 50000]).slice(0, 3).forEach((qty, index) => setInput("scaleQty" + index, qty));
     el.pathRows.addEventListener("input", (event) => {
       const index = Number(event.target.dataset.pathIndex);
       const field = event.target.dataset.pathField;
