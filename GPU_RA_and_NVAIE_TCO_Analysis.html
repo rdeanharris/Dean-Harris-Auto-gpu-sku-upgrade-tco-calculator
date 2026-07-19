@@ -713,6 +713,12 @@
       font-weight: 700;
       color: var(--ink);
     }
+    .nvaie-mode-options {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      flex-wrap: wrap;
+    }
     .nvaie-mode-control input {
       width: 18px;
       height: 18px;
@@ -1300,7 +1306,10 @@
               <div class="nvaie-assumption-grid">
                 <label class="nvaie-assumption nvaie-mode-control nvaie-enable-control"><input id="nvaieRoiEnabled" type="checkbox" />Include NVAIE ROI Analysis</label>
                 <div class="nvaie-assumption"><b>NVAIE Price $ / GPU / Year</b><input id="nvaiePricePerGpu" class="nvaie-price-input" type="number" min="0" step="0.01" aria-label="NVAIE Price per GPU per Year" /></div>
-                <div class="nvaie-assumption"><b>GPU Investment Pricing</b><span id="nvaieAnnualSpendPerGpu"></span></div>
+                <div class="nvaie-assumption nvaie-mode-options">
+                  <label class="nvaie-mode-control"><input id="nvaieUseFutureScenario" type="checkbox" />Use Future GPU Scenario</label>
+                  <label class="nvaie-mode-control"><input id="nvaieUseScaleScenario" type="checkbox" />Use Scale Deployment Scenarios</label>
+                </div>
               </div>
               <div class="nvaie-roi-tables" id="nvaieRoiTables"></div>
             </div>
@@ -1344,7 +1353,7 @@
       "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", "scaleDeploymentBody",
       "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", "summaryTcoBody",
       "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", "nvaieRoiBody",
-      "nvaieRoiEnabled", "nvaiePricePerGpu", "nvaieAnnualSpendPerGpu", "nvaieRoiTables",
+      "nvaieRoiEnabled", "nvaiePricePerGpu", "nvaieUseFutureScenario", "nvaieUseScaleScenario", "nvaieRoiTables",
       "skuOverridePanel", "skuOverrideToggle", "skuOverrideToggleIconStart", "skuOverrideToggleIcon", "skuOverrideTable",
       "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
       "skuOverrideRows", "warning", "saveStatus", "createPdfButton",
@@ -1368,6 +1377,7 @@
     const nvaieSpeedupStorageKey = "gpuTcoNvaieSpeedups";
     const nvaiePriceStorageKey = "gpuTcoNvaiePricePerGpuYear";
     const nvaieRoiEnabledStorageKey = "gpuTcoNvaieRoiEnabled";
+    const nvaieUseScaleScenarioStorageKey = "gpuTcoNvaieUseScaleScenario";
     const authUsersStorageKey = "gpuTcoLocalUsers";
     const authSessionStorageKey = "gpuTcoLocalSession";
     const authConfigsStorageKey = "gpuTcoNamedConfigs";
@@ -1582,6 +1592,18 @@
     function storeNvaieRoiEnabled(value) {
       try {
         window.localStorage.setItem(nvaieRoiEnabledStorageKey, value ? "true" : "false");
+      } catch (error) {}
+    }
+    function nvaieUsesScaleScenario() {
+      try {
+        const storedValue = window.localStorage.getItem(nvaieUseScaleScenarioStorageKey);
+        if (storedValue !== null) return storedValue === "true";
+      } catch (error) {}
+      return data.nvaieRoi?.useScaleScenario === true;
+    }
+    function storeNvaieUseScaleScenario(value) {
+      try {
+        window.localStorage.setItem(nvaieUseScaleScenarioStorageKey, value ? "true" : "false");
       } catch (error) {}
     }
     function readLocalJson(key, fallback) {
@@ -2843,6 +2865,7 @@
         scaleFactorSourceTab: activeScaleSourceTab,
         scaleQuantities: [numberValue("scaleQty0"), numberValue("scaleQty1"), numberValue("scaleQty2")],
         nvaieRoiEnabled: nvaieRoiEnabled(),
+        nvaieUseScaleScenario: nvaieUsesScaleScenario(),
         nvaiePricePerGpuYear: nvaiePricePerGpuYear(),
         nvaieScenarioClusters: storedNvaieScenarioClusters(),
         nvaieMixes: storedNvaieMixes(),
@@ -2964,10 +2987,23 @@
         targetBasis: scenarioBasisLabel(targetCloudMix, targetOnPremMix, paths),
       };
     }
-    function nvaieScenarioModel(scenario) {
-      const cluster = normalizeNvaieCluster(scenario.gpuCluster) ?? 0;
-      const tco = calcForQty(cluster);
-      const annualSpend = tco.currentTco;
+    function scaleDeploymentExtremes() {
+      return {
+        lower: numberValue("scaleQty0") || 10000,
+        higher: numberValue("scaleQty2") || 50000,
+      };
+    }
+    function nvaieScenarioSourceResult(scenario, currentResult) {
+      if (!nvaieUsesScaleScenario()) return currentResult;
+      const scaleQty = scaleDeploymentExtremes()[scenario.id === "higher" ? "higher" : "lower"];
+      return { ...calcForQty(scaleQty), nvaieScaleSourceQty: scaleQty };
+    }
+    function nvaieScenarioModel(scenario, result, options = {}) {
+      const scaleSourceQty = options.useScaleScenario === true ? normalizeNvaieCluster(result?.nvaieScaleSourceQty) : 0;
+      const useFutureCluster = !scaleSourceQty && result && scenario.id === "lower";
+      const cluster = scaleSourceQty || (useFutureCluster ? normalizeNvaieCluster(result.targetGpus) : normalizeNvaieCluster(scenario.gpuCluster)) || 0;
+      const tco = scaleSourceQty ? result : calcForQty(cluster);
+      const annualSpend = useFutureCluster ? result.targetTco : (scaleSourceQty ? tco.currentTco : tco.currentTco);
       const workloads = nvaieWorkloadsFromInputs().map((workload) => {
         const mix = normalizeMix(workload.mix);
         const speedup = Number(workload.speedup) || 1;
@@ -2994,15 +3030,20 @@
         nvaieCost,
         netReturn,
         roi: nvaieCost > 0 ? netReturn / nvaieCost : 0,
+        scaleSourceQty: scaleSourceQty || result?.nvaieScaleSourceQty || 0,
+        clusterLocked: Boolean(useFutureCluster || scaleSourceQty),
       };
     }
-    function nvaiePrimaryScenarioModel() {
+    function nvaiePrimaryScenarioModel(result) {
       const scenarios = nvaieScenariosFromInputs();
       const lower = scenarios.find((scenario) => scenario.id === "lower") || scenarios[0];
-      return lower ? nvaieScenarioModel(lower) : null;
+      if (!lower) return null;
+      const usesScaleScenario = nvaieUsesScaleScenario();
+      const sourceResult = nvaieScenarioSourceResult(lower, result);
+      return nvaieScenarioModel(lower, sourceResult, { useScaleScenario: usesScaleScenario });
     }
     function nvaieSummaryForResult(result) {
-      const model = nvaiePrimaryScenarioModel();
+      const model = nvaiePrimaryScenarioModel(result);
       const baseInvestment = model ? model.annualSpend : 0;
       const grossNvaieSavings = model ? model.totalSavings : 0;
       const nvaieCost = model ? model.nvaieCost : 0;
@@ -3036,15 +3077,19 @@
         };
       });
     }
-    function renderNvaieRoiTables() {
+    function renderNvaieRoiTables(result) {
       const scenarios = nvaieScenariosFromInputs();
       if (document.activeElement !== el.nvaiePricePerGpu) {
         el.nvaiePricePerGpu.value = priceOverrideInputValue(nvaiePricePerGpuYear());
       }
       if (el.nvaieRoiEnabled) el.nvaieRoiEnabled.checked = nvaieRoiEnabled();
-      el.nvaieAnnualSpendPerGpu.textContent = "Selected GPU scenarios + source tab prices";
+      const usesScaleScenario = nvaieUsesScaleScenario();
+      if (el.nvaieUseFutureScenario) el.nvaieUseFutureScenario.checked = !usesScaleScenario;
+      if (el.nvaieUseScaleScenario) el.nvaieUseScaleScenario.checked = usesScaleScenario;
       el.nvaieRoiTables.innerHTML = scenarios.map((scenario) => {
-        const model = nvaieScenarioModel(scenario);
+        const sourceResult = nvaieScenarioSourceResult(scenario, result);
+        const model = nvaieScenarioModel(scenario, sourceResult, { useScaleScenario: usesScaleScenario });
+        const clusterReadonly = model.clusterLocked ? " readonly" : "";
         const workloadHeader = model.workloads.map((workload) => "<th>" + escapeHtml(workload.label) + "</th>").join("");
         const mixCells = model.workloads.map((workload) =>
           "<td><input class=\"nvaie-table-input\" type=\"number\" min=\"0\" max=\"100\" step=\"0.1\" value=\"" + pctInput(workload.mix) + "\" data-nvaie-mix=\"" + escapeHtml(workload.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " " + workload.label + " % Cluster") + "\" /></td>"
@@ -3063,7 +3108,7 @@
           "<tr class=\"workload-head\"><th>Workload</th>" + workloadHeader + "</tr>" +
           "</thead>" +
           "<tbody>" +
-          "<tr class=\"row-strong\"><td class=\"row-label\">GPU Cluster</td><td class=\"nvaie-cluster-cell\" colspan=\"3\"><input class=\"nvaie-table-input nvaie-cluster-input\" type=\"number\" min=\"0\" step=\"any\" value=\"" + model.cluster + "\" data-nvaie-cluster=\"" + escapeHtml(model.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " GPU Cluster") + "\" /></td></tr>" +
+          "<tr class=\"row-strong\"><td class=\"row-label\">GPU Cluster</td><td class=\"nvaie-cluster-cell\" colspan=\"3\"><input class=\"nvaie-table-input nvaie-cluster-input\" type=\"number\" min=\"0\" step=\"any\" value=\"" + model.cluster + "\" data-nvaie-cluster=\"" + escapeHtml(model.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " GPU Cluster") + "\"" + clusterReadonly + " /></td></tr>" +
           "<tr><td class=\"row-label\">% Cluster</td>" + mixCells + "</tr>" +
           "<tr><td class=\"row-label\">Modeled NVAIE GPUs</td>" + gpuCells + "</tr>" +
           "<tr class=\"pale-row\"><td class=\"row-label\">Annual GPU Spend $M<br />before NVAIE Speed up</td><td colspan=\"3\"><strong>" + fmtCurrency(model.annualSpend) + "</strong></td></tr>" +
@@ -3186,7 +3231,7 @@
         el["scaleSavings" + i].textContent = fmtMoney(row.savings);
         el["scaleSavingsPct" + i].textContent = fmtPct(row.savingsPct);
       }
-      renderNvaieRoiTables();
+      renderNvaieRoiTables(result);
       decorateCalculationStars(result);
     }
     function fillSelect(select, value, basis = "") {
@@ -3370,6 +3415,8 @@
         state.scaleQuantities.slice(0, 3).forEach((qty, index) => setInput("scaleQty" + index, qty));
       }
       if (state.nvaieRoiEnabled !== undefined) storeNvaieRoiEnabled(Boolean(state.nvaieRoiEnabled));
+      if (state.nvaieUseScaleScenario !== undefined) storeNvaieUseScaleScenario(Boolean(state.nvaieUseScaleScenario));
+      if (state.nvaieRoi?.useScaleScenario !== undefined) storeNvaieUseScaleScenario(Boolean(state.nvaieRoi.useScaleScenario));
       if (state.nvaiePricePerGpuYear !== undefined) storeNvaiePricePerGpuYear(state.nvaiePricePerGpuYear);
       if (state.nvaieScenarioClusters) storeNvaieScenarioClusters(state.nvaieScenarioClusters);
       if (state.nvaieMixes) storeNvaieMixes(state.nvaieMixes);
@@ -3534,6 +3581,25 @@
       storeNvaieRoiEnabled(event.target.checked);
       update();
       scheduleSave();
+    });
+    function setNvaieRoiScenarioMode(useScaleScenario) {
+      storeNvaieUseScaleScenario(useScaleScenario);
+      update();
+      scheduleSave();
+    }
+    if (el.nvaieUseFutureScenario) el.nvaieUseFutureScenario.addEventListener("change", (event) => {
+      if (!event.target.checked) {
+        event.target.checked = true;
+        return;
+      }
+      setNvaieRoiScenarioMode(false);
+    });
+    if (el.nvaieUseScaleScenario) el.nvaieUseScaleScenario.addEventListener("change", (event) => {
+      if (!event.target.checked) {
+        event.target.checked = true;
+        return;
+      }
+      setNvaieRoiScenarioMode(true);
     });
     el.nvaieRoiTables.addEventListener("input", handleNvaieRoiTableInput);
     el.nvaieRoiTables.addEventListener("change", handleNvaieRoiTableInput);
