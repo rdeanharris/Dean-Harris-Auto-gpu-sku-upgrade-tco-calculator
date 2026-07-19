@@ -634,6 +634,37 @@
       color: #fff;
       font-weight: 700;
     }
+    .headline .nvaie-headline-row td {
+      background: var(--soft);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+      vertical-align: top;
+    }
+    .headline .nvaie-headline-row b {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .headline .nvaie-headline-row span {
+      display: block;
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+    .headline .nvaie-headline-row .nvaie-total-impact {
+      background: var(--nvidia);
+      color: #fff;
+      text-align: center;
+    }
+    .headline .nvaie-headline-row .nvaie-total-impact b,
+    .headline .nvaie-headline-row .nvaie-total-impact span {
+      color: #fff;
+    }
+    .headline .nvaie-headline-row .nvaie-total-impact span {
+      font-size: 19px;
+    }
     .nvaie-roi-wrap {
       display: grid;
       gap: 18px;
@@ -1246,6 +1277,13 @@
                 <td id="savingsPct" class="gain"></td>
                 <td id="gpuReduction"></td>
               </tr>
+              <tr class="nvaie-headline-row">
+                <td><b>NVAIE Investment (nearest $M)</b><span id="summaryNvaieTco"></span></td>
+                <td><b>NVAIE Speed Up</b><span id="summaryNvaieSpeedup"></span></td>
+                <td><b>NVAIE Investment Savings</b><span id="summaryNvaieImpact"></span></td>
+                <td><b>NVAIE ROI</b><span id="summaryNvaieRoi"></span></td>
+                <td colspan="3" class="nvaie-total-impact"><b id="summaryTotalTcoImpactLabel">Total Investment Impact (GPU and Exemplar RA)</b><span id="summaryTotalTcoImpact"></span></td>
+              </tr>
             </tbody>
           </table>
           </div>
@@ -1260,7 +1298,7 @@
             <div class="section-note">NVAIE ROI model uses the selected future GPU requirements and workload mix; scale mode models the lower and larger GPU scenarios.</div>
             <div class="nvaie-roi-wrap">
               <div class="nvaie-assumption-grid">
-                <label class="nvaie-assumption nvaie-mode-control nvaie-enable-control"><input id="nvaieRoiEnabled" type="checkbox" />Create NVAIE ROI Analysis</label>
+                <label class="nvaie-assumption nvaie-mode-control nvaie-enable-control"><input id="nvaieRoiEnabled" type="checkbox" />Include NVAIE ROI Analysis</label>
                 <div class="nvaie-assumption"><b>NVAIE Price $ / GPU / Year</b><input id="nvaiePricePerGpu" class="nvaie-price-input" type="number" min="0" step="0.01" aria-label="NVAIE Price per GPU per Year" /></div>
                 <div class="nvaie-assumption"><b>GPU Investment Pricing</b><span id="nvaieAnnualSpendPerGpu"></span></div>
               </div>
@@ -1298,6 +1336,7 @@
     const el = Object.fromEntries([...ids, "annualGpuHours", "futureGpuSummary", "gpuQuantity", "pathRows",
       "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "combinedPerfFactor", "useSkuPerfFactor", "useSkuExemplarPerfFactor", "targetGpus", "currentTco", "targetTco",
       "currentCostPerSourceGpu", "targetCostPerSourceGpu", "tcoSavings", "savingsPct", "targetTcoNoExemplar", "exemplarImpact", "gpuReduction",
+      "summaryNvaieTco", "summaryNvaieSpeedup", "summaryNvaieImpact", "summaryNvaieRoi", "summaryTotalTcoImpact", "summaryTotalTcoImpactLabel",
       "scalePerf0", "scaleExemplar0", "scaleTargetGpus0", "scaleCurrentTco0", "scaleTargetTco0", "scaleSavings0", "scaleSavingsPct0",
       "scalePerf1", "scaleExemplar1", "scaleTargetGpus1", "scaleCurrentTco1", "scaleTargetTco1", "scaleSavings1", "scaleSavingsPct1",
       "scalePerf2", "scaleExemplar2", "scaleTargetGpus2", "scaleCurrentTco2", "scaleTargetTco2", "scaleSavings2", "scaleSavingsPct2",
@@ -2957,6 +2996,26 @@
         roi: nvaieCost > 0 ? netReturn / nvaieCost : 0,
       };
     }
+    function nvaiePrimaryScenarioModel() {
+      const scenarios = nvaieScenariosFromInputs();
+      const lower = scenarios.find((scenario) => scenario.id === "lower") || scenarios[0];
+      return lower ? nvaieScenarioModel(lower) : null;
+    }
+    function nvaieSummaryForResult(result) {
+      const model = nvaiePrimaryScenarioModel();
+      const baseInvestment = model ? model.annualSpend : 0;
+      const grossNvaieSavings = model ? model.totalSavings : 0;
+      const nvaieCost = model ? model.nvaieCost : 0;
+      const nvaieImpact = model ? model.netReturn : 0;
+      const adjustedInvestment = Math.max(baseInvestment - grossNvaieSavings, 0);
+      return {
+        nvaieCost,
+        nvaieSpeedup: adjustedInvestment > 0 ? baseInvestment / adjustedInvestment : 0,
+        nvaieImpact,
+        nvaieRoi: model ? model.roi : 0,
+        totalTcoImpact: result.savings + nvaieImpact,
+      };
+    }
     function nvaieScenariosFromInputs() {
       const clusters = storedNvaieScenarioClusters();
       return (data.nvaieRoi.scenarios || []).map((scenario) => {
@@ -3091,6 +3150,22 @@
       el.targetTcoNoExemplar.textContent = fmtMoney(result.targetTcoNoExemplar);
       el.exemplarImpact.textContent = fmtMoney(result.exemplarImpact);
       el.gpuReduction.textContent = fmtNumber(result.gpuReduction);
+      const nvaieSummary = nvaieSummaryForResult(result);
+      if (nvaieRoiEnabled()) {
+        el.summaryTotalTcoImpactLabel.textContent = "Total Investment Impact (GPU, Exemplar RA and NVAIE)";
+        el.summaryNvaieTco.textContent = fmtMoney(nvaieSummary.nvaieCost);
+        el.summaryNvaieSpeedup.textContent = fmtFactor(nvaieSummary.nvaieSpeedup);
+        el.summaryNvaieImpact.textContent = fmtMoney(nvaieSummary.nvaieImpact);
+        el.summaryNvaieRoi.textContent = fmtPct(nvaieSummary.nvaieRoi);
+        el.summaryTotalTcoImpact.textContent = fmtMoney(nvaieSummary.totalTcoImpact);
+      } else {
+        el.summaryTotalTcoImpactLabel.textContent = "Total Investment Impact (GPU and Exemplar RA)";
+        el.summaryNvaieTco.textContent = "N/A";
+        el.summaryNvaieSpeedup.textContent = "N/A";
+        el.summaryNvaieImpact.textContent = "N/A";
+        el.summaryNvaieRoi.textContent = "N/A";
+        el.summaryTotalTcoImpact.textContent = fmtMoney(result.savings);
+      }
       el.warning.textContent = result.warnings.join(" ");
       el.warning.className = result.warnings.length ? "warning show" : "warning";
       result.pathResults.forEach((path, index) => {
