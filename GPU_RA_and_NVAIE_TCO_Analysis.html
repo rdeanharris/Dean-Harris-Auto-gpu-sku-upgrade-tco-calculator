@@ -63,6 +63,26 @@
       background: var(--panel);
       padding: 10px;
     }
+    .auth-toggle-panel {
+      margin-top: 8px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      padding: 8px 10px;
+    }
+    .auth-toggle-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .auth-toggle-control input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      min-height: 0;
+      accent-color: var(--nvidia);
+    }
     .auth-panel.auth-disabled {
       border-color: #cfd3da;
       background: #eef0f3;
@@ -1042,7 +1062,10 @@
     <div class="file-actions no-print">
       <button class="pdf-button" type="button" id="createPdfButton">Create PDF</button>
     </div>
-    <section class="auth-panel auth-disabled no-print" aria-label="Login and saved configurations" data-reactivate-note="Starfleet login is visible but disabled until the backend API and redirect URI are configured.">
+    <section class="auth-toggle-panel no-print" aria-label="Show Starfleet login window">
+      <label class="auth-toggle-control"><input id="starfleetLoginVisible" type="checkbox" />Show Starfleet Login and Saved Configurations</label>
+    </section>
+    <section class="auth-panel auth-disabled no-print" id="starfleetLoginPanel" aria-label="Login and saved configurations" data-reactivate-note="Starfleet login is visible but disabled until the backend API and redirect URI are configured." hidden>
       <div class="auth-head">
         <span>Starfleet Login and Saved Configurations</span>
         <span class="auth-user" id="authUserLabel">Not logged in</span>
@@ -1357,6 +1380,7 @@
       "skuOverridePanel", "skuOverrideToggle", "skuOverrideToggleIconStart", "skuOverrideToggleIcon", "skuOverrideTable",
       "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
       "skuOverrideRows", "warning", "saveStatus", "createPdfButton",
+      "starfleetLoginVisible", "starfleetLoginPanel",
       "authEmail", "authPassword", "authUserLabel", "authLogin", "authCreateUser", "authLogout", "authStatus",
       "configName", "savedConfigSelect", "saveConfigButton", "loadConfigButton", "deleteConfigButton",
       "adminPanel", "adminConfigSelect", "adminLoadConfigButton", "adminRefreshButton", "adminActivity"].map((id) => [id, document.getElementById(id)]));
@@ -1378,6 +1402,7 @@
     const nvaiePriceStorageKey = "gpuTcoNvaiePricePerGpuYear";
     const nvaieRoiEnabledStorageKey = "gpuTcoNvaieRoiEnabled";
     const nvaieUseScaleScenarioStorageKey = "gpuTcoNvaieUseScaleScenario";
+    const starfleetLoginVisibleStorageKey = "gpuTcoStarfleetLoginVisible";
     const authUsersStorageKey = "gpuTcoLocalUsers";
     const authSessionStorageKey = "gpuTcoLocalSession";
     const authConfigsStorageKey = "gpuTcoNamedConfigs";
@@ -1605,6 +1630,23 @@
       try {
         window.localStorage.setItem(nvaieUseScaleScenarioStorageKey, value ? "true" : "false");
       } catch (error) {}
+    }
+    function starfleetLoginWindowVisible() {
+      try {
+        return window.localStorage.getItem(starfleetLoginVisibleStorageKey) === "true";
+      } catch (error) {
+        return false;
+      }
+    }
+    function storeStarfleetLoginWindowVisible(value) {
+      try {
+        window.localStorage.setItem(starfleetLoginVisibleStorageKey, value ? "true" : "false");
+      } catch (error) {}
+    }
+    function refreshStarfleetLoginWindow() {
+      const visible = starfleetLoginWindowVisible();
+      if (el.starfleetLoginVisible) el.starfleetLoginVisible.checked = visible;
+      if (el.starfleetLoginPanel) el.starfleetLoginPanel.hidden = !visible;
     }
     function readLocalJson(key, fallback) {
       try {
@@ -3601,6 +3643,10 @@
       }
       setNvaieRoiScenarioMode(true);
     });
+    if (el.starfleetLoginVisible) el.starfleetLoginVisible.addEventListener("change", (event) => {
+      storeStarfleetLoginWindowVisible(event.target.checked);
+      refreshStarfleetLoginWindow();
+    });
     el.nvaieRoiTables.addEventListener("input", handleNvaieRoiTableInput);
     el.nvaieRoiTables.addEventListener("change", handleNvaieRoiTableInput);
     el.authCreateUser.addEventListener("click", () => {
@@ -3655,6 +3701,7 @@
     setExpandableSection("nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey, storedExpandedDefault(nvaieRoiExpandedStorageKey, true));
     setSkuOverrideExpanded(storedSkuOverrideExpanded());
     setHiddenWorkbooksExpanded(storedHiddenWorkbooksExpanded());
+    refreshStarfleetLoginWindow();
     refreshAuthControls();
     syncPerfFactorSelection(true);
     update();
