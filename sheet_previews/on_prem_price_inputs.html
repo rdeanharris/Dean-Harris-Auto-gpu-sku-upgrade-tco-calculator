@@ -180,6 +180,7 @@
         <a class="tab-pill" href="cloud_price_inputs.html" aria-selected="false">Cloud Price Inputs</a>
         <a class="tab-pill" href="on_prem_price_inputs.html" aria-selected="true">On-Prem Price Inputs</a>
         <a class="tab-pill" href="sku_performance_guidelines.html" aria-selected="false">SKU Performance Guidelines</a>
+        <a class="tab-pill" href="gpu_generation_performance_uplift.html" aria-selected="false">GPU Generation Performance Uplift</a>
         <a class="tab-pill" href="sku_dropdown_lists.html" aria-selected="false">SKU Dropdown Lists</a>
       </div>
       <span class="price-save-status" id="priceSaveStatus"></span>
@@ -221,6 +222,16 @@
             <td>2026-06-11</td>
           </tr>
           <tr>
+            <td>B100</td>
+            <td class="money default-price"></td>
+            <td>Manual quote required</td>
+            <td>Customer / vendor quote required</td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="B100" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="B100" data-price-basis="onPrem" data-default-price="0" data-decimals="0"></span></td>
+            <td>Planning SKU. Enter quoted $/GPU capex when using this SKU.</td>
+            <td>2026-07-07</td>
+          </tr>
+          <tr>
             <td>DGX B200 180GB SXM</td>
             <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$70,000</a></td>
             <td>DGX-derived public estimate</td>
@@ -259,6 +270,16 @@
             <td class="money"><span data-effective-price data-price-sku="DGX%20H200%20141GB%20SXM" data-price-basis="onPrem" data-default-price="62500" data-decimals="0"></span></td>
             <td>Leading default uses NVIDIA DGX H200 system pricing divided by 8 GPUs: $500K / 8 = $62.5K per GPU. Override with customer OEM quote when available.</td>
             <td>2026-06-11</td>
+          </tr>
+          <tr>
+            <td>OEM H200 141GB SXM</td>
+            <td class="money default-price"><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">$62,500</a></td>
+            <td>OEM quote planning default</td>
+            <td><a href="https://eaif-business-value-calculator-6ffd5f.gitlab-master-pages.nvidia.com/" target="_blank" rel="noopener noreferrer">NVIDIA EAIF Business Value Calculator</a></td>
+            <td><input class="price-input" type="number" min="0" step="1" inputmode="decimal" data-price-sku="OEM%20H200%20141GB%20SXM" data-price-basis="onPrem" /></td>
+            <td class="money"><span data-effective-price data-price-sku="OEM%20H200%20141GB%20SXM" data-price-basis="onPrem" data-default-price="62500" data-decimals="0"></span></td>
+            <td>OEM H200 on-prem planning default mirrors DGX H200 per-GPU pricing until a customer OEM quote is entered.</td>
+            <td>2026-06-30</td>
           </tr>
           <tr>
             <td>DGX H100 80GB SXM</td>
