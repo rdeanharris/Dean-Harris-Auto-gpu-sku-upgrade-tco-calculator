@@ -1294,7 +1294,7 @@
     const maxMigrationRows = 12;
     const assumedAnnualUtilizationHours = Number(data.defaults.annualUtilizationHours) || 6000;
     const ids = [
-      "exemplar", "scaleQty0", "scaleQty1", "scaleQty2"
+      "exemplar", "exemplarEnabled", "scaleQty0", "scaleQty1", "scaleQty2"
     ];
     const el = Object.fromEntries([...ids, "annualGpuHours", "futureGpuSummary", "gpuQuantity", "pathRows",
       "summaryCurrentGpus", "summaryGpuReduction", "perfFactor", "combinedPerfFactor", "useSkuPerfFactor", "useSkuExemplarPerfFactor", "targetGpus", "currentTco", "targetTco",
@@ -2524,6 +2524,24 @@
       if (current > 0 && target > 0) return Math.max(0.01, target / current);
       return 1;
     }
+    function autoTargetGpuQty(row) {
+      const currentQty = normalizeGpuQty(row?.gpuQty);
+      if (currentQty <= 0) return 0;
+      const perfFactor = ratio(row?.currentSku, row?.targetSku);
+      return Math.ceil(currentQty / Math.max(0.01, perfFactor));
+    }
+    function targetGpuQtyForRow(row) {
+      const explicit = normalizeGpuQty(row?.targetGpuQty);
+      if (row?.targetGpuQtyManual === true) return explicit;
+      return autoTargetGpuQty(row);
+    }
+    function syncAutoTargetGpuQty(row, force = false) {
+      if (!row) return;
+      if (force || row.targetGpuQtyManual !== true) {
+        row.targetGpuQty = autoTargetGpuQty(row);
+        row.targetGpuQtyManual = false;
+      }
+    }
     function scenarioBasis(cloudMix, onPremMix) {
       if (onPremMix <= 0) return "Cloud";
       if (cloudMix <= 0) return "On-Prem";
@@ -2739,7 +2757,8 @@
           ...definition,
           workload: normalizeWorkload(row.workload),
           gpuQty: normalizeGpuQty(row.gpuQty),
-          targetGpuQty: normalizeGpuQty(row.targetGpuQty ?? row.gpuQty),
+          targetGpuQty: targetGpuQtyForRow(row),
+          targetGpuQtyManual: row.targetGpuQtyManual === true,
           currentSku: row.currentSku || "",
           targetSku: row.targetSku || "",
           currentPriceOverride: priceOverrideForSku(row.currentSku, definition.currentBasis),
@@ -2789,6 +2808,7 @@
           workload: path.workload,
           gpuQty: path.gpuQty,
           targetGpuQty: path.targetGpuQty,
+          targetGpuQtyManual: path.targetGpuQtyManual === true,
           currentBasis: path.currentBasis,
           targetBasis: path.targetBasis,
           currentSku: path.currentSku,
@@ -2860,15 +2880,16 @@
 
       const paths = migrationPathsFromInputs();
       const baseQty = paths.reduce((sum, path) => sum + path.gpuQty, 0);
-      const targetBaseQty = paths.reduce((sum, path) => sum + (path.targetGpuQty ?? path.gpuQty), 0);
+      const targetBaseQty = paths.reduce((sum, path) => sum + path.targetGpuQty, 0);
       const currentCloudQty = paths.filter((path) => path.currentBasis === "Cloud").reduce((sum, path) => sum + path.gpuQty, 0);
       const currentOnPremQty = paths.filter((path) => path.currentBasis === "On-Prem").reduce((sum, path) => sum + path.gpuQty, 0);
-      const targetCloudSourceQty = paths.filter((path) => path.targetBasis === "Cloud").reduce((sum, path) => sum + (path.targetGpuQty ?? path.gpuQty), 0);
-      const targetOnPremSourceQty = paths.filter((path) => path.targetBasis === "On-Prem").reduce((sum, path) => sum + (path.targetGpuQty ?? path.gpuQty), 0);
+      const targetCloudSourceQty = paths.filter((path) => path.targetBasis === "Cloud").reduce((sum, path) => sum + path.targetGpuQty, 0);
+      const targetOnPremSourceQty = paths.filter((path) => path.targetBasis === "On-Prem").reduce((sum, path) => sum + path.targetGpuQty, 0);
       const currentCloudMix = baseQty > 0 ? currentCloudQty / baseQty : 0;
       const currentOnPremMix = baseQty > 0 ? currentOnPremQty / baseQty : 0;
       const targetCloudMix = targetBaseQty > 0 ? targetCloudSourceQty / targetBaseQty : 0;
       const targetOnPremMix = targetBaseQty > 0 ? targetOnPremSourceQty / targetBaseQty : 0;
+      const qtyScale = baseQty > 0 ? qty / baseQty : 0;
 
       let currentTco = 0;
       let targetTco = 0;
@@ -2878,11 +2899,11 @@
       const pathResults = paths.map((path) => {
         const automaticPerf = ratio(path.currentSku, path.targetSku);
         const perfFactor = manualPerf && manualPerf > 0 ? manualPerf : automaticPerf;
-        const sourceQty = baseQty > 0 ? Math.round(qty * path.gpuQty / baseQty) : 0;
-        const targetSourceQty = targetBaseQty > 0 ? Math.round(qty * (path.targetGpuQty ?? path.gpuQty) / targetBaseQty) : sourceQty;
-        const targetMultiplier = path.targetBasis === "Cloud" ? exemplarFactor : 1;
-        const targetQty = targetSourceQty <= 0 ? 0 : Math.ceil(targetSourceQty / (perfFactor * targetMultiplier));
-        const targetQtyNoExemplar = targetSourceQty <= 0 ? 0 : Math.ceil(targetSourceQty / perfFactor);
+        const sourceQty = Math.round(path.gpuQty * qtyScale);
+        const targetSourceQty = Math.round(path.targetGpuQty * qtyScale);
+        const targetMultiplier = exemplarFactor;
+        const targetQty = targetSourceQty <= 0 ? 0 : Math.ceil(targetSourceQty / targetMultiplier);
+        const targetQtyNoExemplar = targetSourceQty;
         const currentAnnual = currentUnitCost(path.currentBasis, path.currentSku, utilization, cloudTermYears, onPremYears, path.currentPriceOverride);
         const targetAnnual = targetUnitCost(path.targetBasis, path.targetSku, utilization, cloudTermYears, onPremYears, path.targetPriceOverride);
         const pathCurrentTco = sourceQty * currentAnnual;
@@ -2892,10 +2913,10 @@
         targetTco += pathTargetTco;
         targetTcoNoExemplar += pathTargetNoExemplar;
         targetGpus += targetQty;
-        weightedPerf += (path.targetGpuQty ?? path.gpuQty) * perfFactor;
-        return { ...path, automaticPerf, perfFactor, sourceQty, targetSourceQty, targetQty, currentAnnual, targetAnnual };
+        weightedPerf += path.gpuQty * perfFactor;
+        return { ...path, automaticPerf, perfFactor, sourceQty, targetSourceQty, targetQty, targetQtyNoExemplar, currentAnnual, targetAnnual };
       });
-      const perfFactor = targetBaseQty > 0 ? weightedPerf / targetBaseQty : 0;
+      const perfFactor = baseQty > 0 ? weightedPerf / baseQty : 0;
       const savings = currentTco - targetTco;
       const gpuReduction = targetGpus - qty;
       const currentCostPerSourceGpu = qty > 0 ? currentTco / qty : 0;
@@ -3179,9 +3200,9 @@
     }
     function refreshPathAllocationInputs() {
       const currentTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.gpuQty), 0);
-      const futureTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.targetGpuQty ?? row.gpuQty), 0);
+      const futureTotal = migrationRows.reduce((sum, row) => sum + targetGpuQtyForRow(row), 0);
       migrationRows.forEach((row, index) => {
-        const targetQty = normalizeGpuQty(row.targetGpuQty ?? row.gpuQty);
+        const targetQty = targetGpuQtyForRow(row);
         const values = {
           currentPct: pctOf(row.gpuQty, currentTotal),
           gpuQty: row.gpuQty || "",
@@ -3221,6 +3242,7 @@
           workload: template.workload || data.workloadOptions[0],
           gpuQty: 0,
           targetGpuQty: 0,
+          targetGpuQtyManual: false,
           currentSku: template.currentSku || "",
           targetSku: template.targetSku || "",
         });
@@ -3238,10 +3260,10 @@
     }
     function renderPathRows() {
       const currentTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.gpuQty), 0);
-      const futureTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.targetGpuQty ?? row.gpuQty), 0);
+      const futureTotal = migrationRows.reduce((sum, row) => sum + targetGpuQtyForRow(row), 0);
       el.pathRows.innerHTML = migrationRows.map((row, index) => {
         const definition = pathDefinitionFor(row);
-        const targetQty = normalizeGpuQty(row.targetGpuQty ?? row.gpuQty);
+        const targetQty = targetGpuQtyForRow(row);
         row.currentSku = skuForBasis(row.currentSku, definition.currentBasis);
         row.targetSku = skuForBasis(row.targetSku, definition.targetBasis);
         return (
@@ -3273,14 +3295,17 @@
         migrationRows = state.migrationPaths.slice(0, maxMigrationRows).map((path) => {
           const definition = pathDefinitionFor(path);
           const gpuQty = path.gpuQty !== undefined ? path.gpuQty : Math.round(stateGpuQuantity * normalizeMix(path.allocation));
-          return {
+          const row = {
             ...definition,
             workload: normalizeWorkload(path.workload),
             gpuQty,
             targetGpuQty: path.targetGpuQty !== undefined ? normalizeGpuQty(path.targetGpuQty) : gpuQty,
+            targetGpuQtyManual: path.targetGpuQtyManual === true,
             currentSku: path.currentSku || "",
             targetSku: path.targetSku || "",
           };
+          syncAutoTargetGpuQty(row);
+          return row;
         });
         skuPriceOverrides = mergeSkuPriceOverrides(
           storedSkuPriceOverrides(),
@@ -3319,14 +3344,17 @@
     migrationRows = (data.defaults.migrationPaths || []).slice(0, maxMigrationRows).map((path) => {
       const definition = pathDefinitionFor(path);
       const gpuQty = path.gpuQty !== undefined ? path.gpuQty : Math.round(defaultGpuQuantity * normalizeMix(path.allocation));
-      return {
+      const row = {
         ...definition,
         workload: normalizeWorkload(path.workload),
         gpuQty,
         targetGpuQty: path.targetGpuQty !== undefined ? normalizeGpuQty(path.targetGpuQty) : gpuQty,
+        targetGpuQtyManual: path.targetGpuQtyManual === true,
         currentSku: path.currentSku || "",
         targetSku: path.targetSku || "",
       };
+      syncAutoTargetGpuQty(row);
+      return row;
     });
     skuPriceOverrides = mergeSkuPriceOverrides(
       storedSkuPriceOverrides(),
@@ -3341,20 +3369,28 @@
       const field = event.target.dataset.pathField;
       if (!Number.isInteger(index) || !field || !migrationRows[index]) return;
       const currentTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.gpuQty), 0);
-      const futureTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.targetGpuQty ?? row.gpuQty), 0);
-      if (field === "gpuQty" || field === "targetGpuQty") {
+      const futureTotal = migrationRows.reduce((sum, row) => sum + targetGpuQtyForRow(row), 0);
+      if (field === "gpuQty") {
         migrationRows[index][field] = normalizeGpuQty(event.target.value);
+        syncAutoTargetGpuQty(migrationRows[index]);
+      } else if (field === "targetGpuQty") {
+        migrationRows[index].targetGpuQty = normalizeGpuQty(event.target.value);
+        migrationRows[index].targetGpuQtyManual = true;
       } else if (field === "currentPct") {
         migrationRows[index].gpuQty = Math.round(currentTotal * normalizeMix(event.target.value));
+        syncAutoTargetGpuQty(migrationRows[index]);
       } else if (field === "targetPct") {
         migrationRows[index].targetGpuQty = Math.round(futureTotal * normalizeMix(event.target.value));
+        migrationRows[index].targetGpuQtyManual = true;
       } else if (field === "currentBasis" || field === "targetBasis") {
         migrationRows[index][field] = event.target.value;
         Object.assign(migrationRows[index], pathDefinitionFor(migrationRows[index]));
+        syncAutoTargetGpuQty(migrationRows[index]);
       } else if (field === "workload") {
         migrationRows[index][field] = normalizeWorkload(event.target.value);
       } else {
         migrationRows[index][field] = event.target.value === noneSkuOptionValue ? "" : event.target.value;
+        if (field === "currentSku" || field === "targetSku") syncAutoTargetGpuQty(migrationRows[index]);
       }
       const shouldRenderPathRows = field === "currentBasis" || field === "targetBasis" || ((field === "currentSku" || field === "targetSku") && event.target.value === noneSkuOptionValue);
       if (shouldRenderPathRows) renderPathRows();
@@ -3368,20 +3404,28 @@
       const field = event.target.dataset.pathField;
       if (!Number.isInteger(index) || !field || !migrationRows[index]) return;
       const currentTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.gpuQty), 0);
-      const futureTotal = migrationRows.reduce((sum, row) => sum + normalizeGpuQty(row.targetGpuQty ?? row.gpuQty), 0);
-      if (field === "gpuQty" || field === "targetGpuQty") {
+      const futureTotal = migrationRows.reduce((sum, row) => sum + targetGpuQtyForRow(row), 0);
+      if (field === "gpuQty") {
         migrationRows[index][field] = normalizeGpuQty(event.target.value);
+        syncAutoTargetGpuQty(migrationRows[index]);
+      } else if (field === "targetGpuQty") {
+        migrationRows[index].targetGpuQty = normalizeGpuQty(event.target.value);
+        migrationRows[index].targetGpuQtyManual = true;
       } else if (field === "currentPct") {
         migrationRows[index].gpuQty = Math.round(currentTotal * normalizeMix(event.target.value));
+        syncAutoTargetGpuQty(migrationRows[index]);
       } else if (field === "targetPct") {
         migrationRows[index].targetGpuQty = Math.round(futureTotal * normalizeMix(event.target.value));
+        migrationRows[index].targetGpuQtyManual = true;
       } else if (field === "currentBasis" || field === "targetBasis") {
         migrationRows[index][field] = event.target.value;
         Object.assign(migrationRows[index], pathDefinitionFor(migrationRows[index]));
+        syncAutoTargetGpuQty(migrationRows[index]);
       } else if (field === "workload") {
         migrationRows[index][field] = normalizeWorkload(event.target.value);
       } else {
         migrationRows[index][field] = event.target.value === noneSkuOptionValue ? "" : event.target.value;
+        if (field === "currentSku" || field === "targetSku") syncAutoTargetGpuQty(migrationRows[index]);
       }
       const shouldRenderPathRows = field === "currentBasis" || field === "targetBasis" || ((field === "currentSku" || field === "targetSku") && event.target.value === noneSkuOptionValue);
       if (shouldRenderPathRows) renderPathRows();
