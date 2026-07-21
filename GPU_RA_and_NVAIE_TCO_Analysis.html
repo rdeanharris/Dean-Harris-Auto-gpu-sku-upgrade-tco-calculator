@@ -1136,7 +1136,7 @@
   <main class="app">
     <div class="title">NVIDIA TCO Analysis - GPU, Reference Architecture and NVIDIA AI Enterprise</div>
     <div class="file-actions no-print">
-      <button class="pdf-button" type="button" id="inviteUserButton" disabled title="Available after approved access is activated">Invite User</button>
+      <button class="pdf-button" type="button" id="inviteUserButton" title="Submit a company email for administrator approval">Invite User</button>
       <button class="pdf-button" type="button" id="createPdfButton">Create PDF</button>
     </div>
     <dialog class="invite-dialog no-print" id="inviteUserDialog">
@@ -1996,7 +1996,10 @@
         el.loadConfigButton.disabled = true;
         el.deleteConfigButton.disabled = true;
         el.adminPanel.hidden = true;
-        if (el.inviteUserButton) el.inviteUserButton.disabled = true;
+        if (el.inviteUserButton) {
+          el.inviteUserButton.disabled = false;
+          el.inviteUserButton.title = "Submit a company email for administrator approval";
+        }
         authStatus("Company-email approval becomes available when the secure backend API is activated.");
         return;
       }
@@ -2004,8 +2007,8 @@
       const role = activeUserRole();
       const loggedIn = Boolean(email);
       if (el.inviteUserButton) {
-        el.inviteUserButton.disabled = !loggedIn;
-        el.inviteUserButton.title = loggedIn ? "Invite a customer for administrator approval" : "Approved access is required before inviting a customer";
+        el.inviteUserButton.disabled = false;
+        el.inviteUserButton.title = "Submit a company email for administrator approval";
       }
       document.body.classList.toggle("access-gate-active", !loggedIn);
       if (el.accessApprovalPanel) el.accessApprovalPanel.hidden = false;
@@ -2084,6 +2087,25 @@
       }
       if (!company) {
         el.inviteUserStatus.textContent = "Enter the customer company name.";
+        return;
+      }
+      if (!backendAuthEnabled) {
+        const adminEmail = normalizedUserName((authBackendConfig.adminEmails || [])[0]) || "deanh@nvidia.com";
+        const subject = "TCO Calculator access request: " + email;
+        const body = [
+          "Please review this request to access the NVIDIA TCO Analysis calculator.",
+          "",
+          "Customer email: " + email,
+          "Company: " + company,
+          "Tool: NVIDIA TCO Analysis - GPU, Reference Architecture and NVIDIA AI Enterprise",
+          "Requested: " + new Date().toISOString(),
+          "",
+          "Test mode: the secure approval service is not deployed yet, so this email does not create or send a one-time access link.",
+        ].join("\n");
+        el.inviteUserStatus.textContent = "Opening an approval-request email to " + adminEmail + ". Secure invite links require the approval service.";
+        window.location.href = "mailto:" + encodeURIComponent(adminEmail)
+          + "?subject=" + encodeURIComponent(subject)
+          + "&body=" + encodeURIComponent(body);
         return;
       }
       try {
