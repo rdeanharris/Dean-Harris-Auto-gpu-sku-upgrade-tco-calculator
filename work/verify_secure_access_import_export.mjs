@@ -63,15 +63,15 @@ try {
   await page.screenshot({ path: "work/secure_access_import_export_ui.png", fullPage: false });
 
   const enabledPage = await browser.newPage();
-  await enabledPage.route("**/starfleet_auth_config.js*", (route) => route.fulfill({
+  await enabledPage.route("**/access_approval_config.js*", (route) => route.fulfill({
     contentType: "application/javascript",
-    body: "window.GPU_TCO_STARFLEET_CONFIG={enabled:true,apiBaseUrl:'http://127.0.0.1:8787',blockedPersonalEmailDomains:['gmail.com'],adminEmails:['deanh@nvidia.com']};",
+    body: "window.GPU_TCO_ACCESS_CONFIG={enabled:true,approvalApiUrl:'http://127.0.0.1:8787',blockedPersonalEmailDomains:['gmail.com'],adminEmails:['deanh@nvidia.com']};",
   }));
   await enabledPage.goto(`${baseUrl}/GPU_RA_and_NVAIE_TCO_Analysis.html?verify=enabled-secure-ui`, { waitUntil: "domcontentloaded" });
-  assert.equal(await enabledPage.locator("#starfleetLoginPanel").evaluate((node) => node.classList.contains("auth-disabled")), false);
+  assert.equal(await enabledPage.locator("#accessApprovalPanel").evaluate((node) => node.classList.contains("auth-disabled")), false);
   assert.equal(await enabledPage.locator("body").evaluate((node) => node.classList.contains("access-gate-active")), true);
-  assert.equal(await enabledPage.locator("#starfleetLoginPanel").isVisible(), true);
-  assert.equal(await enabledPage.locator("#starfleetLoginVisible").isVisible(), false);
+  assert.equal(await enabledPage.locator("#accessApprovalPanel").isVisible(), true);
+  assert.equal(await enabledPage.locator("#starfleetLoginVisible").count(), 0);
   assert.equal(await enabledPage.locator("#authEmail").isEnabled(), true);
   assert.equal(await enabledPage.locator("#authLogin").isEnabled(), true);
   assert.equal(await enabledPage.locator("#authCreateUser").textContent(), "Request Approval");

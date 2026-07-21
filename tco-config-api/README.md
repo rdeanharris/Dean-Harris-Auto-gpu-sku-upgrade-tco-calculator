@@ -9,10 +9,10 @@ This API provides company-email access requests, administrator approval, one-tim
 - Approval emails a random, one-time link to the approved address. Only a SHA-256 token hash is stored.
 - The email link expires after 30 minutes by default and can be used once.
 - The browser exchanges the one-time code for a 12-hour session. Only the session hash is stored by the API.
-- Email credentials and administrator data stay server-side. Do not place them in the HTML or `starfleet_auth_config.js`.
+- Email credentials and administrator data stay server-side. Do not place them in the HTML or `access_approval_config.js`.
 - CORS accepts only the exact origins in `ALLOWED_ORIGINS`.
 
-This flow can operate independently of Starfleet. Starfleet/OIDC can be added later as an additional identity method.
+This flow does not use Starfleet, OIDC, a username, or a password. Users request approval and open the calculator from an emailed one-time invite link.
 
 ## Deployment
 
@@ -22,7 +22,7 @@ This flow can operate independently of Starfleet. Starfleet/OIDC can be added la
 4. Connect `EMAIL_DELIVERY_WEBHOOK_URL` to the approved internal email service. It receives JSON with `to`, `from`, `subject`, `text`, and `html`.
 5. Set `PUBLIC_API_BASE_URL` to this deployed API URL and `APP_REDIRECT_URI` to the exact calculator URL.
 6. Add the hosted calculator origin to `ALLOWED_ORIGINS`.
-7. Set the same API URL in `starfleet_auth_config.js`, then set `enabled: true`.
+7. Set the same API URL as `approvalApiUrl` in `access_approval_config.js`, then set `enabled: true`.
 
 Never publish `EMAIL_DELIVERY_BEARER_TOKEN` or the contents of `DATA_DIR`.
 
