@@ -39,7 +39,9 @@
     }
     .file-actions {
       display: flex;
-      justify-content: flex-end;
+      justify-content: flex-start;
+      align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
       margin-top: 8px;
     }
@@ -1137,7 +1139,10 @@
     <div class="title">NVIDIA TCO Analysis - GPU, Reference Architecture and NVIDIA AI Enterprise</div>
     <div class="file-actions no-print">
       <button class="pdf-button" type="button" id="inviteUserButton" title="Submit a company email for administrator approval">Invite User</button>
+      <button class="pdf-button" type="button" id="topSaveConfigurationButton">Save Configuration</button>
+      <button class="pdf-button" type="button" id="topLoadConfigurationButton">Load Configuration</button>
       <button class="pdf-button" type="button" id="createPdfButton">Create PDF</button>
+      <button class="pdf-button" type="button" id="sendFeedbackButton">Send Feedback</button>
     </div>
     <dialog class="invite-dialog no-print" id="inviteUserDialog">
       <form method="dialog" id="inviteUserForm">

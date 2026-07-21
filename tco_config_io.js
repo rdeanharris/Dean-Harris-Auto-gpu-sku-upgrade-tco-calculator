@@ -42,6 +42,21 @@
     }
   }
 
+  function loadConfigurationLocally() {
+    let raw;
+    try {
+      raw = window.localStorage.getItem(localStorageKey());
+    } catch {
+      throw new Error("This browser could not read the saved configuration.");
+    }
+    if (!raw) throw new Error("No saved configuration was found in this browser.");
+    const value = JSON.parse(raw);
+    const state = value?.format === FORMAT ? value.state : value?.state || value;
+    validateState(state);
+    bridge.applyState(state);
+    showStatus("Saved configuration loaded from this browser.");
+  }
+
   function restoreLocalConfiguration() {
     try {
       const raw = window.localStorage.getItem(localStorageKey());
@@ -155,7 +170,8 @@
 
   function install() {
     const actions = document.querySelector(".file-actions") || document.querySelector("main") || document.body;
-    if (!actions || document.getElementById("tcoConfigIoControls")) return;
+    if (!actions || document.documentElement.dataset.configIoInstalled === "true") return;
+    document.documentElement.dataset.configIoInstalled = "true";
 
     // The source calculator still carries internal workbook links for legacy builds.
     // Remove that internal-only view while leaving the Core Source Data tabs intact.
@@ -171,38 +187,37 @@
     ].join("");
     document.head.appendChild(style);
 
-    const controls = document.createElement("div");
-    controls.id = "tcoConfigIoControls";
-    controls.className = "config-io-controls no-print";
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json,.txt,application/json,text/plain";
-    input.hidden = true;
-    input.addEventListener("change", async () => {
+    const saveButton = document.getElementById("topSaveConfigurationButton");
+    const loadButton = document.getElementById("topLoadConfigurationButton");
+    const feedbackButton = document.getElementById("sendFeedbackButton");
+    saveButton?.addEventListener("click", () => {
       try {
-        await importFile(input.files && input.files[0]);
+        saveConfigurationLocally();
       } catch (error) {
-        showStatus(error.message || "Unable to import configuration.");
-        window.alert(error.message || "Unable to import configuration.");
-      } finally {
-        input.value = "";
+        showStatus(error.message || "Unable to save configuration.");
+        window.alert(error.message || "Unable to save configuration.");
       }
     });
-    controls.append(
-      makeButton("Save Configuration", () => {
-        try {
-          saveConfigurationLocally();
-        } catch (error) {
-          showStatus(error.message || "Unable to save configuration.");
-          window.alert(error.message || "Unable to save configuration.");
-        }
-      }),
-      makeButton("Export JSON", exportJson),
-      makeButton("Export Text", exportText),
-      makeButton("Import Configuration", () => input.click()),
-      input
-    );
-    actions.prepend(controls);
+    loadButton?.addEventListener("click", () => {
+      try {
+        loadConfigurationLocally();
+      } catch (error) {
+        showStatus(error.message || "Unable to load configuration.");
+        window.alert(error.message || "Unable to load configuration.");
+      }
+    });
+    feedbackButton?.addEventListener("click", () => {
+      const subject = "NVIDIA TCO Analysis feedback";
+      const body = [
+        "Please share your feedback below:",
+        "",
+        "",
+        "Calculator: " + String(bridge.calculator || document.title || "NVIDIA TCO Analysis"),
+        "Page: " + window.location.href,
+      ].join("\n");
+      window.location.href = "mailto:deanh@nvidia.com?subject=" + encodeURIComponent(subject)
+        + "&body=" + encodeURIComponent(body);
+    });
     restoreLocalConfiguration();
   }
 
