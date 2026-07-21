@@ -10,8 +10,17 @@ window.GPU_TCO_STARFLEET_CONFIG = Object.freeze({
   clientId: "StkDvtzs9LkXP6-N6yhVmfi_vEd_m3zErlk5g-OOdqY",
   // Must match a redirect URI registered on the Starfleet client before auth is enabled.
   redirectUri: "",
-  requiredEmailDomain: "nvidia.com",
-  inviteOnlyExternalUsers: true,
+  // Leave blank to allow external company domains. The backend must block personal email
+  // domains and keep every registration pending until admin approval.
+  requiredEmailDomain: "",
+  companyEmailRequired: true,
+  approvalRequired: true,
+  inviteOnlyExternalUsers: false,
+  blockedPersonalEmailDomains: [
+    "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "outlook.com", "hotmail.com",
+    "live.com", "icloud.com", "me.com", "mac.com", "aol.com", "proton.me", "protonmail.com",
+    "pm.me", "gmx.com", "mail.com", "zoho.com", "hey.com",
+  ],
   adminEmails: ["deanh@nvidia.com"],
   adminGroup: "",
   savedConfigurationsResource: "gpu-tco-configurations",

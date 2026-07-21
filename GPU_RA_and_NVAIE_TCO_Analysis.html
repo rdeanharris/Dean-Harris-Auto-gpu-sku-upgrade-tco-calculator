@@ -171,6 +171,16 @@
       font-size: 12px;
       line-height: 1.35;
     }
+    .auth-note {
+      margin-top: 8px;
+      border-left: 6px solid var(--nvidia);
+      background: var(--gain);
+      padding: 8px 10px;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
     .admin-panel {
       margin-top: 10px;
       border-top: 1px solid var(--line);
@@ -189,6 +199,31 @@
       font-size: 11px;
       line-height: 1.35;
       white-space: pre-wrap;
+    }
+    .admin-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .admin-kpi {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      padding: 8px;
+      min-height: 58px;
+    }
+    .admin-kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .admin-kpi strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 800;
     }
     .grid {
       display: grid;
@@ -1063,19 +1098,22 @@
       <button class="pdf-button" type="button" id="createPdfButton">Create PDF</button>
     </div>
     <section class="auth-toggle-panel no-print" aria-label="Show Starfleet login window">
-      <label class="auth-toggle-control"><input id="starfleetLoginVisible" type="checkbox" />Show Starfleet Login and Saved Configurations</label>
+      <label class="auth-toggle-control"><input id="starfleetLoginVisible" type="checkbox" />Show Secure Login, Approvals and Saved Configurations</label>
     </section>
     <section class="auth-panel auth-disabled no-print" id="starfleetLoginPanel" aria-label="Login and saved configurations" data-reactivate-note="Starfleet login is visible but disabled until the backend API and redirect URI are configured." hidden>
       <div class="auth-head">
-        <span>Starfleet Login and Saved Configurations</span>
+        <span>Starfleet Login, User Approval and Saved Configurations</span>
         <span class="auth-user" id="authUserLabel">Not logged in</span>
       </div>
       <div class="auth-grid">
-        <label>Email / Username
-          <input id="authEmail" type="email" autocomplete="username" placeholder="name@nvidia.com" />
+        <label>Company Email / Username
+          <input id="authEmail" type="email" autocomplete="username" placeholder="name@company.com" />
         </label>
-        <label>Password
+        <label>Password / SSO Credential
           <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password" />
+        </label>
+        <label>Company
+          <input id="authCompany" type="text" autocomplete="organization" placeholder="Company name" />
         </label>
         <label>Configuration Name
           <input id="configName" type="text" placeholder="Customer scenario name" disabled />
@@ -1086,20 +1124,37 @@
       </div>
       <div class="auth-actions" style="margin-top: 8px;">
         <button type="button" id="authLogin">Log In</button>
-        <button type="button" class="secondary" id="authCreateUser">Create User</button>
+        <button type="button" class="secondary" id="authCreateUser">Request Access</button>
         <button type="button" class="secondary" id="authLogout" disabled>Log Out</button>
         <button type="button" id="saveConfigButton" disabled>Save Configuration</button>
         <button type="button" class="secondary" id="loadConfigButton" disabled>Load Configuration</button>
         <button type="button" class="secondary" id="deleteConfigButton" disabled>Delete Configuration</button>
       </div>
       <div class="auth-status" id="authStatus"></div>
-      <div class="auth-warning">Starfleet backend/auth is not connected yet. Login, saved configurations, and admin visibility will be enabled after Starfleet app, API, and admin-role details are added.</div>
+      <div class="auth-warning">Starfleet backend/auth is not connected yet. Login, access requests, saved configurations, approval workflow, and admin visibility will be enabled after Starfleet app, backend API, redirect URI, and admin-role details are added.</div>
+      <div class="auth-note">Security model: users request access with a company email, the backend keeps requests pending until admin approval, and only approved users can log in and save configurations. Admin visibility and usage statistics must be served by the backend, not browser storage.</div>
       <div class="admin-panel" id="adminPanel" hidden>
         <div class="auth-head">
-          <span>Admin Visibility</span>
+          <span>Admin Visibility and Approvals</span>
           <button type="button" class="auth-small-button secondary" id="adminRefreshButton">Refresh Admin View</button>
         </div>
+        <div class="admin-kpis">
+          <div class="admin-kpi"><span>Pending Registrations</span><strong id="adminPendingCount">0</strong></div>
+          <div class="admin-kpi"><span>Approved Users</span><strong id="adminApprovedCount">0</strong></div>
+          <div class="admin-kpi"><span>Active Users</span><strong id="adminActiveCount">0</strong></div>
+          <div class="admin-kpi"><span>Saved Configurations</span><strong id="adminConfigCount">0</strong></div>
+        </div>
         <div class="auth-grid">
+          <label>Pending User Approvals
+            <select id="adminPendingSelect"></select>
+          </label>
+          <div class="auth-actions">
+            <button type="button" id="adminApproveUserButton">Approve User</button>
+            <button type="button" class="secondary" id="adminDenyUserButton">Deny User</button>
+          </div>
+          <label>Registered Users
+            <select id="adminUserSelect"></select>
+          </label>
           <label>User Configurations
             <select id="adminConfigSelect"></select>
           </label>
@@ -1107,6 +1162,7 @@
             <button type="button" id="adminLoadConfigButton">Load Selected User Config</button>
           </div>
         </div>
+        <div class="admin-activity" id="adminUsageStats"></div>
         <div class="admin-activity" id="adminActivity"></div>
       </div>
     </section>
@@ -1382,9 +1438,11 @@
       "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
       "skuOverrideRows", "warning", "saveStatus", "createPdfButton",
       "starfleetLoginVisible", "starfleetLoginPanel",
-      "authEmail", "authPassword", "authUserLabel", "authLogin", "authCreateUser", "authLogout", "authStatus",
+      "authEmail", "authPassword", "authCompany", "authUserLabel", "authLogin", "authCreateUser", "authLogout", "authStatus",
       "configName", "savedConfigSelect", "saveConfigButton", "loadConfigButton", "deleteConfigButton",
-      "adminPanel", "adminConfigSelect", "adminLoadConfigButton", "adminRefreshButton", "adminActivity"].map((id) => [id, document.getElementById(id)]));
+      "adminPanel", "adminConfigSelect", "adminLoadConfigButton", "adminRefreshButton", "adminActivity",
+      "adminPendingCount", "adminApprovedCount", "adminActiveCount", "adminConfigCount",
+      "adminPendingSelect", "adminApproveUserButton", "adminDenyUserButton", "adminUserSelect", "adminUsageStats"].map((id) => [id, document.getElementById(id)]));
     let migrationRows = [];
     let skuPriceOverrides = {};
     let pdfPrintState = [];
@@ -1410,12 +1468,23 @@
     const authActivityStorageKey = "gpuTcoActivityLog";
     const authBackendConfig = window.GPU_TCO_STARFLEET_CONFIG || {};
     const authBackendProviderName = authBackendConfig.providerName || "Starfleet";
+    const blockedPersonalEmailDomains = new Set(authBackendConfig.blockedPersonalEmailDomains || [
+      "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "outlook.com", "hotmail.com", "live.com",
+      "icloud.com", "me.com", "mac.com", "aol.com", "proton.me", "protonmail.com", "pm.me",
+      "gmx.com", "mail.com", "zoho.com", "hey.com",
+    ]);
     const backendAuthEnabled = Boolean(
       authBackendConfig.enabled
       && authBackendConfig.authBaseUrl
       && authBackendConfig.apiBaseUrl
       && authBackendConfig.clientId
+      && authBackendConfig.redirectUri
     );
+    let backendConfigsByUser = {};
+    let backendActivityEntries = [];
+    let backendPendingRegistrations = [];
+    let backendRegisteredUsers = [];
+    let backendUsageStats = {};
     const noneSkuOptionValue = "__NONE__";
     let activeScaleSourceTab = scaleSourceTabs[0];
 
@@ -1668,6 +1737,49 @@
     function normalizedUserName(value) {
       return String(value || "").trim().toLowerCase();
     }
+    function emailDomain(email) {
+      const parts = normalizedUserName(email).split("@");
+      return parts.length === 2 ? parts[1] : "";
+    }
+    function isCompanyEmail(email) {
+      const domain = emailDomain(email);
+      if (!domain || !domain.includes(".")) return false;
+      const requiredDomain = String(authBackendConfig.requiredEmailDomain || "").trim().toLowerCase();
+      if (requiredDomain && domain !== requiredDomain) return false;
+      return !blockedPersonalEmailDomains.has(domain);
+    }
+    function backendApiUrl(path) {
+      const base = String(authBackendConfig.apiBaseUrl || "").replace(/\/+$/, "");
+      return base + path;
+    }
+    async function backendRequest(path, options = {}) {
+      if (!backendAuthEnabled) throw new Error("Backend API is not connected.");
+      const session = currentAuthSession();
+      const headers = {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      };
+      if (session?.token) headers.Authorization = "Bearer " + session.token;
+      const response = await fetch(backendApiUrl(path), {
+        ...options,
+        headers,
+        body: options.body && typeof options.body !== "string" ? JSON.stringify(options.body) : options.body,
+      });
+      if (!response.ok) {
+        let message = "Backend request failed.";
+        try {
+          const payload = await response.json();
+          message = payload.error || payload.message || message;
+        } catch (error) {}
+        throw new Error(message);
+      }
+      if (response.status === 204) return {};
+      try {
+        return await response.json();
+      } catch (error) {
+        return {};
+      }
+    }
     function localUsers() {
       return readLocalJson(authUsersStorageKey, {});
     }
@@ -1685,6 +1797,8 @@
       return session && session.email ? normalizedUserName(session.email) : "";
     }
     function activeUserRole() {
+      const session = currentAuthSession();
+      if (session?.role) return session.role;
       const users = localUsers();
       const email = activeUserName();
       return users[email]?.role || "";
@@ -1739,6 +1853,9 @@
       if (el.authStatus) el.authStatus.textContent = message || "";
     }
     function configListForUser(email) {
+      if (backendAuthEnabled) {
+        return Array.isArray(backendConfigsByUser[email]) ? backendConfigsByUser[email] : [];
+      }
       const configs = localConfigs();
       return Array.isArray(configs[email]) ? configs[email] : [];
     }
@@ -1762,25 +1879,60 @@
       const isAdmin = activeUserIsAdmin();
       el.adminPanel.hidden = !isAdmin;
       if (!isAdmin) return;
-      const configs = localConfigs();
+      const configs = backendAuthEnabled ? backendConfigsByUser : localConfigs();
+      const pending = backendAuthEnabled ? backendPendingRegistrations : [];
+      const users = backendAuthEnabled ? backendRegisteredUsers : Object.values(localUsers());
+      if (el.adminPendingCount) el.adminPendingCount.textContent = String(pending.length);
+      if (el.adminApprovedCount) el.adminApprovedCount.textContent = String(users.filter((user) => (user.status || "approved") === "approved").length);
+      if (el.adminActiveCount) el.adminActiveCount.textContent = String(backendUsageStats.activeUsers ?? users.filter((user) => user.lastActiveAt || user.loggedInAt).length);
+      if (el.adminConfigCount) {
+        const configCount = Object.values(configs).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
+        el.adminConfigCount.textContent = String(configCount);
+      }
+      if (el.adminPendingSelect) {
+        el.adminPendingSelect.innerHTML = "";
+        pending.forEach((request) => {
+          const label = [request.email, request.company, request.requestedAt].filter(Boolean).join(" / ");
+          el.adminPendingSelect.add(new Option(label || request.id || request.email, request.id || request.email));
+        });
+      }
+      if (el.adminUserSelect) {
+        el.adminUserSelect.innerHTML = "";
+        users.forEach((user) => {
+          const label = [user.email, user.company, user.status || "approved", user.lastActiveAt ? "active " + new Date(user.lastActiveAt).toLocaleString() : ""].filter(Boolean).join(" / ");
+          el.adminUserSelect.add(new Option(label || user.email, user.email));
+        });
+      }
       el.adminConfigSelect.innerHTML = "";
       Object.keys(configs).sort().forEach((email) => {
         (configs[email] || []).forEach((config) => {
           el.adminConfigSelect.add(new Option(email + " / " + formatConfigLabel(config), email + "::" + config.id));
         });
       });
-      const activities = localActivity().slice(0, 80).map((entry) => {
+      const usageLines = [
+        "Usage Statistics",
+        "Total logins: " + (backendUsageStats.totalLogins ?? "pending backend"),
+        "Configurations saved: " + (backendUsageStats.configurationsSaved ?? "pending backend"),
+        "Configurations loaded: " + (backendUsageStats.configurationsLoaded ?? "pending backend"),
+        "PDF exports: " + (backendUsageStats.pdfExports ?? "pending backend"),
+        "Last activity: " + (backendUsageStats.lastActivityAt ? new Date(backendUsageStats.lastActivityAt).toLocaleString() : "pending backend"),
+      ];
+      if (el.adminUsageStats) el.adminUsageStats.textContent = usageLines.join("\n");
+      const activities = (backendAuthEnabled ? backendActivityEntries : localActivity()).slice(0, 80).map((entry) => {
         const at = entry.at ? new Date(entry.at).toLocaleString() : "";
         return at + " | " + entry.email + " | " + entry.action + (entry.detail ? " | " + entry.detail : "");
       });
       el.adminActivity.textContent = activities.length ? activities.join("\\n") : "No activity yet.";
       el.adminLoadConfigButton.disabled = el.adminConfigSelect.options.length === 0;
+      if (el.adminApproveUserButton) el.adminApproveUserButton.disabled = el.adminPendingSelect.options.length === 0;
+      if (el.adminDenyUserButton) el.adminDenyUserButton.disabled = el.adminPendingSelect.options.length === 0;
     }
     function refreshAuthControls() {
       if (!backendAuthEnabled) {
         el.authUserLabel.textContent = authBackendProviderName + " not connected";
         el.authEmail.disabled = true;
         el.authPassword.disabled = true;
+        if (el.authCompany) el.authCompany.disabled = true;
         el.configName.disabled = true;
         el.savedConfigSelect.disabled = true;
         el.authLogin.disabled = true;
@@ -1790,7 +1942,7 @@
         el.loadConfigButton.disabled = true;
         el.deleteConfigButton.disabled = true;
         el.adminPanel.hidden = true;
-        authStatus("Login and saved configurations are disabled until " + authBackendProviderName + " backend/auth is activated.");
+        authStatus("Secure login, company-email registration approval, saved configurations, and admin usage visibility are disabled until " + authBackendProviderName + " backend/auth is activated.");
         return;
       }
       const email = activeUserName();
@@ -1804,71 +1956,188 @@
       el.saveConfigButton.disabled = !loggedIn;
       el.authEmail.disabled = loggedIn;
       el.authPassword.disabled = loggedIn;
+      if (el.authCompany) el.authCompany.disabled = loggedIn;
       refreshSavedConfigDropdown();
       refreshAdminPanel();
     }
-    async function createLocalUser() {
+    function applyBackendDashboard(payload = {}) {
+      const email = activeUserName();
+      if (payload.configsByUser && typeof payload.configsByUser === "object") {
+        backendConfigsByUser = payload.configsByUser;
+      } else if (Array.isArray(payload.configs) && email) {
+        backendConfigsByUser = { ...backendConfigsByUser, [email]: payload.configs };
+      }
+      backendPendingRegistrations = Array.isArray(payload.pendingRegistrations) ? payload.pendingRegistrations : backendPendingRegistrations;
+      backendRegisteredUsers = Array.isArray(payload.users) ? payload.users : backendRegisteredUsers;
+      backendActivityEntries = Array.isArray(payload.activity) ? payload.activity : backendActivityEntries;
+      backendUsageStats = payload.usageStats && typeof payload.usageStats === "object" ? payload.usageStats : backendUsageStats;
+    }
+    async function refreshBackendAuthData() {
+      if (!backendAuthEnabled || !activeUserName()) return;
+      const payload = await backendRequest(activeUserIsAdmin() ? "/admin/dashboard" : "/configs");
+      applyBackendDashboard(Array.isArray(payload) ? { configs: payload } : payload);
+      refreshAuthControls();
+    }
+    async function requestAccess() {
       const email = normalizedUserName(el.authEmail.value);
-      const password = String(el.authPassword.value || "");
-      if (!email || !email.includes("@")) {
-        authStatus("Enter a valid email-style username.");
+      const company = String(el.authCompany?.value || "").trim();
+      if (!isCompanyEmail(email)) {
+        authStatus("Use a company email address. Personal email domains are not allowed.");
         return;
       }
-      if (password.length < 8) {
-        authStatus("Password must be at least 8 characters.");
+      if (!company) {
+        authStatus("Enter the company name for approval.");
         return;
       }
-      const users = localUsers();
-      if (users[email]) {
-        authStatus("User already exists. Log in instead.");
+      if (!backendAuthEnabled) {
+        authStatus("Access requests require the secure backend API. Backend is not connected yet.");
         return;
       }
       try {
-        const salt = randomBase64();
-        const role = Object.keys(users).length === 0 || email === "deanh@nvidia.com" ? "admin" : "user";
-        users[email] = {
-          email,
-          role,
-          salt,
-          passwordHash: await passwordHash(password, salt),
-          createdAt: new Date().toISOString(),
-        };
-        writeLocalJson(authUsersStorageKey, users);
-        writeLocalJson(authSessionStorageKey, { email, role, loggedInAt: new Date().toISOString() });
-        addActivity(email, "created user", role);
-        el.authPassword.value = "";
-        authStatus("User created and logged in.");
-        refreshAuthControls();
+        await backendRequest("/registration-requests", {
+          method: "POST",
+          body: {
+            email,
+            company,
+            tool: "GPU_RA_and_NVAIE_TCO_Analysis",
+            requestedAt: new Date().toISOString(),
+          },
+        });
+        authStatus("Access request submitted. Admin approval is required before login.");
       } catch (error) {
-        authStatus(error.message || "Unable to create user.");
+        authStatus(error.message || "Unable to submit access request.");
       }
     }
-    async function loginLocalUser() {
+    async function loginUser() {
       const email = normalizedUserName(el.authEmail.value);
       const password = String(el.authPassword.value || "");
-      const users = localUsers();
-      const user = users[email];
-      if (!user) {
-        authStatus("User not found. Create a user first.");
+      if (!isCompanyEmail(email)) {
+        authStatus("Use an approved company email address.");
+        return;
+      }
+      if (!backendAuthEnabled) {
+        authStatus("Login requires the secure backend API. Backend is not connected yet.");
         return;
       }
       try {
-        const hash = await passwordHash(password, user.salt);
-        if (hash !== user.passwordHash) {
-          authStatus("Password does not match.");
+        const payload = await backendRequest("/auth/login", {
+          method: "POST",
+          body: { email, password, tool: "GPU_RA_and_NVAIE_TCO_Analysis" },
+        });
+        const user = payload.user || {};
+        if ((user.status || payload.status || "approved") !== "approved") {
+          authStatus("Login blocked until admin approval is complete.");
           return;
         }
-        writeLocalJson(authSessionStorageKey, { email, role: user.role, loggedInAt: new Date().toISOString() });
-        addActivity(email, "logged in");
-        el.authPassword.value = "";
+        writeLocalJson(authSessionStorageKey, {
+          email: normalizedUserName(user.email || email),
+          role: user.role || payload.role || "user",
+          token: payload.token,
+          loggedInAt: new Date().toISOString(),
+        });
+        if (el.authPassword) el.authPassword.value = "";
         authStatus("Logged in.");
-        refreshAuthControls();
+        await refreshBackendAuthData();
       } catch (error) {
         authStatus(error.message || "Unable to log in.");
       }
     }
+    async function approvePendingUser() {
+      if (!backendAuthEnabled || !activeUserIsAdmin()) return;
+      const requestId = el.adminPendingSelect?.value;
+      if (!requestId) return;
+      try {
+        await backendRequest("/admin/registration-requests/" + encodeURIComponent(requestId) + "/approve", {
+          method: "POST",
+          body: { tool: "GPU_RA_and_NVAIE_TCO_Analysis" },
+        });
+        authStatus("User approved.");
+        await refreshBackendAuthData();
+      } catch (error) {
+        authStatus(error.message || "Unable to approve user.");
+      }
+    }
+    async function denyPendingUser() {
+      if (!backendAuthEnabled || !activeUserIsAdmin()) return;
+      const requestId = el.adminPendingSelect?.value;
+      if (!requestId) return;
+      try {
+        await backendRequest("/admin/registration-requests/" + encodeURIComponent(requestId) + "/deny", {
+          method: "POST",
+          body: { tool: "GPU_RA_and_NVAIE_TCO_Analysis" },
+        });
+        authStatus("User denied.");
+        await refreshBackendAuthData();
+      } catch (error) {
+        authStatus(error.message || "Unable to deny user.");
+      }
+    }
+    async function saveNamedConfigBackend() {
+      const email = activeUserName();
+      if (!email) {
+        authStatus("Log in before saving a configuration.");
+        return;
+      }
+      const name = String(el.configName.value || "").trim();
+      if (!name) {
+        authStatus("Enter a configuration name.");
+        return;
+      }
+      try {
+        const selectedId = el.savedConfigSelect.value || null;
+        const payload = await backendRequest("/configs", {
+          method: "POST",
+          body: {
+            id: selectedId,
+            name,
+            state: collectState(),
+            tool: "GPU_RA_and_NVAIE_TCO_Analysis",
+          },
+        });
+        const nextConfig = payload.config || {
+          id: selectedId || ("config-" + Date.now()),
+          name,
+          state: collectState(),
+          updatedAt: new Date().toISOString(),
+          updatedBy: email,
+        };
+        const current = configListForUser(email);
+        backendConfigsByUser[email] = current.some((config) => config.id === nextConfig.id)
+          ? current.map((config) => config.id === nextConfig.id ? nextConfig : config)
+          : [...current, nextConfig];
+        authStatus("Saved configuration: " + name);
+        refreshAuthControls();
+        el.savedConfigSelect.value = nextConfig.id;
+      } catch (error) {
+        authStatus(error.message || "Unable to save configuration.");
+      }
+    }
+    async function deleteSelectedConfigBackend() {
+      const email = activeUserName();
+      const selectedId = el.savedConfigSelect.value;
+      if (!email || !selectedId) return;
+      try {
+        await backendRequest("/configs/" + encodeURIComponent(selectedId), {
+          method: "DELETE",
+        });
+        backendConfigsByUser[email] = configListForUser(email).filter((config) => config.id !== selectedId);
+        authStatus("Deleted configuration.");
+        refreshAuthControls();
+      } catch (error) {
+        authStatus(error.message || "Unable to delete configuration.");
+      }
+    }
+    async function createLocalUser() {
+      authStatus("Local browser-only user creation is disabled. Use Request Access after the secure backend is connected.");
+    }
+    async function loginLocalUser() {
+      authStatus("Local browser-only login is disabled. Use the secure backend login after Starfleet is connected.");
+    }
     function logoutLocalUser() {
       const email = activeUserName();
+      if (backendAuthEnabled) {
+        backendRequest("/auth/logout", { method: "POST" }).catch(() => {});
+      }
       try {
         window.localStorage.removeItem(authSessionStorageKey);
       } catch (error) {}
@@ -1877,6 +2146,12 @@
       refreshAuthControls();
     }
     function saveNamedConfig() {
+      if (backendAuthEnabled) {
+        saveNamedConfigBackend();
+        return;
+      }
+      authStatus("Saving named configurations requires the secure backend API.");
+      return;
       const email = activeUserName();
       if (!email) {
         authStatus("Log in before saving a configuration.");
@@ -1927,6 +2202,12 @@
       loadConfigFor(email, el.savedConfigSelect.value, false);
     }
     function deleteSelectedConfig() {
+      if (backendAuthEnabled) {
+        deleteSelectedConfigBackend();
+        return;
+      }
+      authStatus("Deleting named configurations requires the secure backend API.");
+      return;
       const email = activeUserName();
       const selectedId = el.savedConfigSelect.value;
       if (!email || !selectedId) return;
@@ -3694,17 +3975,21 @@
     });
     el.nvaieRoiTables.addEventListener("input", handleNvaieRoiTableInput);
     el.nvaieRoiTables.addEventListener("change", handleNvaieRoiTableInput);
-    el.authCreateUser.addEventListener("click", () => {
-      createLocalUser();
-    });
-    el.authLogin.addEventListener("click", () => {
-      loginLocalUser();
-    });
+    el.authCreateUser.addEventListener("click", requestAccess);
+    el.authLogin.addEventListener("click", loginUser);
     el.authLogout.addEventListener("click", logoutLocalUser);
     el.saveConfigButton.addEventListener("click", saveNamedConfig);
     el.loadConfigButton.addEventListener("click", loadSelectedConfig);
     el.deleteConfigButton.addEventListener("click", deleteSelectedConfig);
-    el.adminRefreshButton.addEventListener("click", refreshAdminPanel);
+    el.adminRefreshButton.addEventListener("click", () => {
+      if (backendAuthEnabled) {
+        refreshBackendAuthData().catch((error) => authStatus(error.message || "Unable to refresh admin view."));
+      } else {
+        refreshAdminPanel();
+      }
+    });
+    if (el.adminApproveUserButton) el.adminApproveUserButton.addEventListener("click", approvePendingUser);
+    if (el.adminDenyUserButton) el.adminDenyUserButton.addEventListener("click", denyPendingUser);
     el.adminLoadConfigButton.addEventListener("click", adminLoadSelectedConfig);
     el.savedConfigSelect.addEventListener("change", () => {
       const email = activeUserName();
@@ -3712,7 +3997,7 @@
       if (config) el.configName.value = config.name;
     });
     el.authPassword.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !el.authLogin.disabled) loginLocalUser();
+      if (event.key === "Enter" && !el.authLogin.disabled) loginUser();
     });
     function clearCellHighlight() {
       document.querySelectorAll(".tco-cell-highlight").forEach((node) => node.classList.remove("tco-cell-highlight"));
