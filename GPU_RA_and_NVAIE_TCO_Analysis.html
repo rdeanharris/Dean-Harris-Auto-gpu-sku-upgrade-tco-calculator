@@ -2107,10 +2107,12 @@
           "",
           "Test mode: the secure approval service is not deployed yet, so this email does not create or send a one-time access link.",
         ].join("\n");
-        el.inviteUserStatus.textContent = "Opening an approval-request email to " + adminEmail + ". Secure invite links require the approval service.";
-        window.location.href = "mailto:" + encodeURIComponent(adminEmail)
-          + "?subject=" + encodeURIComponent(subject)
+        const outlookComposeUrl = "https://outlook.office.com/mail/deeplink/compose"
+          + "?to=" + encodeURIComponent(adminEmail)
+          + "&subject=" + encodeURIComponent(subject)
           + "&body=" + encodeURIComponent(body);
+        el.inviteUserStatus.textContent = "Opening a prefilled approval-request email in Outlook to " + adminEmail + ". Review it and select Send.";
+        window.open(outlookComposeUrl, "_blank", "noopener,noreferrer");
         return;
       }
       try {
