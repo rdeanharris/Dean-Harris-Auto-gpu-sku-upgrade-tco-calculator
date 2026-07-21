@@ -96,6 +96,31 @@
       border-color: #c7cdd6;
       cursor: not-allowed;
     }
+    body.access-gate-active {
+      overflow: hidden;
+    }
+    body.access-gate-active::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: rgba(0, 0, 0, 0.72);
+    }
+    body.access-gate-active #starfleetLoginPanel {
+      display: block !important;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 9999;
+      width: min(760px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      transform: translate(-50%, -50%);
+      border: 2px solid var(--nvidia);
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+    }
     .auth-head {
       display: flex;
       align-items: center;
@@ -121,6 +146,10 @@
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
+    }
+    .access-request-only[hidden],
+    .access-member-only[hidden] {
+      display: none !important;
     }
     .auth-grid input,
     .auth-grid select {
@@ -1097,39 +1126,37 @@
     <div class="file-actions no-print">
       <button class="pdf-button" type="button" id="createPdfButton">Create PDF</button>
     </div>
-    <section class="auth-toggle-panel no-print" aria-label="Show secure access window">
-      <label class="auth-toggle-control"><input id="starfleetLoginVisible" type="checkbox" />Show Secure Login, Approvals and Saved Configurations</label>
-    </section>
-    <section class="auth-panel auth-disabled no-print" id="starfleetLoginPanel" aria-label="Secure access and saved configurations" data-reactivate-note="Secure access is visible but disabled until the backend API and redirect URI are configured." hidden>
+    <input id="starfleetLoginVisible" type="checkbox" hidden />
+    <section class="auth-panel auth-disabled no-print" id="starfleetLoginPanel" aria-label="Approval request and saved configurations" data-reactivate-note="Approval requests activate when the backend API and redirect URI are configured." hidden>
       <div class="auth-head">
-        <span>Secure Access, User Approval and Saved Configurations</span>
-        <span class="auth-user" id="authUserLabel">Not logged in</span>
+        <span id="authPanelTitle">Request Approval to Access the TCO Calculator</span>
+        <span class="auth-user" id="authUserLabel">Approval required</span>
       </div>
       <div class="auth-grid">
-        <label>Company Email
+        <label class="access-request-only">Company Email
           <input id="authEmail" type="email" autocomplete="username" placeholder="name@company.com" />
         </label>
-        <label>Company
+        <label class="access-request-only">Company
           <input id="authCompany" type="text" autocomplete="organization" placeholder="Company name" />
         </label>
-        <label>Configuration Name
+        <label class="access-member-only" hidden>Configuration Name
           <input id="configName" type="text" placeholder="Customer scenario name" disabled />
         </label>
-        <label>Saved Configurations
+        <label class="access-member-only" hidden>Saved Configurations
           <select id="savedConfigSelect" disabled></select>
         </label>
       </div>
       <div class="auth-actions" style="margin-top: 8px;">
-        <button type="button" id="authLogin">Email Secure Access Link</button>
-        <button type="button" class="secondary" id="authCreateUser">Request Access</button>
-        <button type="button" class="secondary" id="authLogout" disabled>Log Out</button>
-        <button type="button" id="saveConfigButton" disabled>Save Configuration</button>
-        <button type="button" class="secondary" id="loadConfigButton" disabled>Load Configuration</button>
-        <button type="button" class="secondary" id="deleteConfigButton" disabled>Delete Configuration</button>
+        <button type="button" id="authCreateUser">Request Approval</button>
+        <button type="button" class="secondary" id="authLogin">Email My Approved Access Link</button>
+        <button type="button" class="secondary" id="authLogout" disabled hidden>End Access</button>
+        <button type="button" class="access-member-only" id="saveConfigButton" disabled hidden>Save Configuration</button>
+        <button type="button" class="secondary access-member-only" id="loadConfigButton" disabled hidden>Load Configuration</button>
+        <button type="button" class="secondary access-member-only" id="deleteConfigButton" disabled hidden>Delete Configuration</button>
       </div>
       <div class="auth-status" id="authStatus"></div>
-      <div class="auth-warning">The secure backend is not connected yet. Access requests, emailed access links, saved configurations, approval workflow, and admin visibility become available after the API URL and redirect URI are deployed.</div>
-      <div class="auth-note">Security model: company-email requests remain pending until administrator approval. Approval sends a one-time, expiring link only to that email address. Tokens, activity, and administrator data remain on the backend.</div>
+      <div class="auth-warning">Approval requests are not active yet. They become available after the secure API URL and redirect URI are deployed.</div>
+      <div class="auth-note">Enter a company email on your first visit. The administrator reviews the request, and approval sends a one-time, expiring access link only to that email address. No password or separate account sign-in is required.</div>
       <div class="admin-panel" id="adminPanel" hidden>
         <div class="auth-head">
           <span>Admin Visibility and Approvals</span>
@@ -1435,7 +1462,7 @@
       "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
       "skuOverrideRows", "warning", "saveStatus", "createPdfButton",
       "starfleetLoginVisible", "starfleetLoginPanel",
-      "authEmail", "authCompany", "authUserLabel", "authLogin", "authCreateUser", "authLogout", "authStatus",
+      "authEmail", "authCompany", "authPanelTitle", "authUserLabel", "authLogin", "authCreateUser", "authLogout", "authStatus",
       "configName", "savedConfigSelect", "saveConfigButton", "loadConfigButton", "deleteConfigButton",
       "adminPanel", "adminConfigSelect", "adminLoadConfigButton", "adminRefreshButton", "adminActivity",
       "adminPendingCount", "adminApprovedCount", "adminActiveCount", "adminConfigCount",
@@ -1704,7 +1731,7 @@
       } catch (error) {}
     }
     function refreshStarfleetLoginWindow() {
-      const visible = starfleetLoginWindowVisible();
+      const visible = backendAuthEnabled;
       if (el.starfleetLoginVisible) el.starfleetLoginVisible.checked = visible;
       if (el.starfleetLoginPanel) el.starfleetLoginPanel.hidden = !visible;
     }
@@ -1917,7 +1944,7 @@
       });
       const usageLines = [
         "Usage Statistics",
-        "Total logins: " + (backendUsageStats.totalLogins ?? "pending backend"),
+        "Approved access sessions: " + (backendUsageStats.totalLogins ?? "pending backend"),
         "Configurations saved: " + (backendUsageStats.configurationsSaved ?? "pending backend"),
         "Configurations loaded: " + (backendUsageStats.configurationsLoaded ?? "pending backend"),
         "PDF exports: " + (backendUsageStats.pdfExports ?? "pending backend"),
@@ -1943,7 +1970,9 @@
         if (warning) warning.hidden = backendAuthEnabled;
       }
       if (!backendAuthEnabled) {
-        el.authUserLabel.textContent = "Secure access not connected";
+        document.body.classList.remove("access-gate-active");
+        if (el.starfleetLoginPanel) el.starfleetLoginPanel.hidden = true;
+        el.authUserLabel.textContent = "Approval service not connected";
         el.authEmail.disabled = true;
         if (el.authCompany) el.authCompany.disabled = true;
         el.configName.disabled = true;
@@ -1955,16 +1984,24 @@
         el.loadConfigButton.disabled = true;
         el.deleteConfigButton.disabled = true;
         el.adminPanel.hidden = true;
-        authStatus("Secure company-email approval, emailed access links, saved configurations, and admin usage visibility are disabled until the backend API is activated.");
+        authStatus("Company-email approval becomes available when the secure backend API is activated.");
         return;
       }
       const email = activeUserName();
       const role = activeUserRole();
       const loggedIn = Boolean(email);
-      el.authUserLabel.textContent = loggedIn ? ("Logged in: " + email + (role === "admin" ? " (admin)" : "")) : "Not logged in";
+      document.body.classList.toggle("access-gate-active", !loggedIn);
+      if (el.starfleetLoginPanel) el.starfleetLoginPanel.hidden = false;
+      document.querySelectorAll(".access-request-only").forEach((node) => { node.hidden = loggedIn; });
+      document.querySelectorAll(".access-member-only").forEach((node) => { node.hidden = !loggedIn; });
+      el.authUserLabel.textContent = loggedIn ? ("Approved access: " + email + (role === "admin" ? " (admin)" : "")) : "Approval required";
+      if (el.authPanelTitle) el.authPanelTitle.textContent = loggedIn ? "Approved Access and Saved Configurations" : "Request Approval to Access the TCO Calculator";
       el.authLogin.disabled = loggedIn;
+      el.authLogin.hidden = loggedIn;
       el.authCreateUser.disabled = loggedIn;
+      el.authCreateUser.hidden = loggedIn;
       el.authLogout.disabled = !loggedIn;
+      el.authLogout.hidden = !loggedIn;
       el.configName.disabled = !loggedIn;
       el.saveConfigButton.disabled = !loggedIn;
       el.authEmail.disabled = loggedIn;
@@ -2027,7 +2064,7 @@
         return;
       }
       if (!backendAuthEnabled) {
-        authStatus("Login requires the secure backend API. Backend is not connected yet.");
+        authStatus("Approved access links require the secure backend API. Backend is not connected yet.");
         return;
       }
       try {
@@ -2154,7 +2191,7 @@
       authStatus("Local browser-only user creation is disabled. Use Request Access after the secure backend is connected.");
     }
     async function loginLocalUser() {
-      authStatus("Local browser-only login is disabled. Use the secure backend login after Starfleet is connected.");
+      authStatus("Local browser-only access is disabled. Use the emailed approved-access link after Starfleet is connected.");
     }
     function logoutLocalUser() {
       const email = activeUserName();
@@ -2164,8 +2201,8 @@
       try {
         window.sessionStorage.removeItem(authSessionStorageKey);
       } catch (error) {}
-      addActivity(email, "logged out");
-      authStatus("Logged out.");
+      addActivity(email, "access ended");
+      authStatus("Access ended.");
       refreshAuthControls();
     }
     function saveNamedConfig() {
@@ -3996,7 +4033,7 @@
       setNvaieRoiScenarioMode(true);
     });
     if (el.starfleetLoginVisible) el.starfleetLoginVisible.addEventListener("change", (event) => {
-      storeStarfleetLoginWindowVisible(event.target.checked);
+      event.target.checked = backendAuthEnabled;
       refreshStarfleetLoginWindow();
     });
     el.nvaieRoiTables.addEventListener("input", handleNvaieRoiTableInput);
@@ -4023,7 +4060,7 @@
       if (config) el.configName.value = config.name;
     });
     el.authEmail.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !el.authLogin.disabled) loginUser();
+      if (event.key === "Enter" && !el.authCreateUser.disabled) requestAccess();
     });
     function clearCellHighlight() {
       document.querySelectorAll(".tco-cell-highlight").forEach((node) => node.classList.remove("tco-cell-highlight"));
