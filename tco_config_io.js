@@ -175,8 +175,12 @@
 
     // The source calculator still carries internal workbook links for legacy builds.
     // Remove that internal-only view while leaving the Core Source Data tabs intact.
-    document.getElementById("hiddenWorkbookToggle")?.remove();
-    document.getElementById("hiddenWorkbookTabs")?.remove();
+    const legacyWorkbookToggle = document.getElementById("hiddenWorkbookToggle");
+    const legacyWorkbookTabs = document.getElementById("hiddenWorkbookTabs");
+    if (!legacyWorkbookToggle?.closest("[data-core-source-data]")) {
+      legacyWorkbookToggle?.remove();
+      legacyWorkbookTabs?.remove();
+    }
 
     const style = document.createElement("style");
     style.textContent = [
