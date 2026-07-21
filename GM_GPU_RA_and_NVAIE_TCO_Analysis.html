@@ -1110,16 +1110,6 @@
         <div class="admin-activity" id="adminActivity"></div>
       </div>
     </section>
-    <div class="source-tabs top-source-tabs">
-      <span>Core Source Data</span>
-      <div class="tab-list" role="tablist" aria-label="Source tabs">
-        <a class="tab-pill" href="sheet_previews/cloud_price_inputs.html" role="tab" data-source-tab="cloudPriceInputs" aria-selected="true">Cloud Price Inputs</a>
-        <a class="tab-pill" href="sheet_previews/on_prem_price_inputs.html" role="tab" data-source-tab="onPremPriceInputs" aria-selected="false">On-Prem Price Inputs</a>
-        <a class="tab-pill" href="sheet_previews/sku_performance_guidelines.html" role="tab" data-source-tab="skuPerformanceGuidelines" aria-selected="false">SKU Performance Guidelines</a>
-        <a class="tab-pill" href="sheet_previews/gpu_generation_performance_uplift.html" role="tab" data-source-tab="gpuGenerationPerformanceUplift" aria-selected="false">GPU Generation Performance Uplift</a>
-        <a class="tab-pill" href="sheet_previews/sku_dropdown_lists.html" role="tab" data-source-tab="skuDropdownLists" aria-selected="false">SKU Dropdown Lists</a>
-      </div>
-    </div>
     <div class="grid">
       <section>
         <div class="section">
@@ -1341,19 +1331,18 @@
         </div>
       </section>
     </div>
-    <div class="source-tabs bottom-source-tabs">
+    <div class="source-tabs bottom-source-tabs" data-core-source-data>
       <button class="override-toggle" type="button" id="hiddenWorkbookToggle" aria-expanded="false" aria-controls="hiddenWorkbookTabs">
         <span class="override-toggle-icon" id="hiddenWorkbookToggleIconStart" aria-hidden="true">+</span>
-        <span class="override-toggle-label">Hidden Workbooks</span>
+        <span class="override-toggle-label">Core Source Data</span>
         <span class="override-toggle-icon" id="hiddenWorkbookToggleIcon" aria-hidden="true">+</span>
       </button>
-      <div class="tab-list hidden-workbook-list" id="hiddenWorkbookTabs" role="tablist" aria-label="Hidden workbook tabs" hidden>
-        <a class="tab-pill" href="sheet_previews/a10_baseline_sku_perf.html" role="tab" data-source-tab="a10BaselineSkuPerf" aria-selected="false">A10 Baseline SKU Perf</a>
-        <a class="tab-pill" href="sheet_previews/a10_to_h100.html" role="tab" data-source-tab="a10ToH100" aria-selected="false">A10 to H100</a>
-        <a class="tab-pill" href="sheet_previews/a10_to_h200.html" role="tab" data-source-tab="a10ToH200" aria-selected="false">A10 to H200</a>
-        <a class="tab-pill" href="sheet_previews/a10_to_b200.html" role="tab" data-source-tab="a10ToB200" aria-selected="false">A10 to B200</a>
-        <a class="tab-pill" href="sheet_previews/h100_to_b200.html" role="tab" data-source-tab="h100ToB200" aria-selected="false">H100 to B200</a>
-        <a class="tab-pill" href="sheet_previews/a100_to_b200.html" role="tab" data-source-tab="a100ToB200" aria-selected="false">A100 to B200</a>
+      <div class="tab-list hidden-workbook-list" id="hiddenWorkbookTabs" role="tablist" aria-label="Core Source Data tabs" hidden>
+        <a class="tab-pill" href="sheet_previews/cloud_price_inputs.html" role="tab" data-source-tab="cloudPriceInputs" aria-selected="true">Cloud Price Inputs</a>
+        <a class="tab-pill" href="sheet_previews/on_prem_price_inputs.html" role="tab" data-source-tab="onPremPriceInputs" aria-selected="false">On-Prem Price Inputs</a>
+        <a class="tab-pill" href="sheet_previews/sku_performance_guidelines.html" role="tab" data-source-tab="skuPerformanceGuidelines" aria-selected="false">SKU Performance Guidelines</a>
+        <a class="tab-pill" href="sheet_previews/gpu_generation_performance_uplift.html" role="tab" data-source-tab="gpuGenerationPerformanceUplift" aria-selected="false">GPU Generation Performance Uplift</a>
+        <a class="tab-pill" href="sheet_previews/sku_dropdown_lists.html" role="tab" data-source-tab="skuDropdownLists" aria-selected="false">SKU Dropdown Lists</a>
       </div>
     </div>
   </main>
