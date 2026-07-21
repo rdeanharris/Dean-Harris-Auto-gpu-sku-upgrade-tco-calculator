@@ -1,11 +1,12 @@
 window.GPU_TCO_STARFLEET_CONFIG = Object.freeze({
   enabled: false,
   providerName: "Starfleet",
+  authMode: "approved_email_magic_link",
   serviceId: "SweHG9LrCP4FbckLjhJFxRNrsSKCQKch3z0fDUINxnA",
   nspectId: "NSPECT-5LTJ-V6DK",
   authBaseUrl: "https://stg.login.nvidia.com",
-  // apiBaseUrl is the future TCO backend/API that saves named configs and admin activity logs.
-  // Leave blank until that backend is deployed.
+  // apiBaseUrl is the deployed secure API that handles approval, one-time email links,
+  // sessions, named configs, and admin activity logs. Leave blank until deployed.
   apiBaseUrl: "",
   clientId: "StkDvtzs9LkXP6-N6yhVmfi_vEd_m3zErlk5g-OOdqY",
   // Must match a redirect URI registered on the Starfleet client before auth is enabled.
@@ -15,6 +16,8 @@ window.GPU_TCO_STARFLEET_CONFIG = Object.freeze({
   requiredEmailDomain: "",
   companyEmailRequired: true,
   approvalRequired: true,
+  magicLinkExpiresMinutes: 30,
+  sessionHours: 12,
   inviteOnlyExternalUsers: false,
   blockedPersonalEmailDomains: [
     "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "outlook.com", "hotmail.com",

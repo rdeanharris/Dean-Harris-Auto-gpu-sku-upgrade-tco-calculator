@@ -14,4 +14,4 @@ node_modules/
 *.pem
 *.p12
 *.pfx
-
+tco-config-api/data/

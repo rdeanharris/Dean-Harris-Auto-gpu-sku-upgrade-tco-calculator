@@ -1097,20 +1097,17 @@
     <div class="file-actions no-print">
       <button class="pdf-button" type="button" id="createPdfButton">Create PDF</button>
     </div>
-    <section class="auth-toggle-panel no-print" aria-label="Show Starfleet login window">
+    <section class="auth-toggle-panel no-print" aria-label="Show secure access window">
       <label class="auth-toggle-control"><input id="starfleetLoginVisible" type="checkbox" />Show Secure Login, Approvals and Saved Configurations</label>
     </section>
-    <section class="auth-panel auth-disabled no-print" id="starfleetLoginPanel" aria-label="Login and saved configurations" data-reactivate-note="Starfleet login is visible but disabled until the backend API and redirect URI are configured." hidden>
+    <section class="auth-panel auth-disabled no-print" id="starfleetLoginPanel" aria-label="Secure access and saved configurations" data-reactivate-note="Secure access is visible but disabled until the backend API and redirect URI are configured." hidden>
       <div class="auth-head">
-        <span>Starfleet Login, User Approval and Saved Configurations</span>
+        <span>Secure Access, User Approval and Saved Configurations</span>
         <span class="auth-user" id="authUserLabel">Not logged in</span>
       </div>
       <div class="auth-grid">
-        <label>Company Email / Username
+        <label>Company Email
           <input id="authEmail" type="email" autocomplete="username" placeholder="name@company.com" />
-        </label>
-        <label>Password / SSO Credential
-          <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password" />
         </label>
         <label>Company
           <input id="authCompany" type="text" autocomplete="organization" placeholder="Company name" />
@@ -1123,7 +1120,7 @@
         </label>
       </div>
       <div class="auth-actions" style="margin-top: 8px;">
-        <button type="button" id="authLogin">Log In</button>
+        <button type="button" id="authLogin">Email Secure Access Link</button>
         <button type="button" class="secondary" id="authCreateUser">Request Access</button>
         <button type="button" class="secondary" id="authLogout" disabled>Log Out</button>
         <button type="button" id="saveConfigButton" disabled>Save Configuration</button>
@@ -1131,8 +1128,8 @@
         <button type="button" class="secondary" id="deleteConfigButton" disabled>Delete Configuration</button>
       </div>
       <div class="auth-status" id="authStatus"></div>
-      <div class="auth-warning">Starfleet backend/auth is not connected yet. Login, access requests, saved configurations, approval workflow, and admin visibility will be enabled after Starfleet app, backend API, redirect URI, and admin-role details are added.</div>
-      <div class="auth-note">Security model: users request access with a company email, the backend keeps requests pending until admin approval, and only approved users can log in and save configurations. Admin visibility and usage statistics must be served by the backend, not browser storage.</div>
+      <div class="auth-warning">The secure backend is not connected yet. Access requests, emailed access links, saved configurations, approval workflow, and admin visibility become available after the API URL and redirect URI are deployed.</div>
+      <div class="auth-note">Security model: company-email requests remain pending until administrator approval. Approval sends a one-time, expiring link only to that email address. Tokens, activity, and administrator data remain on the backend.</div>
       <div class="admin-panel" id="adminPanel" hidden>
         <div class="auth-head">
           <span>Admin Visibility and Approvals</span>
@@ -1438,7 +1435,7 @@
       "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
       "skuOverrideRows", "warning", "saveStatus", "createPdfButton",
       "starfleetLoginVisible", "starfleetLoginPanel",
-      "authEmail", "authPassword", "authCompany", "authUserLabel", "authLogin", "authCreateUser", "authLogout", "authStatus",
+      "authEmail", "authCompany", "authUserLabel", "authLogin", "authCreateUser", "authLogout", "authStatus",
       "configName", "savedConfigSelect", "saveConfigButton", "loadConfigButton", "deleteConfigButton",
       "adminPanel", "adminConfigSelect", "adminLoadConfigButton", "adminRefreshButton", "adminActivity",
       "adminPendingCount", "adminApprovedCount", "adminActiveCount", "adminConfigCount",
@@ -1467,19 +1464,12 @@
     const authConfigsStorageKey = "gpuTcoNamedConfigs";
     const authActivityStorageKey = "gpuTcoActivityLog";
     const authBackendConfig = window.GPU_TCO_STARFLEET_CONFIG || {};
-    const authBackendProviderName = authBackendConfig.providerName || "Starfleet";
     const blockedPersonalEmailDomains = new Set(authBackendConfig.blockedPersonalEmailDomains || [
       "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "outlook.com", "hotmail.com", "live.com",
       "icloud.com", "me.com", "mac.com", "aol.com", "proton.me", "protonmail.com", "pm.me",
       "gmx.com", "mail.com", "zoho.com", "hey.com",
     ]);
-    const backendAuthEnabled = Boolean(
-      authBackendConfig.enabled
-      && authBackendConfig.authBaseUrl
-      && authBackendConfig.apiBaseUrl
-      && authBackendConfig.clientId
-      && authBackendConfig.redirectUri
-    );
+    const backendAuthEnabled = Boolean(authBackendConfig.enabled && authBackendConfig.apiBaseUrl);
     let backendConfigsByUser = {};
     let backendActivityEntries = [];
     let backendPendingRegistrations = [];
@@ -1734,6 +1724,22 @@
         return false;
       }
     }
+    function readSessionJson(key, fallback) {
+      try {
+        const value = window.sessionStorage.getItem(key);
+        return value ? JSON.parse(value) : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+    function writeSessionJson(key, value) {
+      try {
+        window.sessionStorage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
     function normalizedUserName(value) {
       return String(value || "").trim().toLowerCase();
     }
@@ -1790,7 +1796,7 @@
       return readLocalJson(authActivityStorageKey, []);
     }
     function currentAuthSession() {
-      return readLocalJson(authSessionStorageKey, null);
+      return readSessionJson(authSessionStorageKey, null);
     }
     function activeUserName() {
       const session = currentAuthSession();
@@ -1919,8 +1925,11 @@
       ];
       if (el.adminUsageStats) el.adminUsageStats.textContent = usageLines.join("\n");
       const activities = (backendAuthEnabled ? backendActivityEntries : localActivity()).slice(0, 80).map((entry) => {
-        const at = entry.at ? new Date(entry.at).toLocaleString() : "";
-        return at + " | " + entry.email + " | " + entry.action + (entry.detail ? " | " + entry.detail : "");
+        const timestamp = entry.timestamp || entry.at;
+        const at = timestamp ? new Date(timestamp).toLocaleString() : "";
+        const email = entry.userEmail || entry.email || "anonymous";
+        const detail = typeof entry.detail === "string" ? entry.detail : (entry.detail ? JSON.stringify(entry.detail) : "");
+        return at + " | " + email + " | " + entry.action + (detail ? " | " + detail : "");
       });
       el.adminActivity.textContent = activities.length ? activities.join("\\n") : "No activity yet.";
       el.adminLoadConfigButton.disabled = el.adminConfigSelect.options.length === 0;
@@ -1928,10 +1937,14 @@
       if (el.adminDenyUserButton) el.adminDenyUserButton.disabled = el.adminPendingSelect.options.length === 0;
     }
     function refreshAuthControls() {
+      if (el.starfleetLoginPanel) {
+        el.starfleetLoginPanel.classList.toggle("auth-disabled", !backendAuthEnabled);
+        const warning = el.starfleetLoginPanel.querySelector(".auth-warning");
+        if (warning) warning.hidden = backendAuthEnabled;
+      }
       if (!backendAuthEnabled) {
-        el.authUserLabel.textContent = authBackendProviderName + " not connected";
+        el.authUserLabel.textContent = "Secure access not connected";
         el.authEmail.disabled = true;
-        el.authPassword.disabled = true;
         if (el.authCompany) el.authCompany.disabled = true;
         el.configName.disabled = true;
         el.savedConfigSelect.disabled = true;
@@ -1942,7 +1955,7 @@
         el.loadConfigButton.disabled = true;
         el.deleteConfigButton.disabled = true;
         el.adminPanel.hidden = true;
-        authStatus("Secure login, company-email registration approval, saved configurations, and admin usage visibility are disabled until " + authBackendProviderName + " backend/auth is activated.");
+        authStatus("Secure company-email approval, emailed access links, saved configurations, and admin usage visibility are disabled until the backend API is activated.");
         return;
       }
       const email = activeUserName();
@@ -1955,7 +1968,6 @@
       el.configName.disabled = !loggedIn;
       el.saveConfigButton.disabled = !loggedIn;
       el.authEmail.disabled = loggedIn;
-      el.authPassword.disabled = loggedIn;
       if (el.authCompany) el.authCompany.disabled = loggedIn;
       refreshSavedConfigDropdown();
       refreshAdminPanel();
@@ -2003,14 +2015,13 @@
             requestedAt: new Date().toISOString(),
           },
         });
-        authStatus("Access request submitted. Admin approval is required before login.");
+        authStatus("Access request submitted. After approval, a one-time secure link will be emailed only to this address.");
       } catch (error) {
         authStatus(error.message || "Unable to submit access request.");
       }
     }
     async function loginUser() {
       const email = normalizedUserName(el.authEmail.value);
-      const password = String(el.authPassword.value || "");
       if (!isCompanyEmail(email)) {
         authStatus("Use an approved company email address.");
         return;
@@ -2020,27 +2031,39 @@
         return;
       }
       try {
-        const payload = await backendRequest("/auth/login", {
+        const payload = await backendRequest("/auth/request-link", {
           method: "POST",
-          body: { email, password, tool: "GPU_RA_and_NVAIE_TCO_Analysis" },
+          body: { email, tool: "GPU_RA_and_NVAIE_TCO_Analysis" },
         });
+        authStatus(payload.message || "If this account is approved, a secure access link has been emailed.");
+        if (payload.devMagicLink) window.location.assign(payload.devMagicLink);
+      } catch (error) {
+        authStatus(error.message || "Unable to email an access link.");
+      }
+    }
+    async function exchangeAccessCode() {
+      if (!backendAuthEnabled) return;
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("access_code");
+      if (!code) return;
+      url.searchParams.delete("access_code");
+      window.history.replaceState({}, document.title, url.toString());
+      try {
+        const payload = await backendRequest("/auth/exchange", { method: "POST", body: { code } });
         const user = payload.user || {};
-        if ((user.status || payload.status || "approved") !== "approved") {
-          authStatus("Login blocked until admin approval is complete.");
-          return;
-        }
-        writeLocalJson(authSessionStorageKey, {
-          email: normalizedUserName(user.email || email),
-          role: user.role || payload.role || "user",
+        writeSessionJson(authSessionStorageKey, {
+          email: normalizedUserName(user.email),
+          role: user.role || "user",
           token: payload.token,
+          expiresAt: payload.expiresAt,
           loggedInAt: new Date().toISOString(),
         });
-        if (el.authPassword) el.authPassword.value = "";
-        authStatus("Logged in.");
+        authStatus("Secure access confirmed.");
         await refreshBackendAuthData();
       } catch (error) {
-        authStatus(error.message || "Unable to log in.");
+        authStatus(error.message || "The access link is invalid or expired.");
       }
+      refreshAuthControls();
     }
     async function approvePendingUser() {
       if (!backendAuthEnabled || !activeUserIsAdmin()) return;
@@ -2139,7 +2162,7 @@
         backendRequest("/auth/logout", { method: "POST" }).catch(() => {});
       }
       try {
-        window.localStorage.removeItem(authSessionStorageKey);
+        window.sessionStorage.removeItem(authSessionStorageKey);
       } catch (error) {}
       addActivity(email, "logged out");
       authStatus("Logged out.");
@@ -2193,6 +2216,9 @@
       applyState(config.state);
       update();
       addActivity(activeUserName() || email, adminLoad ? "admin loaded configuration" : "loaded configuration", email + " / " + config.name);
+      if (backendAuthEnabled && !adminLoad) {
+        backendRequest("/configs/" + encodeURIComponent(configId) + "/loaded", { method: "POST" }).catch(() => {});
+      }
       authStatus("Loaded configuration: " + config.name);
       if (!adminLoad) el.configName.value = config.name;
       refreshAuthControls();
@@ -3996,7 +4022,7 @@
       const config = configListForUser(email).find((item) => item.id === el.savedConfigSelect.value);
       if (config) el.configName.value = config.name;
     });
-    el.authPassword.addEventListener("keydown", (event) => {
+    el.authEmail.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !el.authLogin.disabled) loginUser();
     });
     function clearCellHighlight() {
@@ -4033,9 +4059,20 @@
     setHiddenWorkbooksExpanded(storedHiddenWorkbooksExpanded());
     refreshStarfleetLoginWindow();
     refreshAuthControls();
+    exchangeAccessCode();
     syncPerfFactorSelection(true);
     update();
     loadSavedState();
+    window.GPU_TCO_CONFIG_IO = {
+      calculator: document.title,
+      collectState,
+      applyState: (state) => {
+        applyState(state);
+        update();
+        if (typeof scheduleSave === "function") scheduleSave();
+      },
+    };
   </script>
+  <script src="tco_config_io.js?version=secure-import-export-v1"></script>
 </body>
 </html>

@@ -4036,6 +4036,16 @@
     syncPerfFactorSelection(true);
     update();
     loadSavedState();
+    window.GPU_TCO_CONFIG_IO = {
+      calculator: document.title,
+      collectState,
+      applyState: (state) => {
+        applyState(state);
+        update();
+        if (typeof scheduleSave === "function") scheduleSave();
+      },
+    };
   </script>
+  <script src="tco_config_io.js?version=secure-import-export-v1"></script>
 </body>
 </html>

@@ -1,46 +1,58 @@
 # TCO Config API
 
-This is the backend API that should become `apiBaseUrl` after it is deployed.
+This API provides company-email access requests, administrator approval, one-time email access links, saved calculator configurations, and activity reporting.
 
-It is separate from Starfleet:
+## Security model
 
-- Starfleet handles login / identity.
-- This API stores TCO calculator saved configurations and admin activity logs.
+- Personal email domains are rejected; an optional `REQUIRED_EMAIL_DOMAIN` can restrict access further.
+- A new user remains pending until an administrator approves the request.
+- Approval emails a random, one-time link to the approved address. Only a SHA-256 token hash is stored.
+- The email link expires after 30 minutes by default and can be used once.
+- The browser exchanges the one-time code for a 12-hour session. Only the session hash is stored by the API.
+- Email credentials and administrator data stay server-side. Do not place them in the HTML or `starfleet_auth_config.js`.
+- CORS accepts only the exact origins in `ALLOWED_ORIGINS`.
 
-## Required production work
+This flow can operate independently of Starfleet. Starfleet/OIDC can be added later as an additional identity method.
 
-Before using this in production, add NVIDIA-approved Starfleet/OIDC token validation in `userFromRequest()`.
+## Deployment
 
-The current server intentionally refuses bearer-token auth until that validation is added. Local development can be tested with:
+1. Deploy this folder to an NVIDIA-approved Node.js service with persistent encrypted storage mounted at `DATA_DIR`.
+2. Put the values from `env.sample` in the deployment secret/environment manager.
+3. Set `ADMIN_EMAILS` to the administrator company email(s).
+4. Connect `EMAIL_DELIVERY_WEBHOOK_URL` to the approved internal email service. It receives JSON with `to`, `from`, `subject`, `text`, and `html`.
+5. Set `PUBLIC_API_BASE_URL` to this deployed API URL and `APP_REDIRECT_URI` to the exact calculator URL.
+6. Add the hosted calculator origin to `ALLOWED_ORIGINS`.
+7. Set the same API URL in `starfleet_auth_config.js`, then set `enabled: true`.
+
+Never publish `EMAIL_DELIVERY_BEARER_TOKEN` or the contents of `DATA_DIR`.
+
+## Local test
+
+Use the bundled development mode only on a local machine:
 
 ```bash
-ALLOW_DEV_AUTH=true ADMIN_EMAILS=deanh@nvidia.com node server.js
+ALLOW_DEV_AUTH=true \
+ADMIN_EMAILS=deanh@nvidia.com \
+ALLOWED_ORIGINS=http://127.0.0.1:8767 \
+PUBLIC_API_BASE_URL=http://127.0.0.1:8787 \
+APP_REDIRECT_URI=http://127.0.0.1:8767/GPU_RA_and_NVAIE_TCO_Analysis.html \
+node server.js
 ```
 
-Then call the API with:
-
-```bash
-curl -H "x-dev-user-email: deanh@nvidia.com" http://localhost:8787/me
-```
+When `ALLOW_DEV_AUTH=true` and no email webhook is configured, registration and login-link responses include `devMagicLink`. Production responses never expose that link.
 
 ## Endpoints
 
 - `GET /health`
+- `POST /registration-requests`
+- `POST /auth/request-link`
+- `GET /auth/magic?token=...`
+- `POST /auth/exchange`
+- `POST /auth/logout`
 - `GET /me`
 - `GET /configs`
 - `POST /configs`
 - `DELETE /configs/:id`
-- `GET /admin/configs`
-- `GET /admin/activity`
-
-## App config
-
-Once this API is deployed, set:
-
-```js
-apiBaseUrl: "https://<deployed-tco-api-host>"
-```
-
-in `starfleet_auth_config.js`.
-
-Also set `redirectUri` to the exact hosted calculator URL registered in Starfleet.
+- `GET /admin/dashboard`
+- `POST /admin/registration-requests/:id/approve`
+- `POST /admin/registration-requests/:id/deny`
