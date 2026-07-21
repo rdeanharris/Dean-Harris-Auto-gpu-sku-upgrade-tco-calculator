@@ -57,6 +57,18 @@
       outline: 2px solid var(--nvidia);
       outline-offset: 2px;
     }
+    .invite-dialog {
+      width: min(520px, calc(100vw - 28px));
+      border: 2px solid var(--black);
+      border-radius: 0;
+      padding: 0;
+    }
+    .invite-dialog::backdrop { background: rgba(0, 0, 0, 0.52); }
+    .invite-dialog form { padding: 14px; }
+    .invite-dialog h2 { margin: 0 0 10px; font-size: 20px; }
+    .invite-dialog label { display: block; margin-top: 8px; font-weight: 700; }
+    .invite-dialog input { width: 100%; margin-top: 4px; }
+    .invite-dialog .auth-actions { margin-top: 12px; }
     .auth-panel {
       margin-top: 8px;
       border: 2px solid var(--black);
@@ -1124,8 +1136,26 @@
   <main class="app">
     <div class="title">NVIDIA TCO Analysis - GPU, Reference Architecture and NVIDIA AI Enterprise</div>
     <div class="file-actions no-print">
+      <button class="pdf-button" type="button" id="inviteUserButton" disabled title="Available after approved access is activated">Invite User</button>
       <button class="pdf-button" type="button" id="createPdfButton">Create PDF</button>
     </div>
+    <dialog class="invite-dialog no-print" id="inviteUserDialog">
+      <form method="dialog" id="inviteUserForm">
+        <h2>Invite a Customer</h2>
+        <div class="auth-note">Submit a company email for administrator review. Customer access is sent only after Dean approves the request by email.</div>
+        <label>Customer Company Email
+          <input id="inviteUserEmail" type="email" autocomplete="email" placeholder="name@company.com" />
+        </label>
+        <label>Company
+          <input id="inviteUserCompany" type="text" autocomplete="organization" placeholder="Company name" />
+        </label>
+        <div class="auth-actions">
+          <button type="submit" id="inviteUserSubmit">Submit for Approval</button>
+          <button type="button" class="secondary" id="inviteUserCancel">Cancel</button>
+        </div>
+        <div class="auth-status" id="inviteUserStatus"></div>
+      </form>
+    </dialog>
     <section class="auth-panel auth-disabled no-print" id="accessApprovalPanel" aria-label="Approval request and saved configurations" data-reactivate-note="Approval requests activate when the approval service is configured." hidden>
       <div class="auth-head">
         <span id="authPanelTitle">Request Approval to Access the TCO Calculator</span>
@@ -1461,6 +1491,7 @@
       "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
       "skuOverrideRows", "warning", "saveStatus", "createPdfButton",
       "accessApprovalPanel",
+      "inviteUserButton", "inviteUserDialog", "inviteUserForm", "inviteUserEmail", "inviteUserCompany", "inviteUserSubmit", "inviteUserCancel", "inviteUserStatus",
       "authEmail", "authCompany", "authPanelTitle", "authUserLabel", "authLogin", "authCreateUser", "authLogout", "authStatus",
       "configName", "savedConfigSelect", "saveConfigButton", "loadConfigButton", "deleteConfigButton",
       "adminPanel", "adminConfigSelect", "adminLoadConfigButton", "adminRefreshButton", "adminActivity",
@@ -1965,12 +1996,17 @@
         el.loadConfigButton.disabled = true;
         el.deleteConfigButton.disabled = true;
         el.adminPanel.hidden = true;
+        if (el.inviteUserButton) el.inviteUserButton.disabled = true;
         authStatus("Company-email approval becomes available when the secure backend API is activated.");
         return;
       }
       const email = activeUserName();
       const role = activeUserRole();
       const loggedIn = Boolean(email);
+      if (el.inviteUserButton) {
+        el.inviteUserButton.disabled = !loggedIn;
+        el.inviteUserButton.title = loggedIn ? "Invite a customer for administrator approval" : "Approved access is required before inviting a customer";
+      }
       document.body.classList.toggle("access-gate-active", !loggedIn);
       if (el.accessApprovalPanel) el.accessApprovalPanel.hidden = false;
       document.querySelectorAll(".access-request-only").forEach((node) => { node.hidden = loggedIn; });
@@ -2036,6 +2072,29 @@
         authStatus("Access request submitted. After approval, a one-time secure link will be emailed only to this address.");
       } catch (error) {
         authStatus(error.message || "Unable to submit access request.");
+      }
+    }
+    async function submitUserInvitation(event) {
+      event.preventDefault();
+      const email = normalizedUserName(el.inviteUserEmail?.value);
+      const company = String(el.inviteUserCompany?.value || "").trim();
+      if (!isCompanyEmail(email)) {
+        el.inviteUserStatus.textContent = "Use a company email address. Personal email domains are not allowed.";
+        return;
+      }
+      if (!company) {
+        el.inviteUserStatus.textContent = "Enter the customer company name.";
+        return;
+      }
+      try {
+        const payload = await backendRequest("/invitation-requests", {
+          method: "POST",
+          body: { email, company, tool: "GPU_RA_and_NVAIE_TCO_Analysis" },
+        });
+        el.inviteUserStatus.textContent = payload.message || "Invitation submitted for administrator approval.";
+        el.inviteUserSubmit.disabled = true;
+      } catch (error) {
+        el.inviteUserStatus.textContent = error.message || "Unable to submit this invitation.";
       }
     }
     async function loginUser() {
@@ -4016,6 +4075,14 @@
     el.nvaieRoiTables.addEventListener("input", handleNvaieRoiTableInput);
     el.nvaieRoiTables.addEventListener("change", handleNvaieRoiTableInput);
     el.authCreateUser.addEventListener("click", requestAccess);
+    if (el.inviteUserButton) el.inviteUserButton.addEventListener("click", () => {
+      el.inviteUserStatus.textContent = "";
+      el.inviteUserSubmit.disabled = false;
+      el.inviteUserDialog.showModal();
+      el.inviteUserEmail.focus();
+    });
+    if (el.inviteUserForm) el.inviteUserForm.addEventListener("submit", submitUserInvitation);
+    if (el.inviteUserCancel) el.inviteUserCancel.addEventListener("click", () => el.inviteUserDialog.close());
     el.authLogin.addEventListener("click", loginUser);
     el.authLogout.addEventListener("click", logoutLocalUser);
     el.saveConfigButton.addEventListener("click", saveNamedConfig);

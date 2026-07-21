@@ -15,6 +15,7 @@ const EMAIL_DELIVERY_WEBHOOK_URL = String(process.env.EMAIL_DELIVERY_WEBHOOK_URL
 const EMAIL_DELIVERY_BEARER_TOKEN = String(process.env.EMAIL_DELIVERY_BEARER_TOKEN || "").trim();
 const EMAIL_FROM = String(process.env.EMAIL_FROM || "GPU TCO Access <no-reply@example.com>").trim();
 const MAGIC_LINK_MINUTES = Math.max(5, Number(process.env.MAGIC_LINK_MINUTES || 30));
+const INVITE_APPROVAL_HOURS = Math.max(1, Number(process.env.INVITE_APPROVAL_HOURS || 24));
 const SESSION_HOURS = Math.max(1, Number(process.env.SESSION_HOURS || 12));
 const ADMIN_EMAILS = new Set(splitEnv(process.env.ADMIN_EMAILS || "deanh@nvidia.com"));
 const REQUIRED_EMAIL_DOMAIN = String(process.env.REQUIRED_EMAIL_DOMAIN || "").trim().toLowerCase();
@@ -41,6 +42,7 @@ function emptyStore() {
     magicLinks: [],
     exchangeCodes: [],
     sessions: [],
+    inviteApprovalLinks: [],
   };
 }
 
@@ -153,6 +155,7 @@ function cleanupExpired(store) {
   store.magicLinks = store.magicLinks.filter((item) => !item.usedAt && Date.parse(item.expiresAt) > now);
   store.exchangeCodes = store.exchangeCodes.filter((item) => !item.usedAt && Date.parse(item.expiresAt) > now);
   store.sessions = store.sessions.filter((item) => !item.revokedAt && Date.parse(item.expiresAt) > now);
+  store.inviteApprovalLinks = store.inviteApprovalLinks.filter((item) => !item.usedAt && Date.parse(item.expiresAt) > now);
   return store;
 }
 
@@ -233,6 +236,31 @@ async function deliverAccessEmail({ email, company, magicUrl, expiresMinutes }) 
   return { delivered: true };
 }
 
+async function deliverApprovalEmail({ adminEmail, invitedEmail, company, requestedBy, approvalUrl, expiresHours }) {
+  const subject = `Approve GPU TCO calculator access for ${invitedEmail}`;
+  const text = [
+    `${requestedBy} invited ${invitedEmail}${company ? ` (${company})` : ""} to use the GPU TCO calculator.`,
+    `Approve this request within ${expiresHours} hours:`,
+    approvalUrl,
+    "The customer will receive their secure access link only after you approve.",
+  ].join("\n\n");
+  const html = `<p><strong>${escapeHtml(requestedBy)}</strong> invited <strong>${escapeHtml(invitedEmail)}</strong>${company ? ` (${escapeHtml(company)})` : ""}.</p><p><a href="${escapeHtml(approvalUrl)}">Approve customer access</a></p><p>This approval link expires in ${expiresHours} hours. The customer receives access only after approval.</p>`;
+  if (!EMAIL_DELIVERY_WEBHOOK_URL) {
+    if (ALLOW_DEV_AUTH) return { delivered: false, devApprovalLink: approvalUrl };
+    throw Object.assign(new Error("Email delivery is not configured."), { status: 503 });
+  }
+  const response = await fetch(EMAIL_DELIVERY_WEBHOOK_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(EMAIL_DELIVERY_BEARER_TOKEN ? { Authorization: `Bearer ${EMAIL_DELIVERY_BEARER_TOKEN}` } : {}),
+    },
+    body: JSON.stringify({ to: adminEmail, from: EMAIL_FROM, subject, text, html }),
+  });
+  if (!response.ok) throw Object.assign(new Error("Approval email delivery failed."), { status: 502 });
+  return { delivered: true };
+}
+
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]);
 }
@@ -250,6 +278,17 @@ function createMagicLinkRecord(store, user, reason) {
     usedAt: null,
   });
   return `${PUBLIC_API_BASE_URL}/auth/magic?token=${encodeURIComponent(rawToken)}`;
+}
+
+function createInviteApprovalRecord(store, request, requestedBy) {
+  const rawToken = randomToken();
+  store.inviteApprovalLinks = store.inviteApprovalLinks.filter((item) => item.requestId !== request.id);
+  store.inviteApprovalLinks.push({
+    id: crypto.randomUUID(), requestId: request.id, requestedBy,
+    tokenHash: hashToken(rawToken), createdAt: new Date().toISOString(),
+    expiresAt: expiresAt(INVITE_APPROVAL_HOURS * 60 * 60 * 1000), usedAt: null,
+  });
+  return `${PUBLIC_API_BASE_URL}/admin/approve-invite?token=${encodeURIComponent(rawToken)}`;
 }
 
 function routeInfo(req) {
@@ -395,6 +434,34 @@ async function handle(req, res) {
     return sendRedirect(req, res, redirect.toString());
   }
 
+  if (method === "GET" && pathname === "/admin/approve-invite") {
+    const tokenHash = hashToken(searchParams.get("token") || "");
+    let approvedEmail = "";
+    await mutateStore(async (store) => {
+      const approval = store.inviteApprovalLinks.find((item) => item.tokenHash === tokenHash && !item.usedAt && Date.parse(item.expiresAt) > Date.now());
+      const request = approval && store.registrationRequests.find((item) => item.id === approval.requestId && item.status === "pending");
+      if (!approval || !request) throw Object.assign(new Error("This invite approval link is invalid or expired."), { status: 401 });
+      approval.usedAt = new Date().toISOString();
+      request.status = "approved";
+      request.reviewedAt = new Date().toISOString();
+      request.reviewedBy = "email-approval";
+      approvedEmail = request.email;
+      const approvedUser = upsertUser(store, {
+        email: request.email, company: request.company, status: "approved",
+        approvedAt: request.reviewedAt, approvedBy: "email-approval",
+      });
+      addActivity(store, "email-approval", "approve_invited_user", { email: request.email, requestedBy: approval.requestedBy });
+      const magicUrl = createMagicLinkRecord(store, approvedUser, "invite-approval");
+      await deliverAccessEmail({ email: approvedUser.email, company: approvedUser.company, magicUrl, expiresMinutes: MAGIC_LINK_MINUTES });
+    });
+    if (APP_REDIRECT_URI) {
+      const redirect = new URL(APP_REDIRECT_URI);
+      redirect.searchParams.set("invite_approved", approvedEmail);
+      return sendRedirect(req, res, redirect.toString());
+    }
+    return sendJson(req, res, 200, { message: `Approved ${approvedEmail}. Their access email has been sent.` });
+  }
+
   if (method === "POST" && pathname === "/auth/exchange") {
     const body = await readJson(req);
     const codeHash = hashToken(body.code || "");
@@ -428,6 +495,41 @@ async function handle(req, res) {
 
   if (method === "GET" && pathname === "/me") {
     return sendJson(req, res, 200, { email: user.email, company: user.company, role: user.role, isAdmin: user.isAdmin });
+  }
+
+  if (method === "POST" && pathname === "/invitation-requests") {
+    if (!rateLimit(req, `invite:${user.email}`, 10, 60)) return sendJson(req, res, 429, { error: "Too many invitation requests. Try again later." });
+    const body = await readJson(req);
+    const validation = companyEmailValidation(body.email);
+    if (!validation.ok) return sendJson(req, res, 400, { error: validation.error });
+    const company = String(body.company || "").trim().slice(0, 160);
+    if (!company) return sendJson(req, res, 400, { error: "Company name is required." });
+    let delivery = null;
+    await mutateStore(async (nextStore) => {
+      const existingUser = userForEmail(nextStore, validation.email);
+      if (existingUser?.status === "approved") throw Object.assign(new Error("This user already has approved access."), { status: 409 });
+      upsertUser(nextStore, { email: validation.email, company, status: "pending" });
+      let request = nextStore.registrationRequests.find((item) => item.email === validation.email && item.status === "pending");
+      if (!request) {
+        request = {
+          id: crypto.randomUUID(), email: validation.email, company, status: "pending",
+          tool: String(body.tool || "GPU_RA_and_NVAIE_TCO_Analysis").slice(0, 120),
+          requestedAt: new Date().toISOString(), requestedBy: user.email,
+        };
+        nextStore.registrationRequests.unshift(request);
+      } else {
+        request.company = company;
+        request.requestedBy = user.email;
+      }
+      const approvalUrl = createInviteApprovalRecord(nextStore, request, user.email);
+      addActivity(nextStore, user.email, "invite_user", { email: validation.email, company, requestId: request.id });
+      const adminEmail = [...ADMIN_EMAILS][0];
+      delivery = await deliverApprovalEmail({ adminEmail, invitedEmail: validation.email, company, requestedBy: user.email, approvalUrl, expiresHours: INVITE_APPROVAL_HOURS });
+    });
+    return sendJson(req, res, 202, {
+      message: "Invitation submitted. The administrator must approve it before customer access is sent.",
+      ...(ALLOW_DEV_AUTH && delivery?.devApprovalLink ? { devApprovalLink: delivery.devApprovalLink } : {}),
+    });
   }
 
   if (method === "POST" && pathname === "/auth/logout") {

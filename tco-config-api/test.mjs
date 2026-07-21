@@ -74,6 +74,11 @@ try {
   });
   assert.equal(blocked.response.status, 400);
 
+  const unauthenticatedInvite = await request("/invitation-requests", {
+    method: "POST", body: { email: "casey@customer-corp.com", company: "Customer Corp", tool: "test" },
+  });
+  assert.equal(unauthenticatedInvite.response.status, 401);
+
   const adminRequest = await request("/registration-requests", {
     method: "POST", body: { email: "deanh@nvidia.com", company: "NVIDIA", tool: "test" },
   });
@@ -96,6 +101,19 @@ try {
   const userSession = await exchangeMagicLink(approval.payload.devMagicLink);
   assert.equal(userSession.user.email, "alex@example-corp.com");
   const userHeaders = { Authorization: `Bearer ${userSession.token}` };
+
+  const invitation = await request("/invitation-requests", {
+    method: "POST", headers: userHeaders,
+    body: { email: "casey@customer-corp.com", company: "Customer Corp", tool: "test" },
+  });
+  assert.equal(invitation.response.status, 202);
+  assert.ok(invitation.payload.devApprovalLink);
+  const emailApproval = await request(invitation.payload.devApprovalLink, { redirect: "manual" });
+  assert.equal(emailApproval.response.status, 302);
+  const caseyAccess = await request("/auth/request-link", {
+    method: "POST", body: { email: "casey@customer-corp.com", tool: "test" },
+  });
+  assert.ok(caseyAccess.payload.devMagicLink);
 
   const save = await request("/configs", {
     method: "POST", headers: userHeaders,

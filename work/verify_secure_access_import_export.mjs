@@ -28,7 +28,10 @@ try {
     await page.goto(`${baseUrl}/${file}?verify=secure-import-export`, { waitUntil: "domcontentloaded" });
     await page.waitForSelector("#tcoConfigIoControls", { timeout: 15000 });
     const labels = await page.locator("#tcoConfigIoControls button").allTextContents();
-    assert.deepEqual(labels, ["Export JSON", "Export Text", "Import Configuration"]);
+    assert.deepEqual(labels, ["Save Configuration", "Export JSON", "Export Text", "Import Configuration"]);
+    assert.equal(await page.locator("#hiddenWorkbookToggle").count(), 0);
+    assert.equal(await page.locator("#hiddenWorkbookTabs").count(), 0);
+    assert.equal(await page.getByText("Core Source Data", { exact: true }).count(), 1);
     assert.deepEqual(pageErrors, [], `${file} page errors: ${pageErrors.join(" | ")}`);
     await page.close();
   }
@@ -36,6 +39,8 @@ try {
   const page = await browser.newPage({ acceptDownloads: true, viewport: { width: 1600, height: 1000 } });
   await page.goto(`${baseUrl}/GPU_RA_and_NVAIE_TCO_Analysis.html?verify=secure-import-export-roundtrip`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("#tcoConfigIoControls");
+  assert.equal(await page.getByRole("button", { name: "Invite User" }).isVisible(), true);
+  assert.equal(await page.getByRole("button", { name: "Invite User" }).isDisabled(), true);
   assert.equal(await page.locator("#authLogin").textContent(), "Email My Approved Access Link");
   assert.equal(await page.locator("#authCreateUser").textContent(), "Request Approval");
   assert.equal(await page.locator("#authPassword").count(), 0);
@@ -73,6 +78,8 @@ try {
   assert.equal(await enabledPage.locator("#accessApprovalPanel").isVisible(), true);
   assert.equal(await enabledPage.locator("#starfleetLoginVisible").count(), 0);
   assert.equal(await enabledPage.locator("#authEmail").isEnabled(), true);
+  assert.equal(await enabledPage.getByRole("button", { name: "Invite User" }).isVisible(), true);
+  assert.equal(await enabledPage.getByRole("button", { name: "Invite User" }).isDisabled(), true);
   assert.equal(await enabledPage.locator("#authLogin").isEnabled(), true);
   assert.equal(await enabledPage.locator("#authCreateUser").textContent(), "Request Approval");
   assert.equal(await enabledPage.locator("#authLogin").textContent(), "Email My Approved Access Link");

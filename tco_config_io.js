@@ -27,6 +27,35 @@
     };
   }
 
+  function localStorageKey() {
+    return "nvidiaTcoSavedConfiguration:" + safeFileBase(bridge.calculator || document.title);
+  }
+
+  function saveConfigurationLocally() {
+    try {
+      const value = envelope();
+      value.savedAt = new Date().toISOString();
+      window.localStorage.setItem(localStorageKey(), JSON.stringify(value));
+      showStatus("Configuration saved in this browser. It will be restored when you return.");
+    } catch {
+      throw new Error("This browser could not save the configuration locally.");
+    }
+  }
+
+  function restoreLocalConfiguration() {
+    try {
+      const raw = window.localStorage.getItem(localStorageKey());
+      if (!raw) return;
+      const value = JSON.parse(raw);
+      const state = value?.format === FORMAT ? value.state : value?.state || value;
+      validateState(state);
+      bridge.applyState(state);
+      showStatus("Your locally saved configuration was restored.");
+    } catch {
+      window.localStorage.removeItem(localStorageKey());
+    }
+  }
+
   function download(contents, type, extension) {
     const blob = new Blob([contents], { type });
     const url = URL.createObjectURL(blob);
@@ -104,6 +133,9 @@
     const state = parseImport(await file.text());
     if (!window.confirm("Importing will replace the current calculator inputs. Continue?")) return;
     bridge.applyState(state);
+    const imported = envelope();
+    imported.savedAt = new Date().toISOString();
+    window.localStorage.setItem(localStorageKey(), JSON.stringify(imported));
     showStatus("Configuration imported from " + file.name + ".");
   }
 
@@ -124,6 +156,11 @@
   function install() {
     const actions = document.querySelector(".file-actions") || document.querySelector("main") || document.body;
     if (!actions || document.getElementById("tcoConfigIoControls")) return;
+
+    // The source calculator still carries internal workbook links for legacy builds.
+    // Remove that internal-only view while leaving the Core Source Data tabs intact.
+    document.getElementById("hiddenWorkbookToggle")?.remove();
+    document.getElementById("hiddenWorkbookTabs")?.remove();
 
     const style = document.createElement("style");
     style.textContent = [
@@ -152,12 +189,21 @@
       }
     });
     controls.append(
+      makeButton("Save Configuration", () => {
+        try {
+          saveConfigurationLocally();
+        } catch (error) {
+          showStatus(error.message || "Unable to save configuration.");
+          window.alert(error.message || "Unable to save configuration.");
+        }
+      }),
       makeButton("Export JSON", exportJson),
       makeButton("Export Text", exportText),
       makeButton("Import Configuration", () => input.click()),
       input
     );
     actions.prepend(controls);
+    restoreLocalConfiguration();
   }
 
   install();

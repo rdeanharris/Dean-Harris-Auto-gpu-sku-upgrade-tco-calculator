@@ -6,6 +6,7 @@ This API provides company-email access requests, administrator approval, one-tim
 
 - Personal email domains are rejected; an optional `REQUIRED_EMAIL_DOMAIN` can restrict access further.
 - A new user remains pending until an administrator approves the request.
+- Any approved user may invite a customer company email, but the invitation remains pending until an administrator uses the one-time approval link emailed to them.
 - Approval emails a random, one-time link to the approved address. Only a SHA-256 token hash is stored.
 - The email link expires after 30 minutes by default and can be used once.
 - The browser exchanges the one-time code for a 12-hour session. Only the session hash is stored by the API.
@@ -39,12 +40,14 @@ APP_REDIRECT_URI=http://127.0.0.1:8767/GPU_RA_and_NVAIE_TCO_Analysis.html \
 node server.js
 ```
 
-When `ALLOW_DEV_AUTH=true` and no email webhook is configured, registration and login-link responses include `devMagicLink`. Production responses never expose that link.
+When `ALLOW_DEV_AUTH=true` and no email webhook is configured, registration and login-link responses include `devMagicLink`, and invitation responses include `devApprovalLink`. Production responses never expose either link.
 
 ## Endpoints
 
 - `GET /health`
 - `POST /registration-requests`
+- `POST /invitation-requests` (approved users only)
+- `GET /admin/approve-invite?token=...` (one-time administrator email approval)
 - `POST /auth/request-link`
 - `GET /auth/magic?token=...`
 - `POST /auth/exchange`
