@@ -1487,7 +1487,7 @@
       "nvaieRoiEnabled", "nvaiePricePerGpu", "nvaieUseFutureScenario", "nvaieUseScaleScenario", "nvaieRoiTables",
       "skuOverridePanel", "skuOverrideToggle", "skuOverrideToggleIconStart", "skuOverrideToggleIcon", "skuOverrideTable",
       "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
-      "skuOverrideRows", "warning", "saveStatus", "createPdfButton",
+      "skuOverrideRows", "warning", "saveStatus", "createPdfButton", "sendFeedbackButton",
       "accessApprovalPanel",
       "inviteUserButton", "inviteUserDialog", "inviteUserForm", "inviteUserEmail", "inviteUserCompany", "inviteUserSubmit", "inviteUserCancel", "inviteUserStatus",
       "authEmail", "authCompany", "authPanelTitle", "authUserLabel", "authLogin", "authCreateUser", "authLogout", "authStatus",
@@ -4097,6 +4097,19 @@
     el.nvaieRoiTables.addEventListener("input", handleNvaieRoiTableInput);
     el.nvaieRoiTables.addEventListener("change", handleNvaieRoiTableInput);
     el.authCreateUser.addEventListener("click", requestAccess);
+    if (el.sendFeedbackButton) el.sendFeedbackButton.addEventListener("click", () => {
+      const feedbackEmail = normalizedUserName((authBackendConfig.adminEmails || [])[0]) || "deanh@nvidia.com";
+      const subject = "NVIDIA TCO Analysis Feedback";
+      const body = [
+        "Please enter your feedback below:",
+        "",
+        "",
+        "Calculator: " + window.location.href,
+      ].join("\n");
+      window.location.href = "mailto:" + encodeURIComponent(feedbackEmail)
+        + "?subject=" + encodeURIComponent(subject)
+        + "&body=" + encodeURIComponent(body);
+    });
     if (el.inviteUserButton) el.inviteUserButton.addEventListener("click", () => {
       el.inviteUserStatus.textContent = "";
       el.inviteUserSubmit.disabled = false;
