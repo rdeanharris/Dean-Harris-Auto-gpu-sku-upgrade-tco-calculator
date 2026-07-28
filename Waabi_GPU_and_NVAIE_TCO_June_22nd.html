@@ -59,13 +59,37 @@
     }
     .grid {
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       align-items: start;
       margin-top: 10px;
     }
-    .grid > section {
+    .grid > section,
+    .grid > section > .section {
+      display: contents;
+    }
+    #selectedDeploymentToggle { grid-column: 1; grid-row: 1; }
+    #scaleDeploymentToggle { grid-column: 2; grid-row: 1; }
+    #nvaieRoiToggle { grid-column: 3; grid-row: 1; }
+    #selectedDeploymentBody { grid-column: 1 / -1; grid-row: 2; }
+    #scaleDeploymentBody { grid-column: 1 / -1; grid-row: 3; }
+    #nvaieRoiBody { grid-column: 1 / -1; grid-row: 4; }
+    #summaryTcoToggle { grid-column: 1 / -1; grid-row: 5; }
+    #summaryTcoBody { grid-column: 1 / -1; grid-row: 6; }
+    #selectedDeploymentToggle,
+    #scaleDeploymentToggle,
+    #nvaieRoiToggle {
+      align-self: stretch;
+      min-height: 56px;
+    }
+    .grid > section > .section > .section-toggle,
+    .grid > section > .section > .section-body {
       min-width: 0;
+      border: 2px solid var(--black);
+    }
+    .grid > section > .section > .section-body {
+      background: var(--panel);
+      overflow-x: auto;
     }
     .section {
       border: 2px solid var(--black);
@@ -874,6 +898,18 @@
     }
     .warning.show { display: block; }
     @media (max-width: 1060px) {
+      .grid { grid-template-columns: minmax(0, 1fr); }
+      #selectedDeploymentToggle { grid-column: 1; grid-row: 1; }
+      #selectedDeploymentBody { grid-column: 1; grid-row: 2; }
+      #scaleDeploymentToggle { grid-column: 1; grid-row: 3; }
+      #scaleDeploymentBody { grid-column: 1; grid-row: 4; }
+      #nvaieRoiToggle { grid-column: 1; grid-row: 5; }
+      #nvaieRoiBody { grid-column: 1; grid-row: 6; }
+      #summaryTcoToggle { grid-column: 1; grid-row: 7; }
+      #summaryTcoBody { grid-column: 1; grid-row: 8; }
+      #selectedDeploymentToggle,
+      #scaleDeploymentToggle,
+      #nvaieRoiToggle { min-height: 44px; }
       .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .nvaie-assumption-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
