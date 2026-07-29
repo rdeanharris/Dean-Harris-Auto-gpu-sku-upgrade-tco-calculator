@@ -3855,10 +3855,11 @@
       if (event.key === "Escape") clearCellHighlight();
     });
     setActiveScaleSourceTab(storedScaleSourceTab() || data.defaults.scaleFactorSourceTab);
-    setExpandableSection("selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey, storedExpanded(selectedDeploymentExpandedStorageKey));
-    setExpandableSection("scaleDeploymentBody", "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", scaleDeploymentExpandedStorageKey, storedExpanded(scaleDeploymentExpandedStorageKey));
+    setExpandableSection("selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey, true);
+    setExpandableSection("scaleDeploymentBody", "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", scaleDeploymentExpandedStorageKey, false);
     setExpandableSection("summaryTcoBody", "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", summaryTcoExpandedStorageKey, storedExpanded(summaryTcoExpandedStorageKey));
-    setExpandableSection("nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey, storedExpandedDefault(nvaieRoiExpandedStorageKey, true));
+    setExpandableSection("nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey, false);
+    showExclusiveAssociationSection("selectedDeploymentToggle");
     setSkuOverrideExpanded(storedSkuOverrideExpanded());
     setHiddenWorkbooksExpanded(storedHiddenWorkbooksExpanded());
     refreshAuthControls();
