@@ -318,6 +318,19 @@
       outline: 2px solid var(--black);
       outline-offset: -2px;
     }
+    .section-toggle.section-association-active,
+    .section-body.section-association-active {
+      outline: 3px solid var(--black);
+      outline-offset: 1px;
+      position: relative;
+      z-index: 3;
+    }
+    .section-body.section-association-active {
+      z-index: 2;
+    }
+    .pdf-print-mode .section-association-active {
+      outline: 0;
+    }
     .section-toggle .override-toggle-icon {
       border-color: rgba(255, 255, 255, 0.75);
       color: var(--ink);
@@ -1566,11 +1579,28 @@
         return defaultValue;
       }
     }
+    const associationSections = [
+      ["selectedDeploymentToggle", "selectedDeploymentBody"],
+      ["scaleDeploymentToggle", "scaleDeploymentBody"],
+      ["nvaieRoiToggle", "nvaieRoiBody"],
+    ];
+    function setSectionAssociation(toggleId, bodyId, active) {
+      associationSections.forEach(([sectionToggleId, sectionBodyId]) => {
+        el[sectionToggleId]?.classList.remove("section-association-active");
+        el[sectionBodyId]?.classList.remove("section-association-active");
+      });
+      if (!active) return;
+      el[toggleId]?.classList.add("section-association-active");
+      el[bodyId]?.classList.add("section-association-active");
+    }
     function setExpandableSection(bodyId, toggleId, startIconId, endIconId, storageKey, expanded, persist = false) {
       el[bodyId].hidden = !expanded;
       el[toggleId].setAttribute("aria-expanded", expanded ? "true" : "false");
       el[startIconId].textContent = expanded ? "-" : "+";
       el[endIconId].textContent = expanded ? "-" : "+";
+      if (persist && associationSections.some(([sectionToggleId]) => sectionToggleId === toggleId)) {
+        setSectionAssociation(toggleId, bodyId, expanded);
+      }
       if (persist) {
         try {
           window.localStorage.setItem(storageKey, expanded ? "true" : "false");
