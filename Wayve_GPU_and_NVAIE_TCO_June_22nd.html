@@ -181,6 +181,33 @@
     .grid > section > .section {
       display: contents;
     }
+    .grid.section-association-layout {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .grid.section-association-layout [data-association-layout="active-toggle"] {
+      grid-column: 1 / -1 !important;
+      grid-row: 1 !important;
+    }
+    .grid.section-association-layout [data-association-layout="active-body"] {
+      grid-column: 1 / -1 !important;
+      grid-row: 2 !important;
+    }
+    .grid.section-association-layout [data-association-layout="secondary-1"] {
+      grid-column: 1 !important;
+      grid-row: 3 !important;
+    }
+    .grid.section-association-layout [data-association-layout="secondary-2"] {
+      grid-column: 2 !important;
+      grid-row: 3 !important;
+    }
+    .grid.section-association-layout #summaryTcoToggle {
+      grid-column: 1 / -1 !important;
+      grid-row: 4 !important;
+    }
+    .grid.section-association-layout #summaryTcoBody {
+      grid-column: 1 / -1 !important;
+      grid-row: 5 !important;
+    }
     #selectedDeploymentToggle { grid-column: 1; grid-row: 1; }
     #scaleDeploymentToggle { grid-column: 2; grid-row: 1; }
     #nvaieRoiToggle { grid-column: 3; grid-row: 1; }
@@ -953,6 +980,35 @@
     .warning.show { display: block; }
     @media (max-width: 1060px) {
       .grid { grid-template-columns: minmax(0, 1fr); }
+      .grid.section-association-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .grid.section-association-layout [data-association-layout="active-toggle"] {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+      }
+      .grid.section-association-layout [data-association-layout="active-body"] {
+        grid-column: 1 !important;
+        grid-row: 2 !important;
+      }
+      .grid.section-association-layout [data-association-layout="secondary-1"] {
+        grid-column: 1 !important;
+        grid-row: 3 !important;
+      }
+      .grid.section-association-layout [data-association-layout="secondary-2"] {
+        grid-column: 1 !important;
+        grid-row: 4 !important;
+      }
+      .grid.section-association-layout #summaryTcoToggle {
+        grid-column: 1 !important;
+        grid-row: 5 !important;
+      }
+      .grid.section-association-layout #summaryTcoBody {
+        grid-column: 1 !important;
+        grid-row: 6 !important;
+      }
+
+
       #selectedDeploymentToggle { grid-column: 1; grid-row: 1; }
       #selectedDeploymentBody { grid-column: 1; grid-row: 2; }
       #scaleDeploymentToggle { grid-column: 1; grid-row: 3; }
@@ -1415,18 +1471,64 @@
       }
     }
     const associationSections = [
-      ["selectedDeploymentToggle", "selectedDeploymentBody"],
-      ["scaleDeploymentToggle", "scaleDeploymentBody"],
-      ["nvaieRoiToggle", "nvaieRoiBody"],
+      ["selectedDeploymentToggle", "selectedDeploymentBody", "selectedDeploymentExpandedStorageKey"],
+      ["scaleDeploymentToggle", "scaleDeploymentBody", "scaleDeploymentExpandedStorageKey"],
+      ["nvaieRoiToggle", "nvaieRoiBody", "nvaieRoiExpandedStorageKey"],
     ];
-    function setSectionAssociation(toggleId, bodyId, active) {
+    function resetAssociationLayout() {
+      const grid = document.querySelector(".grid");
+      grid?.classList.remove("section-association-layout");
       associationSections.forEach(([sectionToggleId, sectionBodyId]) => {
-        el[sectionToggleId]?.classList.remove("section-association-active");
-        el[sectionBodyId]?.classList.remove("section-association-active");
+        const toggle = el[sectionToggleId];
+        const body = el[sectionBodyId];
+        toggle?.classList.remove("section-association-active");
+        body?.classList.remove("section-association-active");
+        toggle?.removeAttribute("data-association-layout");
+        body?.removeAttribute("data-association-layout");
       });
+    }
+    function collapseAssociatedSection(sectionToggleId, sectionBodyId, storageKey) {
+      const toggle = el[sectionToggleId];
+      const body = el[sectionBodyId];
+      if (!toggle || !body) return;
+      body.hidden = true;
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.querySelectorAll(".override-toggle-icon").forEach((icon) => {
+        icon.textContent = "+";
+      });
+      try {
+        window.localStorage.setItem(storageKey, "false");
+      } catch (error) {}
+    }
+    function setSectionAssociation(toggleId, bodyId, active) {
+      resetAssociationLayout();
       if (!active) return;
+      const grid = document.querySelector(".grid");
+      const selectedIndex = associationSections.findIndex(
+        ([sectionToggleId]) => sectionToggleId === toggleId,
+      );
+      if (!grid || selectedIndex < 0) return;
+
+      associationSections.forEach(([sectionToggleId, sectionBodyId, storageKey], index) => {
+        if (index !== selectedIndex) {
+          collapseAssociatedSection(sectionToggleId, sectionBodyId, storageKey);
+        }
+      });
+
+      const secondarySections = associationSections.filter(
+        ([sectionToggleId]) => sectionToggleId !== toggleId,
+      );
+      grid.classList.add("section-association-layout");
       el[toggleId]?.classList.add("section-association-active");
       el[bodyId]?.classList.add("section-association-active");
+      el[toggleId]?.setAttribute("data-association-layout", "active-toggle");
+      el[bodyId]?.setAttribute("data-association-layout", "active-body");
+      secondarySections.forEach(([sectionToggleId], index) => {
+        el[sectionToggleId]?.setAttribute("data-association-layout", "secondary-" + (index + 1));
+      });
+      requestAnimationFrame(() => {
+        el[toggleId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
     function setExpandableSection(bodyId, toggleId, startIconId, endIconId, storageKey, expanded, persist = false) {
       el[bodyId].hidden = !expanded;
