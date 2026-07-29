@@ -45,6 +45,9 @@
       gap: 8px;
       margin-top: 8px;
     }
+    .file-actions .temporarily-hidden-action {
+      display: none !important;
+    }
     .pdf-button {
       min-height: 34px;
       border: 1px solid var(--nvidia);
@@ -887,6 +890,48 @@
       display: grid;
       gap: 12px;
     }
+    .nvaie-scenario-panel {
+      min-width: 0;
+    }
+    .nvaie-scenario-toggle {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      background: var(--black);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .nvaie-scenario-toggle:focus-visible {
+      outline: 2px solid var(--nvidia);
+      outline-offset: 2px;
+    }
+    .nvaie-scenario-toggle-icon {
+      display: inline-flex;
+      width: 20px;
+      height: 20px;
+      flex: 0 0 20px;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1;
+    }
+    .nvaie-scenario-toggle-label {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+    .nvaie-scenario-body[hidden] {
+      display: none !important;
+    }
     .nvaie-table {
       border: 1px solid var(--line);
       table-layout: fixed;
@@ -1209,7 +1254,8 @@
       .section-toggle .override-toggle-icon {
         display: none;
       }
-      .section-body {
+      .section-body,
+      .nvaie-scenario-body[hidden] {
         display: block !important;
       }
       .fields,
@@ -1237,9 +1283,9 @@
   <main class="app">
     <div class="title">NVIDIA TCO Analysis - GPU, Reference Architecture and NVIDIA AI Enterprise</div>
     <div class="file-actions no-print">
-      <button class="pdf-button" type="button" id="inviteUserButton" title="Submit a company email for administrator approval">Invite User</button>
-      <button class="pdf-button" type="button" id="topSaveConfigurationButton">Save Configuration</button>
-      <button class="pdf-button" type="button" id="topLoadConfigurationButton">Load Configuration</button>
+      <button class="pdf-button temporarily-hidden-action" type="button" id="inviteUserButton" title="Submit a company email for administrator approval">Invite User</button>
+      <button class="pdf-button temporarily-hidden-action" type="button" id="topSaveConfigurationButton">Save Configuration</button>
+      <button class="pdf-button temporarily-hidden-action" type="button" id="topLoadConfigurationButton">Load Configuration</button>
       <button class="pdf-button" type="button" id="createPdfButton">Create PDF</button>
       <button class="pdf-button" type="button" id="sendFeedbackButton">Send Feedback</button>
     </div>
@@ -1603,6 +1649,7 @@
     const summaryTcoExpandedStorageKey = "gpuTcoSummaryTcoExpanded";
     const nvaieRoiExpandedStorageKey = "gpuTcoNvaieRoiExpanded";
     const nvaieScenarioClusterStorageKey = "gpuTcoNvaieScenarioClustersV2";
+    const expandedNvaieScenarioIds = new Set();
     const nvaieMixStorageKey = "gpuTcoNvaieMixes10_80_10";
     const nvaieSpeedupStorageKey = "gpuTcoNvaieSpeedups";
     const nvaiePriceStorageKey = "gpuTcoNvaiePricePerGpuYear";
@@ -3721,11 +3768,20 @@
           "<td><input class=\"nvaie-table-input\" type=\"number\" min=\"1\" step=\"0.1\" value=\"" + String(workload.speedup) + "\" data-nvaie-speedup=\"" + escapeHtml(workload.id) + "\" data-nvaie-scenario=\"" + escapeHtml(model.id) + "\" aria-label=\"" + escapeHtml(model.label + " " + workload.label + " NVAIE Speed Up Factor") + "\" /></td>"
         ).join("");
         const savingsCells = model.workloads.map((workload) => "<td>" + fmtCurrency(workload.savings) + "</td>").join("");
+        const scenarioExpanded = expandedNvaieScenarioIds.has(model.id);
+        const expandedText = scenarioExpanded ? "true" : "false";
+        const iconText = scenarioExpanded ? "-" : "+";
         return (
+          "<section class=\"nvaie-scenario-panel\">" +
+          "<button class=\"nvaie-scenario-toggle\" type=\"button\" data-nvaie-scenario-toggle=\"" + escapeHtml(model.id) + "\" aria-expanded=\"" + expandedText + "\">" +
+          "<span class=\"nvaie-scenario-toggle-icon\" aria-hidden=\"true\">" + iconText + "</span>" +
+          "<span class=\"nvaie-scenario-toggle-label\">" + escapeHtml(model.label) + "</span>" +
+          "<span class=\"nvaie-scenario-toggle-icon\" aria-hidden=\"true\">" + iconText + "</span>" +
+          "</button>" +
+          "<div class=\"nvaie-scenario-body\" data-nvaie-scenario-body=\"" + escapeHtml(model.id) + "\"" + (scenarioExpanded ? "" : " hidden") + ">" +
           "<table class=\"nvaie-table\">" +
           "<colgroup><col class=\"row-label-col\" /><col class=\"workload-col\" /><col class=\"workload-col\" /><col class=\"workload-col\" /></colgroup>" +
           "<thead>" +
-          "<tr class=\"scenario-title\"><th colspan=\"4\">" + escapeHtml(model.label) + "</th></tr>" +
           "<tr class=\"workload-head\"><th>Workload</th>" + workloadHeader + "</tr>" +
           "</thead>" +
           "<tbody>" +
@@ -3741,7 +3797,9 @@
           "<tr class=\"green-row\"><td class=\"row-label\">Return</td><td colspan=\"3\">" + fmtCurrencyOneDecimal(model.netReturn) + "</td></tr>" +
           "<tr class=\"green-row\"><td class=\"row-label\">ROI</td><td colspan=\"3\">" + fmtPct(model.roi) + "</td></tr>" +
           "</tbody>" +
-          "</table>"
+          "</table>" +
+          "</div>" +
+          "</section>"
         );
       }).join("");
     }
@@ -4244,6 +4302,22 @@
         return;
       }
       setNvaieRoiScenarioMode(true);
+    });
+    el.nvaieRoiTables.addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-nvaie-scenario-toggle]");
+      if (!toggle || !el.nvaieRoiTables.contains(toggle)) return;
+      const scenarioId = toggle.dataset.nvaieScenarioToggle;
+      const body = Array.from(el.nvaieRoiTables.querySelectorAll("[data-nvaie-scenario-body]"))
+        .find((node) => node.dataset.nvaieScenarioBody === scenarioId);
+      if (!body) return;
+      const expanded = toggle.getAttribute("aria-expanded") !== "true";
+      toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+      body.hidden = !expanded;
+      toggle.querySelectorAll(".nvaie-scenario-toggle-icon").forEach((icon) => {
+        icon.textContent = expanded ? "-" : "+";
+      });
+      if (expanded) expandedNvaieScenarioIds.add(scenarioId);
+      else expandedNvaieScenarioIds.delete(scenarioId);
     });
     el.nvaieRoiTables.addEventListener("input", handleNvaieRoiTableInput);
     el.nvaieRoiTables.addEventListener("change", handleNvaieRoiTableInput);
