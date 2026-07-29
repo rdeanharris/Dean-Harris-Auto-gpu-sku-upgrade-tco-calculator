@@ -290,21 +290,13 @@
       grid-column: 1 / -1 !important;
       grid-row: 2 !important;
     }
-    .grid.section-association-layout [data-association-layout="secondary-body-1"] {
+    .grid.section-association-layout #summaryTcoToggle {
       grid-column: 1 / -1 !important;
       grid-row: 3 !important;
     }
-    .grid.section-association-layout [data-association-layout="secondary-body-2"] {
-      grid-column: 1 / -1 !important;
-      grid-row: 4 !important;
-    }
-    .grid.section-association-layout #summaryTcoToggle {
-      grid-column: 1 / -1 !important;
-      grid-row: 5 !important;
-    }
     .grid.section-association-layout #summaryTcoBody {
       grid-column: 1 / -1 !important;
-      grid-row: 6 !important;
+      grid-row: 4 !important;
     }
     #selectedDeploymentToggle { grid-column: 1; grid-row: 1; }
     #scaleDeploymentToggle { grid-column: 2; grid-row: 1; }
@@ -1134,22 +1126,15 @@
         grid-column: 1 !important;
         grid-row: 4 !important;
       }
-      .grid.section-association-layout [data-association-layout="secondary-body-1"] {
+      .grid.section-association-layout #summaryTcoToggle {
         grid-column: 1 !important;
         grid-row: 5 !important;
       }
-      .grid.section-association-layout [data-association-layout="secondary-body-2"] {
+      .grid.section-association-layout #summaryTcoBody {
         grid-column: 1 !important;
         grid-row: 6 !important;
       }
-      .grid.section-association-layout #summaryTcoToggle {
-        grid-column: 1 !important;
-        grid-row: 7 !important;
-      }
-      .grid.section-association-layout #summaryTcoBody {
-        grid-column: 1 !important;
-        grid-row: 8 !important;
-      }
+
 
 
 
@@ -1688,17 +1673,17 @@
         body?.removeAttribute("data-association-layout");
       });
     }
-    function expandAssociatedSection(sectionToggleId, sectionBodyId, storageKey) {
+    function collapseAssociatedSection(sectionToggleId, sectionBodyId, storageKey) {
       const toggle = el[sectionToggleId];
       const body = el[sectionBodyId];
       if (!toggle || !body) return;
-      body.hidden = false;
-      toggle.setAttribute("aria-expanded", "true");
+      body.hidden = true;
+      toggle.setAttribute("aria-expanded", "false");
       toggle.querySelectorAll(".override-toggle-icon").forEach((icon) => {
-        icon.textContent = "-";
+        icon.textContent = "+";
       });
       try {
-        window.localStorage.setItem(storageKey, "true");
+        window.localStorage.setItem(storageKey, "false");
       } catch (error) {}
     }
     function setSectionAssociation(toggleId, bodyId, active) {
@@ -1710,23 +1695,16 @@
       );
       if (!grid || selectedIndex < 0) return;
 
-      associationSections.forEach(([sectionToggleId, sectionBodyId, storageKey]) => {
-        expandAssociatedSection(sectionToggleId, sectionBodyId, storageKey);
+      associationSections.forEach(([sectionToggleId, sectionBodyId, storageKey], index) => {
+        if (index !== selectedIndex) {
+          collapseAssociatedSection(sectionToggleId, sectionBodyId, storageKey);
+        }
       });
 
-      const secondarySections = associationSections.filter(
-        ([sectionToggleId]) => sectionToggleId !== toggleId,
-      );
       grid.classList.add("section-association-layout");
       el[toggleId]?.classList.add("section-association-active");
       el[bodyId]?.classList.add("section-association-active");
       el[bodyId]?.setAttribute("data-association-layout", "active-body");
-      secondarySections.forEach(([, sectionBodyId], index) => {
-        el[sectionBodyId]?.setAttribute(
-          "data-association-layout",
-          "secondary-body-" + (index + 1),
-        );
-      });
       requestAnimationFrame(() => {
         el[toggleId]?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
