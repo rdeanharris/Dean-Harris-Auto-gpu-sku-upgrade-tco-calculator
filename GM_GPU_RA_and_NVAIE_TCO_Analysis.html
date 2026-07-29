@@ -3899,6 +3899,10 @@
     });
     el.selectedDeploymentToggle.addEventListener("click", (event) => {
       if (event.target.closest(".section-show-control")) return;
+      if (event.target.closest(".override-toggle-icon")) {
+        setExpandableSection("selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey, el.selectedDeploymentBody.hidden, true);
+        return;
+      }
       showExclusiveAssociationSection("selectedDeploymentToggle");
     });
     [
@@ -3913,6 +3917,10 @@
     });
     el.scaleDeploymentToggle.addEventListener("click", (event) => {
       if (event.target.closest(".section-show-control")) return;
+      if (event.target.closest(".override-toggle-icon")) {
+        setExpandableSection("scaleDeploymentBody", "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", scaleDeploymentExpandedStorageKey, el.scaleDeploymentBody.hidden, true);
+        return;
+      }
       showExclusiveAssociationSection("scaleDeploymentToggle");
     });
     el.summaryTcoToggle.addEventListener("click", () => {
@@ -3920,6 +3928,10 @@
     });
     el.nvaieRoiToggle.addEventListener("click", (event) => {
       if (event.target.closest(".section-show-control")) return;
+      if (event.target.closest(".override-toggle-icon")) {
+        setExpandableSection("nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey, el.nvaieRoiBody.hidden, true);
+        return;
+      }
       showExclusiveAssociationSection("nvaieRoiToggle");
     });
     el.createPdfButton.addEventListener("click", createPdf);
