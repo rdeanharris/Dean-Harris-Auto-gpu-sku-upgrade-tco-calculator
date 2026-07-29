@@ -1628,6 +1628,13 @@
       else if (activeAssociationToggleId === toggleId) activeAssociationToggleId = "";
       applyAssociationLayout(scroll && active ? toggleId : "");
     }
+    function showExclusiveAssociationSection(toggleId) {
+      associationSections.forEach(([sectionToggleId, , , checkboxId]) => {
+        if (el[checkboxId]) el[checkboxId].checked = sectionToggleId === toggleId;
+      });
+      activeAssociationToggleId = toggleId;
+      applyAssociationLayout(toggleId);
+    }
     function setExpandableSection(bodyId, toggleId, startIconId, endIconId, storageKey, expanded, persist = false) {
       el[bodyId].hidden = !expanded;
       el[toggleId].setAttribute("aria-expanded", expanded ? "true" : "false");
@@ -3747,7 +3754,7 @@
     });
     el.selectedDeploymentToggle.addEventListener("click", (event) => {
       if (event.target.closest(".section-show-control")) return;
-      setExpandableSection("selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey, el.selectedDeploymentBody.hidden, true);
+      showExclusiveAssociationSection("selectedDeploymentToggle");
     });
     [
       ["selectedDeploymentShow", "selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey],
@@ -3761,14 +3768,14 @@
     });
     el.scaleDeploymentToggle.addEventListener("click", (event) => {
       if (event.target.closest(".section-show-control")) return;
-      setExpandableSection("scaleDeploymentBody", "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", scaleDeploymentExpandedStorageKey, el.scaleDeploymentBody.hidden, true);
+      showExclusiveAssociationSection("scaleDeploymentToggle");
     });
     el.summaryTcoToggle.addEventListener("click", () => {
       setExpandableSection("summaryTcoBody", "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", summaryTcoExpandedStorageKey, el.summaryTcoBody.hidden, true);
     });
     el.nvaieRoiToggle.addEventListener("click", (event) => {
       if (event.target.closest(".section-show-control")) return;
-      setExpandableSection("nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey, el.nvaieRoiBody.hidden, true);
+      showExclusiveAssociationSection("nvaieRoiToggle");
     });
     el.createPdfButton.addEventListener("click", createPdf);
     window.addEventListener("afterprint", () => setPdfPrintMode(false));
