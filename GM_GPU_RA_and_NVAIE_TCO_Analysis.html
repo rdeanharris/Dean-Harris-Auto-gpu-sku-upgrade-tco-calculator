@@ -1646,7 +1646,9 @@
         if (body) body.style.order = "";
       });
     }
-    function applyAssociationLayout(scrollToggleId = "") {
+    function applyAssociationLayout() {
+      const preservedScrollX = window.scrollX;
+      const preservedScrollY = window.scrollY;
       resetAssociationLayout();
       const grid = document.querySelector(".grid");
       if (!grid) return;
@@ -1684,12 +1686,9 @@
           window.localStorage.setItem(storageKey, expanded ? "true" : "false");
         } catch (error) {}
       });
-
-      if (scrollToggleId) {
-        requestAnimationFrame(() => {
-          el[scrollToggleId]?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      }
+      requestAnimationFrame(() => {
+        window.scrollTo(preservedScrollX, preservedScrollY);
+      });
     }
     function setSectionAssociation(toggleId, bodyId, active, scroll = true) {
       const section = associationSections.find(([sectionToggleId]) => sectionToggleId === toggleId);
@@ -1698,14 +1697,14 @@
       if (checkbox) checkbox.checked = Boolean(active);
       if (active) activeAssociationToggleId = toggleId;
       else if (activeAssociationToggleId === toggleId) activeAssociationToggleId = "";
-      applyAssociationLayout(scroll && active ? toggleId : "");
+      applyAssociationLayout();
     }
     function showExclusiveAssociationSection(toggleId) {
       associationSections.forEach(([sectionToggleId, , , checkboxId]) => {
         if (el[checkboxId]) el[checkboxId].checked = sectionToggleId === toggleId;
       });
       activeAssociationToggleId = toggleId;
-      applyAssociationLayout(toggleId);
+      applyAssociationLayout();
     }
     function setExpandableSection(bodyId, toggleId, startIconId, endIconId, storageKey, expanded, persist = false) {
       el[bodyId].hidden = !expanded;
