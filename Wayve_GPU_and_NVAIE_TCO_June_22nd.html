@@ -187,17 +187,19 @@
     .grid.section-association-layout {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
-    .grid.section-association-layout [data-association-layout="active-body"] {
+    .grid.section-association-layout [data-association-layout="visible-body"] {
       grid-column: 1 / -1 !important;
-      grid-row: 2 !important;
+      grid-row: auto !important;
     }
     .grid.section-association-layout #summaryTcoToggle {
       grid-column: 1 / -1 !important;
-      grid-row: 3 !important;
+      grid-row: auto !important;
+      order: 100;
     }
     .grid.section-association-layout #summaryTcoBody {
       grid-column: 1 / -1 !important;
-      grid-row: 4 !important;
+      grid-row: auto !important;
+      order: 101;
     }
     #selectedDeploymentToggle { grid-column: 1; grid-row: 1; }
     #scaleDeploymentToggle { grid-column: 2; grid-row: 1; }
@@ -243,17 +245,50 @@
       background: var(--nvidia);
       color: #fff;
       display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 0;
+      font: inherit;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 0;
+      text-align: left;
+    }
+    .section-toggle-main {
+      min-width: 0;
+      flex: 1;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
       font: inherit;
-      font-size: 17px;
-      font-weight: 700;
+      font-weight: inherit;
       padding: 9px 11px;
       cursor: pointer;
       text-align: left;
     }
-    .section-toggle:focus-visible {
+    .section-show-control {
+      min-width: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-left: 1px solid rgba(255, 255, 255, 0.7);
+      padding: 0 10px;
+      cursor: pointer;
+    }
+    .section-show-control input {
+      width: 18px;
+      height: 18px;
+      min-height: 0;
+      margin: 0;
+      accent-color: var(--black);
+      cursor: pointer;
+    }
+    .section-toggle-main:focus-visible,
+    .section-show-control input:focus-visible {
       outline: 2px solid var(--black);
       outline-offset: -2px;
     }
@@ -1028,17 +1063,14 @@
         grid-column: 1 !important;
         grid-row: 3 !important;
       }
-      .grid.section-association-layout [data-association-layout="active-body"] {
+      .grid.section-association-layout [data-association-layout="visible-body"] {
         grid-column: 1 !important;
-        grid-row: 4 !important;
+        grid-row: auto !important;
       }
-      .grid.section-association-layout #summaryTcoToggle {
-        grid-column: 1 !important;
-        grid-row: 5 !important;
-      }
+      .grid.section-association-layout #summaryTcoToggle,
       .grid.section-association-layout #summaryTcoBody {
         grid-column: 1 !important;
-        grid-row: 6 !important;
+        grid-row: auto !important;
       }
 
 
@@ -1112,7 +1144,8 @@
         padding: 5px 7px;
         font-size: 12px;
       }
-      .section-toggle .override-toggle-icon {
+      .section-toggle .override-toggle-icon,
+      .section-show-control {
         display: none;
       }
       .section-body,
@@ -1194,11 +1227,16 @@
     <div class="grid">
       <section>
         <div class="section">
-          <button class="section-toggle" type="button" id="selectedDeploymentToggle" aria-expanded="false" aria-controls="selectedDeploymentBody">
-            <span class="override-toggle-icon" id="selectedDeploymentToggleIconStart" aria-hidden="true">+</span>
-            <span class="override-toggle-label">Selected GPU Scenarios</span>
-            <span class="override-toggle-icon" id="selectedDeploymentToggleIcon" aria-hidden="true">+</span>
-          </button>
+          <div class="section-toggle" id="selectedDeploymentToggle" aria-expanded="false">
+            <button class="section-toggle-main" type="button" aria-expanded="false" aria-controls="selectedDeploymentBody">
+              <span class="override-toggle-icon" id="selectedDeploymentToggleIconStart" aria-hidden="true">+</span>
+              <span class="override-toggle-label">Selected GPU Scenarios</span>
+              <span class="override-toggle-icon" id="selectedDeploymentToggleIcon" aria-hidden="true">+</span>
+            </button>
+            <label class="section-show-control" title="Show Selected GPU Scenarios">
+              <input id="selectedDeploymentShow" type="checkbox" aria-label="Show Selected GPU Scenarios" />
+            </label>
+          </div>
           <div class="section-body fields" id="selectedDeploymentBody" hidden>
             <div class="full">
               <table class="path-table">
@@ -1282,11 +1320,16 @@
       </section>
       <section>
         <div class="section">
-          <button class="section-toggle" type="button" id="scaleDeploymentToggle" aria-expanded="false" aria-controls="scaleDeploymentBody">
-            <span class="override-toggle-icon" id="scaleDeploymentToggleIconStart" aria-hidden="true">+</span>
-            <span class="override-toggle-label">Scale Deployment Investment</span>
-            <span class="override-toggle-icon" id="scaleDeploymentToggleIcon" aria-hidden="true">+</span>
-          </button>
+          <div class="section-toggle" id="scaleDeploymentToggle" aria-expanded="false">
+            <button class="section-toggle-main" type="button" aria-expanded="false" aria-controls="scaleDeploymentBody">
+              <span class="override-toggle-icon" id="scaleDeploymentToggleIconStart" aria-hidden="true">+</span>
+              <span class="override-toggle-label">Scale Deployment Investment</span>
+              <span class="override-toggle-icon" id="scaleDeploymentToggleIcon" aria-hidden="true">+</span>
+            </button>
+            <label class="section-show-control" title="Show Scale Deployment Investment">
+              <input id="scaleDeploymentShow" type="checkbox" aria-label="Show Scale Deployment Investment" />
+            </label>
+          </div>
           <div class="section-body" id="scaleDeploymentBody" hidden>
           <table class="scale-table">
             <thead>
@@ -1383,11 +1426,16 @@
           </div>
         </div>
         <div class="section">
-          <button class="section-toggle" type="button" id="nvaieRoiToggle" aria-expanded="false" aria-controls="nvaieRoiBody">
-            <span class="override-toggle-icon" id="nvaieRoiToggleIconStart" aria-hidden="true">+</span>
-            <span class="override-toggle-label">NVIDIA AI Enterprise Investment ROI Analysis</span>
-            <span class="override-toggle-icon" id="nvaieRoiToggleIcon" aria-hidden="true">+</span>
-          </button>
+          <div class="section-toggle" id="nvaieRoiToggle" aria-expanded="false">
+            <button class="section-toggle-main" type="button" aria-expanded="false" aria-controls="nvaieRoiBody">
+              <span class="override-toggle-icon" id="nvaieRoiToggleIconStart" aria-hidden="true">+</span>
+              <span class="override-toggle-label">NVIDIA AI Enterprise Investment ROI Analysis</span>
+              <span class="override-toggle-icon" id="nvaieRoiToggleIcon" aria-hidden="true">+</span>
+            </button>
+            <label class="section-show-control" title="Show NVIDIA AI Enterprise Investment ROI Analysis">
+              <input id="nvaieRoiShow" type="checkbox" aria-label="Show NVIDIA AI Enterprise Investment ROI Analysis" />
+            </label>
+          </div>
           <div class="section-body" id="nvaieRoiBody" hidden>
             <div class="section-note">NVAIE ROI model uses the selected future GPU requirements and workload mix; scale mode models the lower and larger GPU scenarios.</div>
             <div class="nvaie-roi-wrap">
@@ -1432,10 +1480,10 @@
       "scalePerf0", "scaleExemplar0", "scaleTargetGpus0", "scaleCurrentTco0", "scaleTargetTco0", "scaleSavings0", "scaleSavingsPct0",
       "scalePerf1", "scaleExemplar1", "scaleTargetGpus1", "scaleCurrentTco1", "scaleTargetTco1", "scaleSavings1", "scaleSavingsPct1",
       "scalePerf2", "scaleExemplar2", "scaleTargetGpus2", "scaleCurrentTco2", "scaleTargetTco2", "scaleSavings2", "scaleSavingsPct2",
-      "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", "selectedDeploymentBody",
-      "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", "scaleDeploymentBody",
+      "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", "selectedDeploymentBody", "selectedDeploymentShow",
+      "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", "scaleDeploymentBody", "scaleDeploymentShow",
       "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", "summaryTcoBody",
-      "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", "nvaieRoiBody",
+      "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", "nvaieRoiBody", "nvaieRoiShow",
       "nvaieRoiEnabled", "nvaiePricePerGpu", "nvaieAnnualSpendPerGpu", "nvaieRoiTables",
       "skuOverridePanel", "skuOverrideToggle", "skuOverrideToggleIconStart", "skuOverrideToggleIcon", "skuOverrideTable",
       "hiddenWorkbookToggle", "hiddenWorkbookToggleIconStart", "hiddenWorkbookToggleIcon", "hiddenWorkbookTabs",
@@ -1508,10 +1556,11 @@
       }
     }
     const associationSections = [
-      ["selectedDeploymentToggle", "selectedDeploymentBody", "selectedDeploymentExpandedStorageKey"],
-      ["scaleDeploymentToggle", "scaleDeploymentBody", "scaleDeploymentExpandedStorageKey"],
-      ["nvaieRoiToggle", "nvaieRoiBody", "nvaieRoiExpandedStorageKey"],
+      ["selectedDeploymentToggle", "selectedDeploymentBody", "selectedDeploymentExpandedStorageKey", "selectedDeploymentShow"],
+      ["scaleDeploymentToggle", "scaleDeploymentBody", "scaleDeploymentExpandedStorageKey", "scaleDeploymentShow"],
+      ["nvaieRoiToggle", "nvaieRoiBody", "nvaieRoiExpandedStorageKey", "nvaieRoiShow"],
     ];
+    let activeAssociationToggleId = "";
     function resetAssociationLayout() {
       const grid = document.querySelector(".grid");
       grid?.classList.remove("section-association-layout");
@@ -1522,51 +1571,71 @@
         body?.classList.remove("section-association-active");
         toggle?.removeAttribute("data-association-layout");
         body?.removeAttribute("data-association-layout");
+        if (body) body.style.order = "";
       });
     }
-    function collapseAssociatedSection(sectionToggleId, sectionBodyId, storageKey) {
-      const toggle = el[sectionToggleId];
-      const body = el[sectionBodyId];
-      if (!toggle || !body) return;
-      body.hidden = true;
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.querySelectorAll(".override-toggle-icon").forEach((icon) => {
-        icon.textContent = "+";
-      });
-      try {
-        window.localStorage.setItem(storageKey, "false");
-      } catch (error) {}
-    }
-    function setSectionAssociation(toggleId, bodyId, active) {
+    function applyAssociationLayout(scrollToggleId = "") {
       resetAssociationLayout();
-      if (!active) return;
       const grid = document.querySelector(".grid");
-      const selectedIndex = associationSections.findIndex(
-        ([sectionToggleId]) => sectionToggleId === toggleId,
-      );
-      if (!grid || selectedIndex < 0) return;
-
-      associationSections.forEach(([sectionToggleId, sectionBodyId, storageKey], index) => {
-        if (index !== selectedIndex) {
-          collapseAssociatedSection(sectionToggleId, sectionBodyId, storageKey);
-        }
-      });
-
+      if (!grid) return;
       grid.classList.add("section-association-layout");
-      el[toggleId]?.classList.add("section-association-active");
-      el[bodyId]?.classList.add("section-association-active");
-      el[bodyId]?.setAttribute("data-association-layout", "active-body");
-      requestAnimationFrame(() => {
-        el[toggleId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      const visible = associationSections.filter(([, , , checkboxId]) => el[checkboxId]?.checked);
+      if (!visible.some(([toggleId]) => toggleId === activeAssociationToggleId)) {
+        activeAssociationToggleId = visible[0]?.[0] || "";
+      }
+      const ordered = visible.slice().sort(([leftToggleId], [rightToggleId]) => {
+        if (leftToggleId === activeAssociationToggleId) return -1;
+        if (rightToggleId === activeAssociationToggleId) return 1;
+        return associationSections.findIndex(([toggleId]) => toggleId === leftToggleId)
+          - associationSections.findIndex(([toggleId]) => toggleId === rightToggleId);
       });
+
+      associationSections.forEach(([toggleId, bodyId, storageKey, checkboxId]) => {
+        const toggle = el[toggleId];
+        const body = el[bodyId];
+        const expanded = Boolean(el[checkboxId]?.checked);
+        if (!toggle || !body) return;
+        body.hidden = !expanded;
+        toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        toggle.querySelector(".section-toggle-main")?.setAttribute("aria-expanded", expanded ? "true" : "false");
+        toggle.querySelectorAll(".override-toggle-icon").forEach((icon) => {
+          icon.textContent = expanded ? "-" : "+";
+        });
+        if (expanded) {
+          toggle.classList.add("section-association-active");
+          body.classList.add("section-association-active");
+          body.setAttribute("data-association-layout", "visible-body");
+          body.style.order = String(10 + ordered.findIndex(([orderedToggleId]) => orderedToggleId === toggleId));
+        }
+        try {
+          window.localStorage.setItem(storageKey, expanded ? "true" : "false");
+        } catch (error) {}
+      });
+
+      if (scrollToggleId) {
+        requestAnimationFrame(() => {
+          el[scrollToggleId]?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+    }
+    function setSectionAssociation(toggleId, bodyId, active, scroll = true) {
+      const section = associationSections.find(([sectionToggleId]) => sectionToggleId === toggleId);
+      if (!section) return;
+      const checkbox = el[section[3]];
+      if (checkbox) checkbox.checked = Boolean(active);
+      if (active) activeAssociationToggleId = toggleId;
+      else if (activeAssociationToggleId === toggleId) activeAssociationToggleId = "";
+      applyAssociationLayout(scroll && active ? toggleId : "");
     }
     function setExpandableSection(bodyId, toggleId, startIconId, endIconId, storageKey, expanded, persist = false) {
       el[bodyId].hidden = !expanded;
       el[toggleId].setAttribute("aria-expanded", expanded ? "true" : "false");
+      el[toggleId].querySelector(".section-toggle-main")?.setAttribute("aria-expanded", expanded ? "true" : "false");
       el[startIconId].textContent = expanded ? "-" : "+";
       el[endIconId].textContent = expanded ? "-" : "+";
-      if (persist && associationSections.some(([sectionToggleId]) => sectionToggleId === toggleId)) {
-        setSectionAssociation(toggleId, bodyId, expanded);
+      if (associationSections.some(([sectionToggleId]) => sectionToggleId === toggleId)) {
+        setSectionAssociation(toggleId, bodyId, expanded, persist);
       }
       if (persist) {
         try {
@@ -3676,16 +3745,29 @@
     el.hiddenWorkbookToggle.addEventListener("click", () => {
       setHiddenWorkbooksExpanded(el.hiddenWorkbookTabs.hidden, true);
     });
-    el.selectedDeploymentToggle.addEventListener("click", () => {
+    el.selectedDeploymentToggle.addEventListener("click", (event) => {
+      if (event.target.closest(".section-show-control")) return;
       setExpandableSection("selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey, el.selectedDeploymentBody.hidden, true);
     });
-    el.scaleDeploymentToggle.addEventListener("click", () => {
+    [
+      ["selectedDeploymentShow", "selectedDeploymentBody", "selectedDeploymentToggle", "selectedDeploymentToggleIconStart", "selectedDeploymentToggleIcon", selectedDeploymentExpandedStorageKey],
+      ["scaleDeploymentShow", "scaleDeploymentBody", "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", scaleDeploymentExpandedStorageKey],
+      ["nvaieRoiShow", "nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey],
+    ].forEach(([checkboxId, bodyId, toggleId, startIconId, endIconId, storageKey]) => {
+      el[checkboxId].addEventListener("click", (event) => event.stopPropagation());
+      el[checkboxId].addEventListener("change", () => {
+        setExpandableSection(bodyId, toggleId, startIconId, endIconId, storageKey, el[checkboxId].checked, true);
+      });
+    });
+    el.scaleDeploymentToggle.addEventListener("click", (event) => {
+      if (event.target.closest(".section-show-control")) return;
       setExpandableSection("scaleDeploymentBody", "scaleDeploymentToggle", "scaleDeploymentToggleIconStart", "scaleDeploymentToggleIcon", scaleDeploymentExpandedStorageKey, el.scaleDeploymentBody.hidden, true);
     });
     el.summaryTcoToggle.addEventListener("click", () => {
       setExpandableSection("summaryTcoBody", "summaryTcoToggle", "summaryTcoToggleIconStart", "summaryTcoToggleIcon", summaryTcoExpandedStorageKey, el.summaryTcoBody.hidden, true);
     });
-    el.nvaieRoiToggle.addEventListener("click", () => {
+    el.nvaieRoiToggle.addEventListener("click", (event) => {
+      if (event.target.closest(".section-show-control")) return;
       setExpandableSection("nvaieRoiBody", "nvaieRoiToggle", "nvaieRoiToggleIconStart", "nvaieRoiToggleIcon", nvaieRoiExpandedStorageKey, el.nvaieRoiBody.hidden, true);
     });
     el.createPdfButton.addEventListener("click", createPdf);
