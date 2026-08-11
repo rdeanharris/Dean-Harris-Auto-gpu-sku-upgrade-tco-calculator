@@ -2079,6 +2079,7 @@
       if (session?.token) headers.Authorization = "Bearer " + session.token;
       const response = await fetch(backendApiUrl(path), {
         ...options,
+        credentials: "include",
         headers,
         body: options.body && typeof options.body !== "string" ? JSON.stringify(options.body) : options.body,
       });
@@ -2216,7 +2217,7 @@
       if (el.adminUserSelect) {
         el.adminUserSelect.innerHTML = "";
         users.forEach((user) => {
-          const label = [user.email, user.company, user.status || "approved", user.lastActiveAt ? "active " + new Date(user.lastActiveAt).toLocaleString() : ""].filter(Boolean).join(" / ");
+          const label = [user.email, user.company, user.status || "approved", "logins " + Number(user.loginCount || 0), user.lastActiveAt ? "active " + new Date(user.lastActiveAt).toLocaleString() : ""].filter(Boolean).join(" / ");
           el.adminUserSelect.add(new Option(label || user.email, user.email));
         });
       }
@@ -2228,7 +2229,13 @@
       });
       const usageLines = [
         "Usage Statistics",
-        "Approved access sessions: " + (backendUsageStats.totalLogins ?? "pending backend"),
+        "Invitations requested: " + (backendUsageStats.invitationsRequested ?? "pending backend"),
+        "Pending approvals: " + (backendUsageStats.pendingApprovals ?? "pending backend"),
+        "Approved users: " + (backendUsageStats.approvedUsers ?? "pending backend"),
+        "Total logins: " + (backendUsageStats.totalLogins ?? "pending backend"),
+        "Active users (7 days): " + (backendUsageStats.activeUsers7Days ?? "pending backend"),
+        "Active users (30 days): " + (backendUsageStats.activeUsers30Days ?? "pending backend"),
+        "Returning users: " + (backendUsageStats.returningUsers ?? "pending backend"),
         "Configurations saved: " + (backendUsageStats.configurationsSaved ?? "pending backend"),
         "Configurations loaded: " + (backendUsageStats.configurationsLoaded ?? "pending backend"),
         "PDF exports: " + (backendUsageStats.pdfExports ?? "pending backend"),
@@ -2418,7 +2425,23 @@
       if (!backendAuthEnabled) return;
       const url = new URL(window.location.href);
       const code = url.searchParams.get("access_code");
-      if (!code) return;
+      if (!code) {
+        try {
+          const user = await backendRequest("/me");
+          writeSessionJson(authSessionStorageKey, {
+            email: normalizedUserName(user.email),
+            role: user.role || "user",
+            expiresAt: new Date(Date.now() + Number(authBackendConfig.accessSessionHours || 12) * 60 * 60 * 1000).toISOString(),
+            loggedInAt: new Date().toISOString(),
+          });
+          authStatus("Secure access confirmed.");
+          await refreshBackendAuthData();
+        } catch (error) {
+          window.sessionStorage.removeItem(authSessionStorageKey);
+        }
+        refreshAuthControls();
+        return;
+      }
       url.searchParams.delete("access_code");
       window.history.replaceState({}, document.title, url.toString());
       try {
@@ -4516,5 +4539,7 @@
     };
   </script>
   <script src="tco_config_io.js?version=secure-import-export-v1"></script>
+  <script src="databricks_cloud_pricing_config.js?version=databricks-cloud-pricing-v1"></script>
+  <script src="databricks_cloud_pricing_loader.js?version=databricks-cloud-pricing-v1"></script>
 </body>
 </html>

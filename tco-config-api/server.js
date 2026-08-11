@@ -17,6 +17,9 @@ const EMAIL_FROM = String(process.env.EMAIL_FROM || "GPU TCO Access <no-reply@ex
 const MAGIC_LINK_MINUTES = Math.max(5, Number(process.env.MAGIC_LINK_MINUTES || 30));
 const INVITE_APPROVAL_HOURS = Math.max(1, Number(process.env.INVITE_APPROVAL_HOURS || 24));
 const SESSION_HOURS = Math.max(1, Number(process.env.SESSION_HOURS || 12));
+const COOKIE_AUTH_ENABLED = process.env.COOKIE_AUTH_ENABLED === "true";
+const SESSION_COOKIE_NAME = String(process.env.SESSION_COOKIE_NAME || "autotco_session").trim();
+const COOKIE_SECURE = process.env.COOKIE_SECURE !== "false";
 const ADMIN_EMAILS = new Set(splitEnv(process.env.ADMIN_EMAILS || "deanh@nvidia.com"));
 const REQUIRED_EMAIL_DOMAIN = String(process.env.REQUIRED_EMAIL_DOMAIN || "").trim().toLowerCase();
 const ALLOWED_ORIGINS = new Set(splitEnv(process.env.ALLOWED_ORIGINS || "http://127.0.0.1:8767,http://localhost:8767"));
@@ -26,8 +29,23 @@ const PERSONAL_EMAIL_DOMAINS = new Set(splitEnv(process.env.BLOCKED_PERSONAL_EMA
   "pm.me", "gmx.com", "mail.com", "zoho.com", "hey.com",
 ].join(",")));
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
+const MS_GRAPH_TENANT_ID = String(process.env.MS_GRAPH_TENANT_ID || "").trim();
+const MS_GRAPH_CLIENT_ID = String(process.env.MS_GRAPH_CLIENT_ID || "").trim();
+const MS_GRAPH_CLIENT_SECRET = String(process.env.MS_GRAPH_CLIENT_SECRET || "").trim();
+const MS_GRAPH_SENDER = String(process.env.MS_GRAPH_SENDER || "").trim();
+const DATABRICKS_HOST = String(process.env.DATABRICKS_HOST || "https://nvidia-edsp-fdp-prd.cloud.databricks.com").replace(/\/+$/, "");
+const DATABRICKS_TABLE = String(process.env.DATABRICKS_TABLE || "edsp_fdp_nala_fpa_prod.gpu_cloud_model.unified_dataset_automotive").trim();
+const DATABRICKS_WAREHOUSE_ID = String(process.env.DATABRICKS_WAREHOUSE_ID || "").trim();
+const DATABRICKS_TOKEN = String(process.env.DATABRICKS_TOKEN || "").trim();
+const DATABRICKS_SQL = String(process.env.DATABRICKS_SQL || "").trim();
+const DATABRICKS_SKU_COLUMN = String(process.env.DATABRICKS_SKU_COLUMN || "").trim();
+const DATABRICKS_PRICE_COLUMN = String(process.env.DATABRICKS_PRICE_COLUMN || "").trim();
+const DATABRICKS_PROVIDER_COLUMN = String(process.env.DATABRICKS_PROVIDER_COLUMN || "").trim();
+const DATABRICKS_MAX_ROWS = Math.min(50000, Math.max(1, Number(process.env.DATABRICKS_MAX_ROWS || 10000)));
+const DATABRICKS_CACHE_MINUTES = Math.max(1, Number(process.env.DATABRICKS_CACHE_MINUTES || 60));
 const rateBuckets = new Map();
 let storeQueue = Promise.resolve();
+let cloudPriceCache = null;
 
 function splitEnv(value) {
   return String(value || "").split(",").map((item) => item.trim().toLowerCase()).filter(Boolean);
@@ -90,6 +108,7 @@ function corsHeaders(req) {
   const origin = allowedOrigin(req);
   return {
     ...(origin ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : {}),
+    ...(origin ? { "Access-Control-Allow-Credentials": "true" } : {}),
     "Access-Control-Allow-Headers": "authorization, content-type",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Cache-Control": "no-store",
@@ -104,9 +123,25 @@ function sendJson(req, res, status, payload) {
   res.end(body);
 }
 
-function sendRedirect(req, res, location) {
-  res.writeHead(302, { Location: location, ...corsHeaders(req) });
+function sendRedirect(req, res, location, extraHeaders = {}) {
+  res.writeHead(302, { Location: location, ...corsHeaders(req), ...extraHeaders });
   res.end();
+}
+
+function parseCookies(req) {
+  return String(req.headers.cookie || "").split(";").reduce((cookies, part) => {
+    const separator = part.indexOf("=");
+    if (separator < 0) return cookies;
+    const key = part.slice(0, separator).trim();
+    if (!key) return cookies;
+    cookies[key] = decodeURIComponent(part.slice(separator + 1).trim());
+    return cookies;
+  }, {});
+}
+
+function sessionCookie(token, maxAgeSeconds) {
+  const secure = COOKIE_SECURE ? "; Secure" : "";
+  return `${SESSION_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.max(0, maxAgeSeconds)}${secure}`;
 }
 
 async function readJson(req) {
@@ -220,20 +255,9 @@ async function deliverAccessEmail({ email, company, magicUrl, expiresMinutes }) 
     "If you did not request access, ignore this message.",
   ].join("\n\n");
   const html = `<p>Access for <strong>${escapeHtml(email)}</strong> has been approved.</p><p><a href="${escapeHtml(magicUrl)}">Open the GPU TCO calculator</a></p><p>This one-time link expires in ${expiresMinutes} minutes. If you did not request access, ignore this message.</p>`;
-  if (!EMAIL_DELIVERY_WEBHOOK_URL) {
-    if (ALLOW_DEV_AUTH) return { delivered: false, devMagicLink: magicUrl };
-    throw Object.assign(new Error("Email delivery is not configured."), { status: 503 });
-  }
-  const response = await fetch(EMAIL_DELIVERY_WEBHOOK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(EMAIL_DELIVERY_BEARER_TOKEN ? { Authorization: `Bearer ${EMAIL_DELIVERY_BEARER_TOKEN}` } : {}),
-    },
-    body: JSON.stringify({ to: email, from: EMAIL_FROM, subject, text, html }),
-  });
-  if (!response.ok) throw Object.assign(new Error("Email delivery failed."), { status: 502 });
-  return { delivered: true };
+  const delivery = await deliverEmail({ to: email, subject, text, html });
+  if (!delivery.delivered && ALLOW_DEV_AUTH) return { ...delivery, devMagicLink: magicUrl };
+  return delivery;
 }
 
 async function deliverApprovalEmail({ adminEmail, invitedEmail, company, requestedBy, approvalUrl, expiresHours }) {
@@ -245,20 +269,56 @@ async function deliverApprovalEmail({ adminEmail, invitedEmail, company, request
     "The customer will receive their secure access link only after you approve.",
   ].join("\n\n");
   const html = `<p><strong>${escapeHtml(requestedBy)}</strong> invited <strong>${escapeHtml(invitedEmail)}</strong>${company ? ` (${escapeHtml(company)})` : ""}.</p><p><a href="${escapeHtml(approvalUrl)}">Approve customer access</a></p><p>This approval link expires in ${expiresHours} hours. The customer receives access only after approval.</p>`;
-  if (!EMAIL_DELIVERY_WEBHOOK_URL) {
-    if (ALLOW_DEV_AUTH) return { delivered: false, devApprovalLink: approvalUrl };
-    throw Object.assign(new Error("Email delivery is not configured."), { status: 503 });
+  const delivery = await deliverEmail({ to: adminEmail, subject, text, html });
+  if (!delivery.delivered && ALLOW_DEV_AUTH) return { ...delivery, devApprovalLink: approvalUrl };
+  return delivery;
+}
+
+async function deliverEmail({ to, subject, text, html }) {
+  if (EMAIL_DELIVERY_WEBHOOK_URL) {
+    const response = await fetch(EMAIL_DELIVERY_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(EMAIL_DELIVERY_BEARER_TOKEN ? { Authorization: `Bearer ${EMAIL_DELIVERY_BEARER_TOKEN}` } : {}),
+      },
+      body: JSON.stringify({ to, from: EMAIL_FROM, subject, text, html }),
+    });
+    if (!response.ok) throw Object.assign(new Error("Email delivery failed."), { status: 502 });
+    return { delivered: true, provider: "webhook" };
   }
-  const response = await fetch(EMAIL_DELIVERY_WEBHOOK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(EMAIL_DELIVERY_BEARER_TOKEN ? { Authorization: `Bearer ${EMAIL_DELIVERY_BEARER_TOKEN}` } : {}),
-    },
-    body: JSON.stringify({ to: adminEmail, from: EMAIL_FROM, subject, text, html }),
-  });
-  if (!response.ok) throw Object.assign(new Error("Approval email delivery failed."), { status: 502 });
-  return { delivered: true };
+
+  if (MS_GRAPH_TENANT_ID && MS_GRAPH_CLIENT_ID && MS_GRAPH_CLIENT_SECRET && MS_GRAPH_SENDER) {
+    const tokenResponse = await fetch(`https://login.microsoftonline.com/${encodeURIComponent(MS_GRAPH_TENANT_ID)}/oauth2/v2.0/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: MS_GRAPH_CLIENT_ID,
+        client_secret: MS_GRAPH_CLIENT_SECRET,
+        scope: "https://graph.microsoft.com/.default",
+        grant_type: "client_credentials",
+      }),
+    });
+    if (!tokenResponse.ok) throw Object.assign(new Error("Microsoft Graph authentication failed."), { status: 502 });
+    const tokenPayload = await tokenResponse.json();
+    const graphResponse = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(MS_GRAPH_SENDER)}/sendMail`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${tokenPayload.access_token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: {
+          subject,
+          body: { contentType: "HTML", content: html || `<pre>${escapeHtml(text)}</pre>` },
+          toRecipients: [{ emailAddress: { address: to } }],
+        },
+        saveToSentItems: true,
+      }),
+    });
+    if (!graphResponse.ok) throw Object.assign(new Error("Microsoft Graph email delivery failed."), { status: 502 });
+    return { delivered: true, provider: "microsoft-graph" };
+  }
+
+  if (ALLOW_DEV_AUTH) return { delivered: false, provider: "development" };
+  throw Object.assign(new Error("Email delivery is not configured."), { status: 503 });
 }
 
 function escapeHtml(value) {
@@ -278,6 +338,19 @@ function createMagicLinkRecord(store, user, reason) {
     usedAt: null,
   });
   return `${PUBLIC_API_BASE_URL}/auth/magic?token=${encodeURIComponent(rawToken)}`;
+}
+
+function createSessionRecord(store, user) {
+  const rawToken = randomToken();
+  const session = {
+    id: crypto.randomUUID(), email: user.email, tokenHash: hashToken(rawToken),
+    createdAt: new Date().toISOString(), expiresAt: expiresAt(SESSION_HOURS * 60 * 60 * 1000), revokedAt: null,
+  };
+  store.sessions.push(session);
+  user.lastActiveAt = new Date().toISOString();
+  user.loginCount = Number(user.loginCount || 0) + 1;
+  addActivity(store, user.email, "login", { sessionId: session.id });
+  return { rawToken, session };
 }
 
 function createInviteApprovalRecord(store, request, requestedBy) {
@@ -307,8 +380,10 @@ async function userFromRequest(req, store) {
   const devUser = devUserFromHeaders(req);
   if (devUser) return devUser;
   const authorization = String(req.headers.authorization || "");
-  if (!authorization.startsWith("Bearer ")) return null;
-  const tokenHash = hashToken(authorization.slice(7));
+  const cookieToken = parseCookies(req)[SESSION_COOKIE_NAME] || "";
+  const rawToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : cookieToken;
+  if (!rawToken) return null;
+  const tokenHash = hashToken(rawToken);
   const session = store.sessions.find((item) => item.tokenHash === tokenHash && !item.revokedAt && Date.parse(item.expiresAt) > Date.now());
   if (!session) return null;
   const user = userForEmail(store, session.email);
@@ -330,15 +405,216 @@ function groupedConfigs(configs) {
 }
 
 function usageStats(store) {
-  const activeCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const active7Cutoff = now - 7 * 24 * 60 * 60 * 1000;
+  const active30Cutoff = now - 30 * 24 * 60 * 60 * 1000;
+  const loginEvents = store.activity.filter((item) => item.action === "login");
+  const activeEmailsSince = (cutoff) => new Set(loginEvents.filter((item) => Date.parse(item.timestamp) >= cutoff).map((item) => item.userEmail)).size;
+  const approvedUsers = store.users.filter((user) => user.status === "approved");
+  const userFrequency = approvedUsers.map((user) => {
+    const logins = loginEvents.filter((item) => item.userEmail === user.email).map((item) => Date.parse(item.timestamp)).filter(Number.isFinite).sort((a, b) => a - b);
+    const gaps = logins.slice(1).map((timestamp, index) => (timestamp - logins[index]) / (24 * 60 * 60 * 1000));
+    return {
+      email: user.email,
+      company: user.company,
+      loginCount: logins.length,
+      lastLoginAt: logins.length ? new Date(logins[logins.length - 1]).toISOString() : null,
+      averageDaysBetweenLogins: gaps.length ? Math.round((gaps.reduce((sum, value) => sum + value, 0) / gaps.length) * 10) / 10 : null,
+    };
+  });
   return {
-    totalLogins: store.activity.filter((item) => item.action === "login").length,
-    activeUsers: store.users.filter((user) => user.lastActiveAt && Date.parse(user.lastActiveAt) >= activeCutoff).length,
+    invitationsRequested: store.activity.filter((item) => item.action === "request_access" || item.action === "invite_user").length,
+    pendingApprovals: store.registrationRequests.filter((request) => request.status === "pending").length,
+    approvedUsers: approvedUsers.length,
+    totalLogins: loginEvents.length,
+    activeUsers: activeEmailsSince(active30Cutoff),
+    activeUsers7Days: activeEmailsSince(active7Cutoff),
+    activeUsers30Days: activeEmailsSince(active30Cutoff),
+    returningUsers: userFrequency.filter((item) => item.loginCount > 1).length,
     configurationsSaved: store.activity.filter((item) => item.action === "save_config").length,
     configurationsLoaded: store.activity.filter((item) => item.action === "load_config").length,
     pdfExports: store.activity.filter((item) => item.action === "pdf_export").length,
     lastActivityAt: store.activity[0]?.timestamp || null,
+    userFrequency,
   };
+}
+
+function normalizedColumnName(value) {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function findColumn(columns, configured, candidates) {
+  const normalized = new Map(columns.map((column, index) => [normalizedColumnName(column.name), index]));
+  if (configured) {
+    const index = normalized.get(normalizedColumnName(configured));
+    if (index === undefined) throw Object.assign(new Error(`Configured Databricks column not found: ${configured}`), { status: 502 });
+    return index;
+  }
+  for (const candidate of candidates) {
+    const index = normalized.get(normalizedColumnName(candidate));
+    if (index !== undefined) return index;
+  }
+  return -1;
+}
+
+function canonicalCloudSku(value) {
+  const raw = String(value || "").trim();
+  const key = raw.toUpperCase().replace(/NVIDIA/g, " ").replace(/[^A-Z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!key) return "";
+  if (key.includes("GB300")) return "GB300 NVL72";
+  if (key.includes("GB200")) return "GB200 NVL72";
+  if (key.includes("B300")) return "B300 270GB SXM";
+  if (key.includes("B200")) return "B200 180GB SXM";
+  if (key.includes("B100")) return "B100";
+  if (key.includes("GH200")) return "GH200 96GB";
+  if (key.includes("H200")) return "H200 141GB SXM";
+  if (key.includes("H100") && key.includes("NVL")) return "H100 NVL 94GB";
+  if (key.includes("H100") && key.includes("PCIE")) return "H100 80GB PCIe";
+  if (key.includes("H100")) return "H100 80GB SXM";
+  if (key.includes("H800")) return "H800 80GB SXM";
+  if (/\bH20\b/.test(key)) return "H20 96GB SXM";
+  if (key.includes("A100") && key.includes("40") && key.includes("PCIE")) return "A100 40GB PCIe";
+  if (key.includes("A100") && key.includes("40")) return "A100 40GB SXM";
+  if (key.includes("A100") && key.includes("80") && key.includes("PCIE")) return "A100 80GB PCIe";
+  if (key.includes("A100")) return "A100 80GB SXM";
+  if (key.includes("A800") && key.includes("PCIE")) return "A800 80GB PCIe";
+  if (key.includes("A800")) return "A800 80GB SXM";
+  if (key.includes("A6000")) return "A6000 48GB";
+  if (/\bA40\b/.test(key)) return "A40 48GB";
+  if (/\bA30\b/.test(key)) return "A30 24GB";
+  if (/\bA10\b/.test(key)) return "A10 24GB";
+  if (/\bA2\b/.test(key)) return "A2 16GB";
+  if (key.includes("L40S")) return "L40S 48GB";
+  if (/\bL40\b/.test(key)) return "L40 48GB";
+  if (/\bL20\b/.test(key)) return "L20 48GB PCIe";
+  if (/\bL4\b/.test(key)) return "L4 24GB";
+  if (/\bL2\b/.test(key)) return "L2 24GB PCIe";
+  if (key.includes("RTX PRO 6000") && key.includes("BLACKWELL")) return "RTX PRO 6000 Blackwell Server Edition";
+  if (/\bRTXD\b/.test(key) || key.includes("RTX 6000 D")) return "RTXD";
+  if (key.includes("RTX 6000") && key.includes("ADA")) return "RTX 6000 Ada 48GB";
+  if (key.includes("QUADRO RTX 6000")) return "Quadro RTX 6000 24GB";
+  if (/\bT4\b/.test(key)) return "T4 16GB";
+  if (key.includes("V100") && key.includes("32")) return "Tesla V100 32GB";
+  if (key.includes("V100")) return "Tesla V100 16GB";
+  if (key.includes("P100")) return "P100 16GB";
+  return raw;
+}
+
+function numericPrice(value) {
+  const parsed = Number(String(value ?? "").replace(/[$,\s]/g, ""));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function databricksStatementSql() {
+  if (DATABRICKS_SQL) return DATABRICKS_SQL;
+  if (!/^[A-Za-z0-9_]+\.[A-Za-z0-9_]+\.[A-Za-z0-9_]+$/.test(DATABRICKS_TABLE)) {
+    throw Object.assign(new Error("DATABRICKS_TABLE must be a three-part catalog.schema.table name."), { status: 500 });
+  }
+  return `SELECT * FROM ${DATABRICKS_TABLE} LIMIT ${DATABRICKS_MAX_ROWS}`;
+}
+
+async function databricksRequest(pathname, options = {}) {
+  const response = await fetch(`${DATABRICKS_HOST}${pathname}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${DATABRICKS_TOKEN}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload.message || payload.error || `Databricks request failed (${response.status}).`;
+    throw Object.assign(new Error(message), { status: 502 });
+  }
+  return payload;
+}
+
+async function runDatabricksStatement() {
+  if (!DATABRICKS_WAREHOUSE_ID || !DATABRICKS_TOKEN) {
+    throw Object.assign(new Error("Databricks cloud pricing is configured but requires DATABRICKS_WAREHOUSE_ID and DATABRICKS_TOKEN on the TCO API server."), { status: 503 });
+  }
+  let statement = await databricksRequest("/api/2.0/sql/statements", {
+    method: "POST",
+    body: JSON.stringify({
+      warehouse_id: DATABRICKS_WAREHOUSE_ID,
+      statement: databricksStatementSql(),
+      wait_timeout: "30s",
+      on_wait_timeout: "CONTINUE",
+      disposition: "INLINE",
+      format: "JSON_ARRAY",
+    }),
+  });
+  const statementId = statement.statement_id;
+  for (let attempt = 0; statement.status?.state === "PENDING" || statement.status?.state === "RUNNING"; attempt += 1) {
+    if (attempt >= 30) throw Object.assign(new Error("Databricks cloud pricing query timed out."), { status: 504 });
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    statement = await databricksRequest(`/api/2.0/sql/statements/${encodeURIComponent(statementId)}`);
+  }
+  if (statement.status?.state !== "SUCCEEDED") {
+    throw Object.assign(new Error(statement.status?.error?.message || `Databricks statement ended in ${statement.status?.state || "an unknown state"}.`), { status: 502 });
+  }
+  const rows = [...(statement.result?.data_array || [])];
+  let nextLink = statement.result?.next_chunk_internal_link;
+  while (nextLink) {
+    const chunk = await databricksRequest(nextLink);
+    rows.push(...(chunk.data_array || []));
+    nextLink = chunk.next_chunk_internal_link;
+  }
+  return { columns: statement.manifest?.schema?.columns || [], rows };
+}
+
+function normalizeCloudPriceRows(columns, rows) {
+  const skuIndex = findColumn(columns, DATABRICKS_SKU_COLUMN, [
+    "gpu_sku", "nvidia_gpu_sku", "gpu_model", "gpu_name", "accelerator_name", "product_name", "product", "sku",
+  ]);
+  const priceIndex = findColumn(columns, DATABRICKS_PRICE_COLUMN, [
+    "average_price_per_gpu_hour", "avg_price_per_gpu_hour", "price_per_gpu_hour", "dollars_per_gpu_hour",
+    "average_gpu_hourly_price", "avg_gpu_hourly_price", "gpu_hourly_price", "hourly_price_per_gpu",
+    "average_price", "avg_price",
+  ]);
+  const providerIndex = findColumn(columns, DATABRICKS_PROVIDER_COLUMN, [
+    "cloud_provider", "provider_name", "provider", "csp", "vendor",
+  ]);
+  if (skuIndex < 0 || priceIndex < 0) {
+    const available = columns.map((column) => column.name).join(", ");
+    throw Object.assign(new Error(`Unable to identify Databricks SKU/price columns. Available columns: ${available}`), { status: 502 });
+  }
+  const grouped = new Map();
+  rows.forEach((row) => {
+    const sku = canonicalCloudSku(row[skuIndex]);
+    const price = numericPrice(row[priceIndex]);
+    if (!sku || price === null) return;
+    const entry = grouped.get(sku) || { sku, prices: [], providers: new Set() };
+    entry.prices.push(price);
+    if (providerIndex >= 0 && row[providerIndex]) entry.providers.add(String(row[providerIndex]).trim());
+    grouped.set(sku, entry);
+  });
+  return Object.fromEntries([...grouped.values()].map((entry) => {
+    const average = entry.prices.reduce((sum, value) => sum + value, 0) / entry.prices.length;
+    return [entry.sku, {
+      sku: entry.sku,
+      dollarsPerGpuHour: Math.round(average * 10000) / 10000,
+      sampleCount: entry.prices.length,
+      providers: [...entry.providers].sort(),
+      source: `${DATABRICKS_HOST} / ${DATABRICKS_TABLE}`,
+    }];
+  }));
+}
+
+async function currentCloudPrices(forceRefresh = false) {
+  const maxAgeMs = DATABRICKS_CACHE_MINUTES * 60 * 1000;
+  if (!forceRefresh && cloudPriceCache && Date.now() - cloudPriceCache.cachedAtMs < maxAgeMs) return cloudPriceCache.payload;
+  const { columns, rows } = await runDatabricksStatement();
+  const prices = normalizeCloudPriceRows(columns, rows);
+  const payload = {
+    source: { host: DATABRICKS_HOST, table: DATABRICKS_TABLE, refreshedAt: new Date().toISOString() },
+    prices,
+    skuCount: Object.keys(prices).length,
+    rowCount: rows.length,
+  };
+  cloudPriceCache = { cachedAtMs: Date.now(), payload };
+  return payload;
 }
 
 async function handle(req, res) {
@@ -372,22 +648,33 @@ async function handle(req, res) {
         approvedAt: status === "approved" ? (currentUser?.approvedAt || new Date().toISOString()) : null,
         approvedBy: status === "approved" ? (currentUser?.approvedBy || "admin-bootstrap") : null,
       });
-      const existing = store.registrationRequests.find((item) => item.email === validation.email && item.status === "pending");
-      if (!existing && status === "pending") {
-        store.registrationRequests.unshift({
+      let request = store.registrationRequests.find((item) => item.email === validation.email && item.status === "pending");
+      if (!request && status === "pending") {
+        request = {
           id: crypto.randomUUID(), email: validation.email, company, status: "pending",
           tool: String(body.tool || "GPU_RA_and_NVAIE_TCO_Analysis").slice(0, 120), requestedAt: new Date().toISOString(),
-        });
+          requestedBy: validation.email,
+        };
+        store.registrationRequests.unshift(request);
       }
       addActivity(store, validation.email, "request_access", { company, status });
       if (status === "approved") {
         const magicUrl = createMagicLinkRecord(store, user, "registration");
         delivery = await deliverAccessEmail({ email: user.email, company: user.company, magicUrl, expiresMinutes: MAGIC_LINK_MINUTES });
+      } else if (request) {
+        request.company = company;
+        const approvalUrl = createInviteApprovalRecord(store, request, validation.email);
+        const adminEmail = [...ADMIN_EMAILS][0];
+        delivery = await deliverApprovalEmail({
+          adminEmail, invitedEmail: validation.email, company, requestedBy: validation.email,
+          approvalUrl, expiresHours: INVITE_APPROVAL_HOURS,
+        });
       }
     });
     return sendJson(req, res, 202, {
       message: "If the address is eligible, the request is pending approval or an access link has been sent.",
       ...(ALLOW_DEV_AUTH && delivery?.devMagicLink ? { devMagicLink: delivery.devMagicLink } : {}),
+      ...(ALLOW_DEV_AUTH && delivery?.devApprovalLink ? { devApprovalLink: delivery.devApprovalLink } : {}),
     });
   }
 
@@ -417,11 +704,17 @@ async function handle(req, res) {
     if (!APP_REDIRECT_URI) return sendJson(req, res, 503, { error: "APP_REDIRECT_URI is not configured." });
     const tokenHash = hashToken(searchParams.get("token") || "");
     let exchangeCode = null;
+    let cookieSession = null;
     await mutateStore(async (store) => {
       const link = store.magicLinks.find((item) => item.tokenHash === tokenHash && !item.usedAt && Date.parse(item.expiresAt) > Date.now());
       const user = link && userForEmail(store, link.email);
       if (!link || !user || user.status !== "approved") throw Object.assign(new Error("This access link is invalid or expired."), { status: 401 });
       link.usedAt = new Date().toISOString();
+      if (COOKIE_AUTH_ENABLED) {
+        cookieSession = createSessionRecord(store, user);
+        addActivity(store, user.email, "consume_magic_link");
+        return;
+      }
       exchangeCode = randomToken(24);
       store.exchangeCodes.push({
         id: crypto.randomUUID(), email: user.email, codeHash: hashToken(exchangeCode),
@@ -429,6 +722,11 @@ async function handle(req, res) {
       });
       addActivity(store, user.email, "consume_magic_link");
     });
+    if (COOKIE_AUTH_ENABLED && cookieSession) {
+      return sendRedirect(req, res, APP_REDIRECT_URI, {
+        "Set-Cookie": sessionCookie(cookieSession.rawToken, SESSION_HOURS * 60 * 60),
+      });
+    }
     const redirect = new URL(APP_REDIRECT_URI);
     redirect.searchParams.set("access_code", exchangeCode);
     return sendRedirect(req, res, redirect.toString());
@@ -471,15 +769,7 @@ async function handle(req, res) {
       const user = code && userForEmail(store, code.email);
       if (!code || !user || user.status !== "approved") throw Object.assign(new Error("Access code is invalid or expired."), { status: 401 });
       code.usedAt = new Date().toISOString();
-      const rawSessionToken = randomToken();
-      const session = {
-        id: crypto.randomUUID(), email: user.email, tokenHash: hashToken(rawSessionToken),
-        createdAt: new Date().toISOString(), expiresAt: expiresAt(SESSION_HOURS * 60 * 60 * 1000), revokedAt: null,
-      };
-      store.sessions.push(session);
-      user.lastActiveAt = new Date().toISOString();
-      user.loginCount = Number(user.loginCount || 0) + 1;
-      addActivity(store, user.email, "login", { sessionId: session.id });
+      const { rawToken: rawSessionToken, session } = createSessionRecord(store, user);
       responsePayload = {
         token: rawSessionToken,
         expiresAt: session.expiresAt,
@@ -493,8 +783,17 @@ async function handle(req, res) {
   const user = await userFromRequest(req, store);
   if (!user) return sendJson(req, res, 401, { error: "Authentication required." });
 
+  if (method === "GET" && pathname === "/auth/check") {
+    return sendJson(req, res, 204, {});
+  }
+
   if (method === "GET" && pathname === "/me") {
     return sendJson(req, res, 200, { email: user.email, company: user.company, role: user.role, isAdmin: user.isAdmin });
+  }
+
+  if (method === "GET" && pathname === "/cloud-prices") {
+    const forceRefresh = searchParams.get("refresh") === "true" && user.isAdmin;
+    return sendJson(req, res, 200, await currentCloudPrices(forceRefresh));
   }
 
   if (method === "POST" && pathname === "/invitation-requests") {
@@ -538,6 +837,10 @@ async function handle(req, res) {
       if (session) session.revokedAt = new Date().toISOString();
       addActivity(nextStore, user.email, "logout");
     });
+    if (COOKIE_AUTH_ENABLED) {
+      res.writeHead(204, { ...corsHeaders(req), "Set-Cookie": sessionCookie("", 0) });
+      return res.end();
+    }
     return sendJson(req, res, 204, {});
   }
 

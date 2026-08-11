@@ -168,7 +168,7 @@
       </div>
     </div>
     <div class="preview">
-      <div class="source-note">Cloud calculator defaults use CSP-only Cloud Avg ASP from AWS, Azure, GCP Cloud, and OCI in the provider workbook. The Calculator column reflects any saved Manual SKU Price Override; otherwise it uses Cloud Avg.</div>
+      <div class="source-note">Authoritative cloud pricing averages are loaded from the configured Databricks automotive dataset. The Calculator column reflects any saved Manual SKU Price Override; otherwise it uses the Databricks average.</div>
       <table class="source-table cloud_price_inputs">
         <colgroup><col /><col /><col /><col /><col /><col /><col /></colgroup>
         <thead><tr><th>GPU SKU</th><th>ASP Product</th><th>Cloud Avg $/GPU-Hour</th><th>Calculator $/GPU-Hour</th><th>Cloud Providers</th><th>Source Rows</th><th>Latest Snapshot</th></tr></thead>
@@ -603,5 +603,7 @@
       loadState();
     })();
   </script>
+  <script src="../databricks_cloud_pricing_config.js?version=databricks-cloud-pricing-v1"></script>
+  <script src="../databricks_cloud_pricing_loader.js?version=databricks-cloud-pricing-v1"></script>
 </body>
 </html>
